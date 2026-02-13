@@ -1,0 +1,22 @@
+# Sample data for local development (used when Google Sheets unavailable)
+
+# Config sheet equivalent
+config:
+  theme: "Product Demo"
+  target_platform: "tiktok"
+  video_duration_seconds: 20
+  style: "cinematic"
+  auto_post: false
+  trend_scrape_schedule: "0 */6 * * *"  # Every 6 hours
+
+# Product/Content References sheet equivalent
+content_references:
+  - ref_id: "demo-01"
+    type: "product"
+    title: "Smart Water Bottle"
+    description: "Self-cleaning UV water bottle with temperature display"
+    media_url: "https://example.com/product-image.jpg"
+    talking_points:
+      - "UV-C LED self-cleaning every 2 hours"
+      - "Temperature display on cap"
+      - "Keeps drinks cold for 24 hours"
