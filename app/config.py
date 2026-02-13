@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     trend_scrape_interval_hours: int = 6
     trend_analysis_delay_minutes: int = 30
 
+    # Content Generation (Phase 3)
+    openai_api_key: str = ""  # For TTS provider (OpenAI)
+    video_provider_type: str = "mock"  # mock/svd/veo
+    tts_provider_type: str = "mock"  # mock/openai/elevenlabs
+    output_dir: str = "output"  # Base directory for generated files
+
 
 @lru_cache()
 def get_settings():

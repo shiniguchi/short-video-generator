@@ -8,6 +8,10 @@ config:
   style: "cinematic"
   auto_post: false
   trend_scrape_schedule: "0 */6 * * *"  # Every 6 hours
+  product_name: "HydroGlow Smart Bottle"
+  tagline: "Stay hydrated, stay clean, stay informed"
+  target_audience: "Health-conscious millennials and fitness enthusiasts"
+  tone: "energetic and aspirational"
 
 # Product/Content References sheet equivalent
 content_references:
@@ -20,3 +24,17 @@ content_references:
       - "UV-C LED self-cleaning every 2 hours"
       - "Temperature display on cap"
       - "Keeps drinks cold for 24 hours"
+      - "BPA-free stainless steel construction"
+      - "Rechargeable via USB-C, 30-day battery life"
+
+  - ref_id: "demo-02"
+    type: "product"
+    title: "Wireless Earbuds Pro"
+    description: "Noise-cancelling wireless earbuds with 48-hour battery life"
+    media_url: "https://example.com/earbuds-image.jpg"
+    talking_points:
+      - "Active noise cancellation with transparency mode"
+      - "48-hour total battery life with charging case"
+      - "IPX7 water resistance for workouts"
+      - "Premium sound with custom EQ in app"
+      - "Touch controls and voice assistant integration"
