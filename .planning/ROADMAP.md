@@ -31,10 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Celery workers connect to Redis and can execute test tasks
   4. PostgreSQL migrations run successfully and schema is created
   5. Local config files provide sample data when Google Sheets is unavailable
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (plans defined during `/gsd:plan-phase 1`)
+- [ ] 01-01-PLAN.md — Docker infrastructure with PostgreSQL, Redis, config system, and local data fallback
+- [ ] 01-02-PLAN.md — Database layer with SQLAlchemy async models and Alembic migrations
+- [ ] 01-03-PLAN.md — FastAPI REST API with health endpoint and Celery worker with test task
 
 ### Phase 2: Trend Intelligence
 **Goal**: System collects trending videos from TikTok and YouTube, then analyzes patterns with engagement velocity scoring
@@ -118,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/0 | Not started | - |
+| 1. Foundation & Infrastructure | 0/3 | Planned | - |
 | 2. Trend Intelligence | 0/0 | Not started | - |
 | 3. Content Generation | 0/0 | Not started | - |
 | 4. Video Composition | 0/0 | Not started | - |
