@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     # Database
     database_url: str
 
-    # Redis
-    redis_url: str = "redis://redis:6379/0"
+    # Redis (optional for local dev without Redis)
+    redis_url: str = ""
 
     # Celery
-    celery_broker_url: str = "redis://redis:6379/0"
-    celery_result_backend: str = "redis://redis:6379/0"
+    celery_broker_url: str = "sqla+sqlite:///celery_broker.db"
+    celery_result_backend: str = "db+sqlite:///celery_results.db"
 
     # API
     api_secret_key: str

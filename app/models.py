@@ -17,7 +17,7 @@ class Job(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     error_message = Column(Text)
-    metadata = Column(JSON)  # Flexible storage for stage-specific data
+    extra_data = Column("metadata", JSON)  # Flexible storage for stage-specific data
 
 
 class Trend(Base):
@@ -37,7 +37,7 @@ class Trend(Base):
     video_url = Column(String(1000))
     thumbnail_url = Column(String(1000))
     collected_at = Column(DateTime(timezone=True), server_default=func.now())
-    metadata = Column(JSON)
+    extra_data = Column("metadata", JSON)
 
 
 class Script(Base):
@@ -72,4 +72,4 @@ class Video(Base):
     approved_at = Column(DateTime(timezone=True))
     published_at = Column(DateTime(timezone=True))
     published_url = Column(String(1000))
-    metadata = Column(JSON)
+    extra_data = Column("metadata", JSON)

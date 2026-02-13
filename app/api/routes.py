@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.database import get_session
 from app.config import get_settings
-import redis.asyncio as redis
 
 router = APIRouter()
 
@@ -21,17 +20,20 @@ async def health_check(session: AsyncSession = Depends(get_session)):
     except Exception as e:
         db_status = f"error: {str(e)}"
 
-    # Check Redis
-    redis_status = "disconnected"
-    try:
-        r = redis.from_url(settings.redis_url)
-        await r.ping()
-        redis_status = "connected"
-        await r.close()
-    except Exception as e:
-        redis_status = f"error: {str(e)}"
+    # Check Redis (skip if not configured)
+    redis_status = "not configured"
+    if settings.redis_url:
+        try:
+            import redis.asyncio as aioredis
+            r = aioredis.from_url(settings.redis_url)
+            await r.ping()
+            redis_status = "connected"
+            await r.close()
+        except Exception as e:
+            redis_status = f"error: {str(e)}"
 
-    overall_status = "healthy" if db_status == "connected" and redis_status == "connected" else "unhealthy"
+    # Healthy if DB connected and Redis is either connected or not configured
+    overall_status = "healthy" if db_status == "connected" and redis_status in ("connected", "not configured") else "unhealthy"
 
     return {
         "status": overall_status,

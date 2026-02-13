@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False, server_default='pending'),
     sa.Column('stage', sa.String(length=50), nullable=True),
     sa.Column('theme', sa.String(length=255), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('error_message', sa.Text(), nullable=True),
     sa.Column('metadata', sa.JSON(), nullable=True),
@@ -46,7 +46,7 @@ def upgrade() -> None:
     sa.Column('shares', sa.Integer(), nullable=True),
     sa.Column('video_url', sa.String(length=1000), nullable=True),
     sa.Column('thumbnail_url', sa.String(length=1000), nullable=True),
-    sa.Column('collected_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('collected_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('metadata', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('external_id')
@@ -63,7 +63,7 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=500), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('hashtags', sa.JSON(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['job_id'], ['jobs.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -78,7 +78,7 @@ def upgrade() -> None:
     sa.Column('thumbnail_path', sa.String(length=1000), nullable=True),
     sa.Column('duration_seconds', sa.Float(), nullable=True),
     sa.Column('cost_usd', sa.Float(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('approved_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('published_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('published_url', sa.String(length=1000), nullable=True),

@@ -5,13 +5,18 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=True,
-    future=True,
-    pool_pre_ping=True,
-    pool_size=5
-)
+# SQLite doesn't support pool_size or pool_pre_ping the same way
+engine_kwargs = {
+    "echo": True,
+    "future": True,
+}
+if settings.database_url.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_size"] = 5
+
+engine = create_async_engine(settings.database_url, **engine_kwargs)
 
 async_session_factory = sessionmaker(
     engine,
