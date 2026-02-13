@@ -22,5 +22,18 @@ celery_app.conf.update(
     worker_max_tasks_per_child=1000,  # Restart worker after 1000 tasks (memory cleanup)
 )
 
+# Celery Beat schedule for periodic tasks
+celery_app.conf.beat_schedule = {
+    'collect-trends-periodic': {
+        'task': 'app.tasks.collect_trends_task',
+        'schedule': settings.trend_scrape_interval_hours * 3600,  # Convert hours to seconds
+    },
+    'analyze-trends-periodic': {
+        'task': 'app.tasks.analyze_trends_task',
+        'schedule': settings.trend_scrape_interval_hours * 3600,  # Same interval
+        # Analysis runs at same interval but relies on collected data from last 24h
+    },
+}
+
 # Auto-discover tasks from app.tasks module
 celery_app.autodiscover_tasks(['app'])

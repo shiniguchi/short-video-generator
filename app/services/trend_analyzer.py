@@ -93,7 +93,7 @@ def analyze_trends(trends: List[Dict]) -> Dict:
                     "audio_type": "original"
                 },
             ],
-            "avg_engagement_velocity": sum(t.get('engagement_velocity', 0) for t in trends) / max(len(trends), 1),
+            "avg_engagement_velocity": sum(t.get('engagement_velocity') or 0 for t in trends) / max(len(trends), 1),
             "top_hashtags": _extract_top_hashtags(trends, limit=10),
             "recommendations": [
                 "Use hook questions in first 2 seconds to capture attention",
@@ -239,7 +239,7 @@ Use the generate_trend_report tool to structure your response."""
                     "audio_type": "original"
                 },
             ],
-            "avg_engagement_velocity": sum(t.get('engagement_velocity', 0) for t in trends) / max(len(trends), 1),
+            "avg_engagement_velocity": sum(t.get('engagement_velocity') or 0 for t in trends) / max(len(trends), 1),
             "top_hashtags": _extract_top_hashtags(trends, limit=10),
             "recommendations": [
                 "Use hook questions in first 2 seconds to capture attention",
