@@ -1,20 +1,25 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from app.api import routes
 from app.config import get_settings
-
-app = FastAPI(title="ViralForge API")
 
 settings = get_settings()
 
 
-@app.get("/")
-async def root():
-    return {"status": "ok", "service": "viralforge-api"}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("Starting ViralForge API...")
+    yield
+    # Shutdown
+    print("Shutting down ViralForge API...")
 
 
-@app.get("/health")
-async def health():
-    return {
-        "status": "healthy",
-        "database": "configured",
-        "redis": "configured"
-    }
+app = FastAPI(
+    title="ViralForge API",
+    description="Short-form video generation pipeline",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.include_router(routes.router)
