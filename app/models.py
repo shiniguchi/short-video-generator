@@ -80,6 +80,13 @@ class Script(Base):
     title = Column(String(500))
     description = Column(Text)
     hashtags = Column(JSON)
+    # Phase 3 additions
+    duration_target = Column(Integer)  # 15-30 seconds
+    aspect_ratio = Column(String(10), default="9:16")
+    hook_text = Column(String(500))  # First 3 seconds hook
+    cta_text = Column(String(500))  # Call-to-action
+    theme_config = Column(JSON)  # Snapshot of theme config used
+    trend_report_id = Column(Integer, ForeignKey("trend_reports.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -86,3 +86,57 @@ class TrendReportResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Video Production Plan Schemas (Phase 3: Content Generation)
+
+class SceneSchema(BaseModel):
+    """Individual scene in video production plan."""
+    scene_number: int
+    duration_seconds: int  # 2-4 second range
+    visual_prompt: str  # Text prompt for video generation
+    transition: str  # fade, cut, dissolve
+
+
+class TextOverlaySchema(BaseModel):
+    """Text overlay timing and positioning."""
+    text: str
+    timestamp_start: float  # seconds
+    timestamp_end: float  # seconds
+    position: str  # top, center, bottom
+    style: str  # bold, normal, highlight
+
+
+class VideoProductionPlanCreate(BaseModel):
+    """Complete video production plan from Claude (used as tool-use schema)."""
+    video_prompt: str  # Master visual prompt
+    duration_target: int  # 15-30 seconds
+    aspect_ratio: str  # Always "9:16"
+    scenes: List[SceneSchema]
+    voiceover_script: str
+    hook_text: str  # First 3 seconds hook
+    cta_text: str  # Call-to-action
+    text_overlays: List[TextOverlaySchema]
+    hashtags: List[str]
+    title: str
+    description: str
+
+
+class VideoProductionPlanResponse(BaseModel):
+    """Video production plan API response."""
+    id: int
+    video_prompt: str
+    duration_target: int
+    aspect_ratio: str
+    scenes: List[SceneSchema]
+    voiceover_script: str
+    hook_text: str
+    cta_text: str
+    text_overlays: List[TextOverlaySchema]
+    hashtags: List[str]
+    title: str
+    description: str
+    created_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
