@@ -13,7 +13,7 @@ ViralForge's roadmap follows the natural flow of its 8-stage video pipeline: fou
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Docker Compose environment with core services and configuration
-- [ ] **Phase 2: Trend Intelligence** - Trend collection from TikTok/YouTube and AI-powered pattern analysis
+- [x] **Phase 2: Trend Intelligence** - Trend collection from TikTok/YouTube and AI-powered pattern analysis
 - [ ] **Phase 3: Content Generation** - Script generation, AI video creation, and voiceover synthesis
 - [ ] **Phase 4: Video Composition** - FFmpeg assembly with text overlays, audio, and final rendering
 - [ ] **Phase 5: Review & Output** - File-based review workflow with cost tracking and approval system
@@ -51,9 +51,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Data foundation: schema migration, Pydantic schemas, config, and mock data fixtures
-- [ ] 02-02-PLAN.md — Trend collection: TikTok/YouTube scrapers, engagement velocity, DB UPSERT, Celery task
-- [ ] 02-03-PLAN.md — Trend analysis: Claude API analyzer, TrendReport storage, Celery Beat schedule, API endpoints
+- [x] 02-01-PLAN.md — Data foundation: schema migration, Pydantic schemas, config, and mock data fixtures
+- [x] 02-02-PLAN.md — Trend collection: TikTok/YouTube scrapers, engagement velocity, DB UPSERT, Celery task
+- [x] 02-03-PLAN.md — Trend analysis: Claude API analyzer, TrendReport storage, Celery Beat schedule, API endpoints
 
 ### Phase 3: Content Generation
 **Goal**: System reads theme config and generates complete videos from AI-generated scripts, visuals, and voiceover
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 3/3 | Complete | 2026-02-13 |
-| 2. Trend Intelligence | 0/3 | Planned | - |
+| 2. Trend Intelligence | 3/3 | Complete | 2026-02-13 |
 | 3. Content Generation | 0/0 | Not started | - |
 | 4. Video Composition | 0/0 | Not started | - |
 | 5. Review & Output | 0/0 | Not started | - |
@@ -131,4 +131,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-13 -- Phase 2 planned*
+*Last updated: 2026-02-13 -- Phase 2 complete*
