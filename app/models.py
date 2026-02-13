@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -26,18 +26,45 @@ class Trend(Base):
 
     id = Column(Integer, primary_key=True)
     platform = Column(String(50), nullable=False)  # tiktok, youtube
-    external_id = Column(String(255), nullable=False, unique=True)  # Platform's video ID
+    external_id = Column(String(255), nullable=False)  # Platform's video ID
     title = Column(String(500))
+    description = Column(Text)
     creator = Column(String(255))
+    creator_id = Column(String(255))
     hashtags = Column(JSON)  # Array of hashtag strings
     views = Column(Integer)
     likes = Column(Integer)
     comments = Column(Integer)
     shares = Column(Integer)
+    duration = Column(Integer)  # Video duration in seconds
+    sound_name = Column(String(500))  # Audio/sound used in video
     video_url = Column(String(1000))
     thumbnail_url = Column(String(1000))
+    posted_at = Column(DateTime(timezone=True))  # When video was originally posted
+    engagement_velocity = Column(Float)  # (likes+comments+shares)/hours_since_posted
     collected_at = Column(DateTime(timezone=True), server_default=func.now())
     extra_data = Column("metadata", JSON)
+
+    __table_args__ = (
+        UniqueConstraint('platform', 'external_id', name='uq_platform_external_id'),
+    )
+
+
+class TrendReport(Base):
+    """AI-generated trend analysis reports"""
+    __tablename__ = "trend_reports"
+
+    id = Column(Integer, primary_key=True)
+    analyzed_count = Column(Integer, nullable=False)
+    date_range_start = Column(DateTime(timezone=True), nullable=False)
+    date_range_end = Column(DateTime(timezone=True), nullable=False)
+    video_styles = Column(JSON, nullable=False)  # List of {category, confidence, count}
+    common_patterns = Column(JSON, nullable=False)  # List of pattern objects
+    avg_engagement_velocity = Column(Float)
+    top_hashtags = Column(JSON)  # List of hashtag strings
+    recommendations = Column(JSON)  # List of recommendation strings
+    raw_report = Column(JSON)  # Full Claude response for debugging
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Script(Base):

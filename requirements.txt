@@ -12,3 +12,12 @@ pyyaml
 redis
 httptools
 watchfiles
+anthropic
+httpx
+tenacity
+google-api-python-client
+google-auth-oauthlib
+isodate
+pytest
+pytest-mock
+pytest-asyncio

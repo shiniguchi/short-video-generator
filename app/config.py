@@ -26,6 +26,16 @@ class Settings(BaseSettings):
     # Local config fallback
     local_config_path: str = "config/sample-data.yml"
 
+    # Trend Intelligence
+    use_mock_data: bool = True  # Default to mock for local dev
+    apify_api_token: str = ""
+    youtube_api_key: str = ""
+    anthropic_api_key: str = ""
+
+    # Schedule
+    trend_scrape_interval_hours: int = 6
+    trend_analysis_delay_minutes: int = 30
+
 
 @lru_cache()
 def get_settings():
