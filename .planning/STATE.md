@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 1: Foundation & Infrastructure — Verification
+**Current focus:** Phase 2: Trend Intelligence — In Progress
 
 ## Current Position
 
-Phase: 1 of 6 (Foundation & Infrastructure)
-Plan: 3 of 3 in current phase (all complete)
-Status: Verifying
-Last activity: 2026-02-13 — All 3 plans executed, local testing passed
+Phase: 2 of 6 (Trend Intelligence)
+Plan: 1 of 3 in current phase (02-01 complete)
+Status: Executing
+Last activity: 2026-02-13 — Phase 02-01 complete: schema, models, mock data
 
 Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 3 min
-- Total execution time: 0.2 hours
+- Total execution time: 0.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 9 min | 3 min |
+| 02 | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (5 min), 01-03 (2 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (5 min), 01-03 (2 min), 02-01 (5 min)
 - Trend: Steady
 
 *Updated after each plan completion*
@@ -51,6 +52,10 @@ Recent decisions affecting current work:
 - [Phase 01]: SQLAlchemy 'metadata' is reserved — use extra_data = Column("metadata", JSON) pattern
 - [Phase 01]: Local dev uses SQLite + aiosqlite and SQLAlchemy Celery transport (no Docker/Redis/PostgreSQL required)
 - [Phase 01]: Python 3.9 compatibility — FastAPI pinned to >=0.100.0, migration uses CURRENT_TIMESTAMP not now()
+- [Phase 02-01]: Composite unique constraint (platform, external_id) prevents duplicate trends across platforms
+- [Phase 02-01]: Store engagement_velocity as calculated field for query performance
+- [Phase 02-01]: USE_MOCK_DATA=True default enables testing without API credentials
+- [Phase 02-01]: JSON columns in TrendReport allow flexible analysis schema evolution
 
 ### Pending Todos
 
@@ -71,8 +76,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13 (phase 1 execution)
-Stopped at: All 3 plans complete, local testing passed, awaiting verification
+Last session: 2026-02-13 (phase 2 execution)
+Stopped at: Completed 02-01-PLAN.md (schema, models, mock data)
 Resume file: None
 
 ---
