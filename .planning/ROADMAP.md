@@ -48,10 +48,12 @@ Plans:
   3. PostgreSQL stores deduplicated trends with no duplicate (platform, external_id) entries
   4. Claude API analyzes collected videos and produces structured Trend Report JSON with patterns
   5. Trend reports include engagement velocity scores and style classifications (cinematic, talking-head, etc.)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (plans defined during `/gsd:plan-phase 2`)
+- [ ] 02-01-PLAN.md — Data foundation: schema migration, Pydantic schemas, config, and mock data fixtures
+- [ ] 02-02-PLAN.md — Trend collection: TikTok/YouTube scrapers, engagement velocity, DB UPSERT, Celery task
+- [ ] 02-03-PLAN.md — Trend analysis: Claude API analyzer, TrendReport storage, Celery Beat schedule, API endpoints
 
 ### Phase 3: Content Generation
 **Goal**: System reads theme config and generates complete videos from AI-generated scripts, visuals, and voiceover
@@ -103,7 +105,7 @@ Plans:
 **Depends on**: Phase 5
 **Requirements**: ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05
 **Success Criteria** (what must be TRUE):
-  1. Pipeline executes all 8 stages in sequence: trend collection → pattern analysis → script generation → video generation → voiceover → composition → review
+  1. Pipeline executes all 8 stages in sequence: trend collection -> pattern analysis -> script generation -> video generation -> voiceover -> composition -> review
   2. Per-stage checkpointing allows resume from last completed stage after failure without restarting pipeline
   3. Failed stages retry up to configurable limit (default: 3) with exponential backoff between attempts
   4. Pipeline status is visible via REST API endpoints and Docker container logs in real-time
@@ -116,12 +118,12 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 3/3 | ✓ Complete | 2026-02-13 |
-| 2. Trend Intelligence | 0/0 | Not started | - |
+| 1. Foundation & Infrastructure | 3/3 | Complete | 2026-02-13 |
+| 2. Trend Intelligence | 0/3 | Planned | - |
 | 3. Content Generation | 0/0 | Not started | - |
 | 4. Video Composition | 0/0 | Not started | - |
 | 5. Review & Output | 0/0 | Not started | - |
@@ -129,4 +131,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-13 — Phase 1 complete*
+*Last updated: 2026-02-13 -- Phase 2 planned*
