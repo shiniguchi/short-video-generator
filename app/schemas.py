@@ -21,6 +21,7 @@ class TrendCreate(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     posted_at: Optional[datetime] = None
+    engagement_velocity: Optional[float] = None
 
 
 class TrendResponse(BaseModel):
