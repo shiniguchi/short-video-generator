@@ -129,56 +129,56 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| INFRA-04 | — | Pending |
-| INFRA-05 | — | Pending |
-| INFRA-06 | — | Pending |
-| INFRA-07 | — | Pending |
-| TREND-01 | — | Pending |
-| TREND-02 | — | Pending |
-| TREND-03 | — | Pending |
-| TREND-04 | — | Pending |
-| TREND-05 | — | Pending |
-| ANLYS-01 | — | Pending |
-| ANLYS-02 | — | Pending |
-| ANLYS-03 | — | Pending |
-| ANLYS-04 | — | Pending |
-| ANLYS-05 | — | Pending |
-| SCRIPT-01 | — | Pending |
-| SCRIPT-02 | — | Pending |
-| SCRIPT-03 | — | Pending |
-| SCRIPT-04 | — | Pending |
-| VIDEO-01 | — | Pending |
-| VIDEO-02 | — | Pending |
-| VIDEO-03 | — | Pending |
-| VIDEO-04 | — | Pending |
-| VIDEO-05 | — | Pending |
-| VOICE-01 | — | Pending |
-| VOICE-02 | — | Pending |
-| VOICE-03 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| COMP-04 | — | Pending |
-| COMP-05 | — | Pending |
-| REVIEW-01 | — | Pending |
-| REVIEW-02 | — | Pending |
-| REVIEW-03 | — | Pending |
-| REVIEW-04 | — | Pending |
-| REVIEW-05 | — | Pending |
-| ORCH-01 | — | Pending |
-| ORCH-02 | — | Pending |
-| ORCH-03 | — | Pending |
-| ORCH-04 | — | Pending |
-| ORCH-05 | — | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Pending |
+| INFRA-06 | Phase 1 | Pending |
+| INFRA-07 | Phase 1 | Pending |
+| TREND-01 | Phase 2 | Pending |
+| TREND-02 | Phase 2 | Pending |
+| TREND-03 | Phase 2 | Pending |
+| TREND-04 | Phase 2 | Pending |
+| TREND-05 | Phase 2 | Pending |
+| ANLYS-01 | Phase 2 | Pending |
+| ANLYS-02 | Phase 2 | Pending |
+| ANLYS-03 | Phase 2 | Pending |
+| ANLYS-04 | Phase 2 | Pending |
+| ANLYS-05 | Phase 2 | Pending |
+| SCRIPT-01 | Phase 3 | Pending |
+| SCRIPT-02 | Phase 3 | Pending |
+| SCRIPT-03 | Phase 3 | Pending |
+| SCRIPT-04 | Phase 3 | Pending |
+| VIDEO-01 | Phase 3 | Pending |
+| VIDEO-02 | Phase 3 | Pending |
+| VIDEO-03 | Phase 3 | Pending |
+| VIDEO-04 | Phase 3 | Pending |
+| VIDEO-05 | Phase 3 | Pending |
+| VOICE-01 | Phase 3 | Pending |
+| VOICE-02 | Phase 3 | Pending |
+| VOICE-03 | Phase 3 | Pending |
+| COMP-01 | Phase 4 | Pending |
+| COMP-02 | Phase 4 | Pending |
+| COMP-03 | Phase 4 | Pending |
+| COMP-04 | Phase 4 | Pending |
+| COMP-05 | Phase 4 | Pending |
+| REVIEW-01 | Phase 5 | Pending |
+| REVIEW-02 | Phase 5 | Pending |
+| REVIEW-03 | Phase 5 | Pending |
+| REVIEW-04 | Phase 5 | Pending |
+| REVIEW-05 | Phase 5 | Pending |
+| ORCH-01 | Phase 6 | Pending |
+| ORCH-02 | Phase 6 | Pending |
+| ORCH-03 | Phase 6 | Pending |
+| ORCH-04 | Phase 6 | Pending |
+| ORCH-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 40 total
-- Mapped to phases: 0
-- Unmapped: 40 (pending roadmap creation)
+- Mapped to phases: 40
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-13*
-*Last updated: 2026-02-13 after initial definition*
+*Last updated: 2026-02-13 after roadmap creation*
