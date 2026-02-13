@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 6 (Trend Intelligence)
-Plan: 1 of 3 in current phase (02-01 complete)
+Plan: 2 of 3 in current phase (02-02 complete)
 Status: Executing
-Last activity: 2026-02-13 — Phase 02-01 complete: schema, models, mock data
+Last activity: 2026-02-13 — Phase 02-02 complete: scrapers, engagement velocity, UPSERT, collection task
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 3 min
-- Total execution time: 0.3 hours
+- Total plans completed: 5
+- Average duration: 4 min
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 9 min | 3 min |
-| 02 | 1 | 5 min | 5 min |
+| 02 | 2 | 10 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (5 min), 01-03 (2 min), 02-01 (5 min)
+- Last 5 plans: 01-02 (5 min), 01-03 (2 min), 02-01 (5 min), 02-02 (5 min)
 - Trend: Steady
 
 *Updated after each plan completion*
@@ -56,6 +56,10 @@ Recent decisions affecting current work:
 - [Phase 02-01]: Store engagement_velocity as calculated field for query performance
 - [Phase 02-01]: USE_MOCK_DATA=True default enables testing without API credentials
 - [Phase 02-01]: JSON columns in TrendReport allow flexible analysis schema evolution
+- [Phase 02-02]: Use httpx for synchronous Apify REST API calls (simpler than async apify-client in Celery tasks)
+- [Phase 02-02]: Cycle mock data with _dup_N suffix to support any limit size
+- [Phase 02-02]: SQLite UPSERT with on_conflict_do_update prevents duplicates on (platform, external_id)
+- [Phase 02-02]: Minimum 0.1 hour threshold in engagement velocity prevents division by zero
 
 ### Pending Todos
 
@@ -77,7 +81,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-13 (phase 2 execution)
-Stopped at: Completed 02-01-PLAN.md (schema, models, mock data)
+Stopped at: Completed 02-02-PLAN.md (scrapers, engagement, UPSERT, collection task)
 Resume file: None
 
 ---
