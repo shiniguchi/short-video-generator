@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, select
+from typing import Optional
 from app.database import get_session
 from app.config import get_settings
 
@@ -49,3 +50,49 @@ async def trigger_test_task():
     from app.tasks import test_task
     task = test_task.delay()
     return {"task_id": str(task.id), "status": "queued"}
+
+
+@router.post("/collect-trends")
+async def trigger_trend_collection():
+    """Trigger trend collection from TikTok and YouTube."""
+    from app.tasks import collect_trends_task
+    task = collect_trends_task.delay()
+    return {"task_id": str(task.id), "status": "queued", "description": "Collecting trends from TikTok and YouTube"}
+
+
+@router.get("/trends")
+async def list_trends(
+    platform: Optional[str] = None,
+    limit: int = 50,
+    session: AsyncSession = Depends(get_session)
+):
+    """List collected trends, optionally filtered by platform."""
+    from app.models import Trend
+
+    query = select(Trend).order_by(Trend.collected_at.desc()).limit(limit)
+    if platform:
+        query = query.where(Trend.platform == platform)
+
+    result = await session.execute(query)
+    trends = result.scalars().all()
+
+    return {
+        "count": len(trends),
+        "trends": [
+            {
+                "id": t.id,
+                "platform": t.platform,
+                "external_id": t.external_id,
+                "title": t.title,
+                "creator": t.creator,
+                "likes": t.likes,
+                "comments": t.comments,
+                "shares": t.shares,
+                "views": t.views,
+                "duration": t.duration,
+                "engagement_velocity": t.engagement_velocity,
+                "collected_at": t.collected_at.isoformat() if t.collected_at else None,
+            }
+            for t in trends
+        ]
+    }
