@@ -65,10 +65,12 @@ Plans:
   3. Production Plans include all required fields (video_prompt, scenes, text_overlays, voiceover_script, hashtags, title, description)
   4. Stable Video Diffusion generates 9:16 vertical video clips (2-4 seconds each) chained to target duration (15-30 seconds)
   5. OpenAI TTS generates voiceover audio synced to video duration with configurable provider backend
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (plans defined during `/gsd:plan-phase 3`)
+- [ ] 03-01-PLAN.md — Config reader service, Production Plan schemas, and Alembic migration
+- [ ] 03-02-PLAN.md — Video and voiceover provider abstraction with mock providers and clip chaining
+- [ ] 03-03-PLAN.md — Claude 5-step prompt chain script generator, Celery content task, and API endpoints
 
 ### Phase 4: Video Composition
 **Goal**: FFmpeg composites raw video, voiceover, text overlays, and background music into publish-ready MP4
@@ -124,11 +126,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 3/3 | Complete | 2026-02-13 |
 | 2. Trend Intelligence | 3/3 | Complete | 2026-02-13 |
-| 3. Content Generation | 0/0 | Not started | - |
+| 3. Content Generation | 0/3 | Planning complete | - |
 | 4. Video Composition | 0/0 | Not started | - |
 | 5. Review & Output | 0/0 | Not started | - |
 | 6. Pipeline Integration | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-13 -- Phase 2 complete*
+*Last updated: 2026-02-13 -- Phase 3 planned*
