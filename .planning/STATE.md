@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 11 of 11 (Real AI Providers)
-Plan: 2 of 3 in current phase
-Status: In Progress
-Last activity: 2026-02-14 — Completed plan 11-02 (Real TTS providers: ElevenLabs & Fish Audio)
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-02-14 — Completed plan 11-03 (HeyGen avatar provider)
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
+- Total plans completed: 23
 - Average duration: 3 min
-- Total execution time: 1.9 hours
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
@@ -37,10 +37,10 @@ Progress: [█████████░] 94%
 | 08 | 2 | 3 min | 2 min |
 | 09 | 1 | 1 min | 1 min |
 | 10 | 2 | 7 min | 4 min |
-| 11 | 2 | 5 min | 3 min |
+| 11 | 3 | 7 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-01 (1 min), 10-01 (3 min), 10-02 (4 min), 11-01 (3 min), 11-02 (2 min)
+- Last 5 plans: 10-01 (3 min), 10-02 (4 min), 11-01 (3 min), 11-02 (2 min), 11-03 (2 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -48,6 +48,8 @@ Progress: [█████████░] 94%
 | Phase 10 P02 | 4 | 2 tasks | 2 files |
 | Phase 11 P01 | 3 | 2 tasks | 6 files |
 | Phase 11 P02 | 2 | 2 tasks | 6 files |
+| Phase 11 P03 | 2 | 2 tasks | 8 files |
+| Phase 11 P03 | 2 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -125,6 +127,10 @@ Recent decisions affecting current work:
 - [Phase 11-02]: Fish Audio as budget TTS provider (50-70% cheaper, competitive quality, good for high-volume testing)
 - [Phase 11-02]: ElevenLabs eleven_turbo_v2_5 model for fast generation and cost efficiency
 - [Phase 11-02]: httpx for Fish Audio API (simple REST API, no SDK needed)
+- [Phase 11-03]: HeyGen avatar video replaces both video + voiceover (complete talking-head with embedded audio)
+- [Phase 11-03]: Avatar generation as Step 6b (after voiceover generation) for pipeline flexibility
+- [Phase 11-03]: Avatar provider only activates when AVATAR_PROVIDER_TYPE in ('heygen',), mock stays default
+- [Phase 11]: HeyGen avatar video replaces both video + voiceover (complete talking-head with embedded audio)
 
 ### Roadmap Evolution
 
@@ -153,8 +159,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (Phase 11 in progress)
-Stopped at: Completed 11-02-PLAN.md (Real TTS providers: ElevenLabs & Fish Audio)
+Last session: 2026-02-14 (Phase 11 complete)
+Stopped at: Completed 11-03-PLAN.md (HeyGen avatar provider)
 Resume file: None
 
 ---
