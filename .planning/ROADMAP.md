@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Video Composition** - FFmpeg assembly with text overlays, audio, and final rendering
 - [x] **Phase 5: Review & Output** - File-based review workflow with cost tracking and approval system
 - [x] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
-- [ ] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
+- [x] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
 - [ ] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
 
 ## Phase Details
@@ -135,7 +135,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Thread job_id through pipeline chain and update ORCH-01 documentation
+- [x] 07-01-PLAN.md — Thread job_id through pipeline chain and update ORCH-01 documentation
 
 ### Phase 8: Docker Compose Validation
 **Goal**: Validate that Docker Compose stack starts and runs the full pipeline with PostgreSQL, Redis, and all app containers
@@ -163,7 +163,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 4. Video Composition | 2/2 | Complete | 2026-02-14 |
 | 5. Review & Output | 1/1 | Complete | 2026-02-14 |
 | 6. Pipeline Integration | 2/2 | Complete | 2026-02-14 |
-| 7. Pipeline Data Lineage | 0/? | Pending | — |
+| 7. Pipeline Data Lineage | 1/1 | Complete | 2026-02-14 |
 | 8. Docker Compose Validation | 0/? | Pending | — |
 
 ---
