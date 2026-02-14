@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 6 of 6 (Pipeline Integration)
-Plan: 2 of 2 in current phase (06-01 complete)
-Status: In Progress
-Last activity: 2026-02-14 — 06-01 executed: Pipeline orchestration with stage constants and Job helpers
+Plan: 2 of 2 in current phase (06-01, 06-02 complete)
+Status: Complete
+Last activity: 2026-02-14 — 06-02 executed: Pipeline REST API endpoints for control and monitoring
 
-Progress: [█████████░] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 3 min
-- Total execution time: 1.3 hours
+- Total execution time: 1.4 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [█████████░] 96%
 | 03 | 3 | 18 min | 6 min |
 | 04 | 2 | 3 min | 2 min |
 | 05 | 1 | 3 min | 3 min |
-| 06 | 1 | 1 min | 1 min |
+| 06 | 2 | 3 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (6 min), 04-01 (2 min), 04-02 (1 min), 05-01 (3 min), 06-01 (1 min)
+- Last 5 plans: 04-01 (2 min), 04-02 (1 min), 05-01 (3 min), 06-01 (1 min), 06-02 (2 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -90,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 06-01]: Composition chained from content generation — extracted compose_task_id and waited for completion
 - [Phase 06-01]: completed_stages list in Job.extra_data enables resume-from-checkpoint capability
 - [Phase 06-01]: Review stage marked complete by orchestrator — manual review happens via API endpoints
+- [Phase 06-02]: Lazy imports in endpoints avoid circular dependencies between routes, pipeline, and models
+- [Phase 06-02]: Progress percentage computed on-the-fly from Job.extra_data["completed_stages"]
+- [Phase 06-02]: Retry endpoint preserves completed_stages to enable true resume-from-checkpoint
+- [Phase 06-02]: Poll URL pattern (/jobs/{id}) enables client-side status monitoring
 
 ### Pending Todos
 
@@ -110,8 +114,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (phase 6 in progress)
-Stopped at: Completed 06-01-PLAN.md — Pipeline orchestration with stage constants and Job helpers
+Last session: 2026-02-14 (phase 6 complete)
+Stopped at: Completed 06-02-PLAN.md — Pipeline REST API endpoints for control and monitoring
 Resume file: None
 
 ---
