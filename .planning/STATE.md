@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 7 in progress — Pipeline Data Lineage
+**Current focus:** Phase 8 in progress — Docker Compose Validation
 
 ## Current Position
 
-Phase: 7 of 7 (Pipeline Data Lineage)
-Plan: 1 of 1 in current phase (07-01 complete)
-Status: Complete
-Last activity: 2026-02-14 — 07-01 executed: Pipeline data lineage (job_id threading)
+Phase: 8 of 8 (Docker Compose Validation)
+Plan: 1 of 2 in current phase (08-01 complete)
+Status: In Progress
+Last activity: 2026-02-14 — 08-01 executed: Docker stack configuration
 
-Progress: [██████████] 100%
+Progress: [██████████░] 94%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 3 min
-- Total execution time: 1.5 hours
+- Total execution time: 1.6 hours
 
 **By Phase:**
 
@@ -34,9 +34,10 @@ Progress: [██████████] 100%
 | 05 | 1 | 3 min | 3 min |
 | 06 | 2 | 3 min | 2 min |
 | 07 | 1 | 2 min | 2 min |
+| 08 | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (1 min), 05-01 (3 min), 06-01 (1 min), 06-02 (2 min), 07-01 (2 min)
+- Last 5 plans: 05-01 (3 min), 06-01 (1 min), 06-02 (2 min), 07-01 (2 min), 08-01 (2 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -96,6 +97,10 @@ Recent decisions affecting current work:
 - [Phase 06-02]: Retry endpoint preserves completed_stages to enable true resume-from-checkpoint
 - [Phase 06-02]: Poll URL pattern (/jobs/{id}) enables client-side status monitoring
 - [Phase 07-01]: Use optional job_id parameter instead of required for backward compatibility
+- [Phase 08-01]: Migration entrypoint pattern — bash script runs alembic upgrade head before exec'ing to service command
+- [Phase 08-01]: Celery worker depends on web service_healthy to ensure migrations completed before worker starts
+- [Phase 08-01]: USE_MOCK_DATA=true default in Docker prevents accidental external API calls during development
+- [Phase 08-01]: Health check start_period accounts for initialization time (postgres 10s, redis 5s, web 30s for migrations)
 
 ### Pending Todos
 
@@ -114,10 +119,13 @@ None yet.
 **Phase 6 (Pipeline Integration):**
 - Cloud Run GPU support limitation — video-generator service may need GCE/GKE deployment or cloud-only APIs (Veo/Sora)
 
+**Phase 8 (Docker Compose Validation):**
+- Docker not installed on local development machine — runtime validation requires Docker-enabled environment (CI/CD or different machine)
+
 ## Session Continuity
 
-Last session: 2026-02-14 (phase 7 complete)
-Stopped at: Completed 07-01-PLAN.md — Pipeline data lineage (job_id threading)
+Last session: 2026-02-14 (phase 8 in progress)
+Stopped at: Completed 08-01-PLAN.md — Docker stack configuration (migrations, health checks, mock mode)
 Resume file: None
 
 ---
