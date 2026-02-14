@@ -8,6 +8,8 @@ from app.config import get_settings
 from app.services.video_generator.base import VideoProvider
 from app.services.video_generator.mock import MockVideoProvider
 from app.services.video_generator.svd import StableVideoDiffusionProvider
+from app.services.video_generator.fal_kling import FalKlingProvider
+from app.services.video_generator.fal_minimax import FalMinimaxProvider
 from app.services.video_generator.chaining import chain_clips_to_duration
 
 
@@ -90,6 +92,8 @@ def get_video_generator() -> VideoGeneratorService:
     Provider is selected based on VIDEO_PROVIDER_TYPE setting:
     - "mock": MockVideoProvider (default for local dev)
     - "svd": StableVideoDiffusionProvider (requires GPU)
+    - "kling": FalKlingProvider (Kling 3.0 via fal.ai, requires FAL_KEY)
+    - "minimax": FalMinimaxProvider (Minimax/Hailuo via fal.ai, requires FAL_KEY)
 
     Returns:
         Configured VideoGeneratorService instance
@@ -104,7 +108,13 @@ def get_video_generator() -> VideoGeneratorService:
     os.makedirs(output_dir, exist_ok=True)
 
     # Create provider based on type
-    if provider_type == "svd":
+    if provider_type == "kling":
+        fal_key = getattr(settings, "fal_key", "")
+        provider = FalKlingProvider(fal_key=fal_key, output_dir=output_dir)
+    elif provider_type == "minimax":
+        fal_key = getattr(settings, "fal_key", "")
+        provider = FalMinimaxProvider(fal_key=fal_key, output_dir=output_dir)
+    elif provider_type == "svd":
         provider = StableVideoDiffusionProvider()
     else:
         # Default to mock for local development
