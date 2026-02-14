@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
 - [x] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
 - [x] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
-- [ ] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
+- [x] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
 - [ ] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
 
 ## Phase Details
@@ -170,7 +170,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 09-01-PLAN.md — Fix manual endpoint signatures, align VideoCompositor default, remove output/final
+- [x] 09-01-PLAN.md — Fix manual endpoint signatures, align VideoCompositor default, remove output/final
 
 ### Phase 10: Documentation Cleanup
 **Goal**: Add missing verification files and fix stale verification status to complete audit trail
@@ -199,9 +199,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 6. Pipeline Integration | 2/2 | Complete | 2026-02-14 |
 | 7. Pipeline Data Lineage | 1/1 | Complete | 2026-02-14 |
 | 8. Docker Compose Validation | 2/2 | Complete | 2026-02-14 |
-| 9. Fix Stale Manual Endpoints | 0/1 | Pending | — |
+| 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
 | 10. Documentation Cleanup | 0/? | Pending | — |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 9 planned (1 plan)*
+*Last updated: 2026-02-14 -- Phase 9 complete*
