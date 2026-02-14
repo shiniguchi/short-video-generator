@@ -132,7 +132,10 @@ Plans:
   3. `compose_video_task` accepts `job_id` and populates `Video.job_id` in database
   4. After full pipeline run, Job record can query its associated Script and Video records via foreign keys
   5. REQUIREMENTS.md ORCH-01 updated to reflect 5 orchestration stages (consolidated by design)
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md — Thread job_id through pipeline chain and update ORCH-01 documentation
 
 ### Phase 8: Docker Compose Validation
 **Goal**: Validate that Docker Compose stack starts and runs the full pipeline with PostgreSQL, Redis, and all app containers
