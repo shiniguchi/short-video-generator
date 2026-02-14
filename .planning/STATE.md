@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 11 of 11 (Real AI Providers)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In Progress
-Last activity: 2026-02-14 — Completed plan 11-01 (Real AI video providers via fal.ai)
+Last activity: 2026-02-14 — Completed plan 11-02 (Real TTS providers: ElevenLabs & Fish Audio)
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 22
 - Average duration: 3 min
-- Total execution time: 1.8 hours
+- Total execution time: 1.9 hours
 
 **By Phase:**
 
@@ -37,16 +37,17 @@ Progress: [█████████░] 92%
 | 08 | 2 | 3 min | 2 min |
 | 09 | 1 | 1 min | 1 min |
 | 10 | 2 | 7 min | 4 min |
-| 11 | 1 | 3 min | 3 min |
+| 11 | 2 | 5 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-02 (1 min), 09-01 (1 min), 10-01 (3 min), 10-02 (4 min), 11-01 (3 min)
+- Last 5 plans: 09-01 (1 min), 10-01 (3 min), 10-02 (4 min), 11-01 (3 min), 11-02 (2 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
 | Phase 10 P01 | 189 | 1 tasks | 1 files |
 | Phase 10 P02 | 4 | 2 tasks | 2 files |
 | Phase 11 P01 | 3 | 2 tasks | 6 files |
+| Phase 11 P02 | 2 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,10 @@ Recent decisions affecting current work:
 - [Phase 11-01]: Kling 3.0 as premium quality option ($0.029/sec, 4K support)
 - [Phase 11-01]: Minimax as budget-friendly option ($0.02-0.05/video, fast generation)
 - [Phase 11-01]: Mock fallback pattern when FAL_KEY is empty or USE_MOCK_DATA=true (consistent with OpenAI TTS provider)
+- [Phase 11-02]: ElevenLabs as premium TTS provider (70+ languages, superior marketing voices, $99/mo)
+- [Phase 11-02]: Fish Audio as budget TTS provider (50-70% cheaper, competitive quality, good for high-volume testing)
+- [Phase 11-02]: ElevenLabs eleven_turbo_v2_5 model for fast generation and cost efficiency
+- [Phase 11-02]: httpx for Fish Audio API (simple REST API, no SDK needed)
 
 ### Roadmap Evolution
 
@@ -149,7 +154,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14 (Phase 11 in progress)
-Stopped at: Completed 11-01-PLAN.md (Real AI video providers via fal.ai)
+Stopped at: Completed 11-02-PLAN.md (Real TTS providers: ElevenLabs & Fish Audio)
 Resume file: None
 
 ---
