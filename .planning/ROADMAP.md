@@ -22,6 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
 - [x] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
 - [x] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
+- [ ] **Phase 11: Real AI Providers** - Replace mock providers with configurable real AI services for video, avatars, and TTS
 
 ## Phase Details
 
@@ -205,7 +206,24 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 8. Docker Compose Validation | 2/2 | Complete | 2026-02-14 |
 | 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
 | 10. Documentation Cleanup | 2/2 | Complete | 2026-02-14 |
+| 11. Real AI Providers | 0/? | Pending | — |
+
+### Phase 11: Real AI Providers
+**Goal**: Replace mock providers with configurable real AI services — pluggable video generation (Kling, Runway, Veo, Minimax), AI avatar presenters (HeyGen), and natural TTS voiceover (ElevenLabs, Fish Audio, OpenAI) — selectable per-video via configuration
+**Depends on**: Phase 10
+**Requirements**: None (new feature)
+**Success Criteria** (what must be TRUE):
+  1. Provider selection is configurable per-video via config (video_provider, tts_provider, avatar_provider settings)
+  2. At least 2 real video generation providers produce 9:16 vertical clips via API
+  3. HeyGen avatar integration generates talking presenter videos from script text
+  4. At least 2 real TTS providers generate natural voiceover audio from script
+  5. Pipeline runs end-to-end with real providers producing watchable marketing video with audio
+  6. Mock providers remain as fallback when API keys are not configured
+**Plans**: TBD
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- All phases complete*
+*Last updated: 2026-02-14 -- Phase 11 added (Real AI Providers)*

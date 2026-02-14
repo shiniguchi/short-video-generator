@@ -4,6 +4,7 @@ Text Overlay Rendering
 Converts TextOverlaySchema objects into positioned, styled MoviePy TextClip objects.
 """
 
+import os
 from typing import List, Tuple, Optional
 from moviepy import TextClip
 from app.schemas import TextOverlaySchema
@@ -16,11 +17,12 @@ POSITION_MAP = {
     "bottom": ("center", 1100),
 }
 
-# Font style mapping to Montserrat variants
+# Font style mapping to Montserrat variants (full paths to bundled fonts)
+_FONTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "fonts")
 FONT_MAP = {
-    "bold": "Montserrat-Bold",
-    "normal": "Montserrat-Regular",
-    "highlight": "Montserrat-ExtraBold",
+    "bold": os.path.abspath(os.path.join(_FONTS_DIR, "Montserrat-Bold.ttf")),
+    "normal": os.path.abspath(os.path.join(_FONTS_DIR, "Montserrat-Regular.ttf")),
+    "highlight": os.path.abspath(os.path.join(_FONTS_DIR, "Montserrat-ExtraBold.ttf")),
 }
 
 
