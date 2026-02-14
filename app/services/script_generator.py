@@ -357,7 +357,8 @@ def _generate_mock_plan(theme_config: dict, content_refs: List[dict]) -> dict:
 async def save_production_plan(
     plan_data: dict,
     theme_config: dict,
-    trend_report_id: Optional[int] = None
+    trend_report_id: Optional[int] = None,
+    job_id: Optional[int] = None
 ) -> int:
     """Save production plan to database.
 
@@ -365,6 +366,7 @@ async def save_production_plan(
         plan_data: Dict matching VideoProductionPlanCreate schema
         theme_config: Theme config snapshot to store
         trend_report_id: Optional ID of trend report used
+        job_id: Optional ID of orchestrating Job
 
     Returns:
         Script ID in database
@@ -374,6 +376,7 @@ async def save_production_plan(
 
     async with async_session_factory() as session:
         script = Script(
+            job_id=job_id,
             video_prompt=plan_data['video_prompt'],
             scenes=plan_data['scenes'],
             text_overlays=plan_data.get('text_overlays'),
@@ -393,5 +396,5 @@ async def save_production_plan(
         await session.commit()
         await session.refresh(script)
 
-        logger.info(f"Saved production plan as Script ID {script.id}: '{script.title}'")
+        logger.info(f"Saved production plan as Script ID {script.id} for Job {job_id}: '{script.title}'")
         return script.id

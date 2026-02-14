@@ -214,7 +214,7 @@ def orchestrate_pipeline_task(self, job_id: int, theme_config_path: Optional[str
         stage_tasks = [
             (STAGE_TREND_COLLECTION, collect_trends_task, []),
             (STAGE_TREND_ANALYSIS, analyze_trends_task, []),
-            (STAGE_CONTENT_GENERATION, generate_content_task, [theme_config_path]),
+            (STAGE_CONTENT_GENERATION, generate_content_task, [job_id, theme_config_path]),
         ]
 
         # Execute each stage

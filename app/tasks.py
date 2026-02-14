@@ -97,7 +97,7 @@ def analyze_trends_task(self):
     retry_backoff_max=600,
     retry_jitter=True,
 )
-def generate_content_task(self, theme_config_path: Optional[str] = None):
+def generate_content_task(self, job_id: int, theme_config_path: Optional[str] = None):
     """Generate content: config -> script -> video -> voiceover.
 
     Orchestrates the full content generation pipeline using mock or real providers.
@@ -105,7 +105,7 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     """
     from typing import Optional as Opt
 
-    logger.info(f"Starting content generation (attempt {self.request.retries + 1})")
+    logger.info(f"Starting content generation for job {job_id} (attempt {self.request.retries + 1})")
 
     # Step 1: Read config
     from app.services.config_reader import read_theme_config, read_content_references
@@ -140,7 +140,8 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     script_id = asyncio.run(save_production_plan(
         plan_data=plan,
         theme_config=config.model_dump(),
-        trend_report_id=trend_report_id
+        trend_report_id=trend_report_id,
+        job_id=job_id
     ))
     logger.info(f"Script saved to DB: ID {script_id}")
 
@@ -170,7 +171,7 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     }
 
     # Step 8: Chain into compose_video_task for end-to-end pipeline
-    compose_result = compose_video_task.delay(script_id, video_path, audio_path, cost_data)
+    compose_result = compose_video_task.delay(job_id, script_id, video_path, audio_path, cost_data)
     logger.info(f"Composition task queued: {compose_result.id}")
 
     result = {
@@ -196,10 +197,11 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     retry_backoff_max=600,
     retry_jitter=True,
 )
-def compose_video_task(self, script_id: int, video_path: str, audio_path: str, cost_data: dict = None):
+def compose_video_task(self, job_id: int, script_id: int, video_path: str, audio_path: str, cost_data: dict = None):
     """Compose final video with text overlays, audio mixing, and thumbnail generation.
 
     Args:
+        job_id: Database ID of the Job record
         script_id: Database ID of the Script record containing text_overlays
         video_path: Path to generated video file
         audio_path: Path to generated voiceover audio file
@@ -208,7 +210,7 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str, c
     Returns:
         dict with video_id, video_path, thumbnail_path, duration
     """
-    logger.info(f"Starting video composition for script {script_id} (attempt {self.request.retries + 1})")
+    logger.info(f"Starting video composition for job {job_id}, script {script_id} (attempt {self.request.retries + 1})")
 
     # Initialize cost_data if not provided
     if cost_data is None:
@@ -288,13 +290,14 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str, c
         }
 
         # Step 6: Save Video record to database with cost and metadata
-        async def _save_video_record(script_id: int, file_path: str, thumbnail_path: str,
+        async def _save_video_record(job_id: int, script_id: int, file_path: str, thumbnail_path: str,
                                       duration: float, cost_usd: float, generation_metadata: dict):
             from app.database import async_session_factory
             from app.models import Video
 
             async with async_session_factory() as session:
                 video = Video(
+                    job_id=job_id,
                     script_id=script_id,
                     file_path=file_path,
                     thumbnail_path=thumbnail_path,
@@ -309,6 +312,7 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str, c
                 return video.id
 
         video_id = asyncio.run(_save_video_record(
+            job_id=job_id,
             script_id=script_id,
             file_path=result["video_path"],
             thumbnail_path=result["thumbnail_path"],
