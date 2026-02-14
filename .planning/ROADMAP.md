@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Review & Output** - File-based review workflow with cost tracking and approval system
 - [x] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
 - [x] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
-- [ ] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
+- [x] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
 
 ## Phase Details
 
@@ -151,8 +151,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Dockerfile, entrypoint, and docker-compose.yml fixes to make stack bootable
-- [ ] 08-02-PLAN.md — Validation script and human verification of end-to-end Docker pipeline
+- [x] 08-01-PLAN.md — Dockerfile, entrypoint, and docker-compose.yml fixes to make stack bootable
+- [x] 08-02-PLAN.md — Validation script and human verification of end-to-end Docker pipeline
 
 ## Progress
 
@@ -168,8 +168,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 5. Review & Output | 1/1 | Complete | 2026-02-14 |
 | 6. Pipeline Integration | 2/2 | Complete | 2026-02-14 |
 | 7. Pipeline Data Lineage | 1/1 | Complete | 2026-02-14 |
-| 8. Docker Compose Validation | 0/2 | Pending | — |
+| 8. Docker Compose Validation | 2/2 | Complete | 2026-02-14 |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 8 plans created*
+*Last updated: 2026-02-14 -- Phase 8 complete (all phases done)*

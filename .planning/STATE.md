@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 8 in progress — Docker Compose Validation
+**Current focus:** All phases complete — Milestone v1.0 ready for audit
 
 ## Current Position
 
 Phase: 8 of 8 (Docker Compose Validation)
 Plan: 2 of 2 in current phase (08-01, 08-02 complete)
 Status: Phase Complete
-Last activity: 2026-02-14 — 08-02 executed: Docker validation script
+Last activity: 2026-02-14 — Phase 8 complete: Docker Compose validated end-to-end
 
 Progress: [███████████] 100%
 
@@ -122,12 +122,13 @@ None yet.
 - Cloud Run GPU support limitation — video-generator service may need GCE/GKE deployment or cloud-only APIs (Veo/Sora)
 
 **Phase 8 (Docker Compose Validation):**
-- Docker not installed on local development machine — runtime validation requires Docker-enabled environment (CI/CD or different machine)
+- ~~Docker not installed on local development machine~~ — Resolved: Docker Desktop installed and validated
+- Runtime fixes required: asyncpg event loop conflicts (NullPool), dialect-aware UPSERT, MoviePy v2 API, font installation, Celery thread pool
 
 ## Session Continuity
 
-Last session: 2026-02-14 (phase 8 complete)
-Stopped at: Completed 08-02-PLAN.md — Docker validation script (6-step automated verification)
+Last session: 2026-02-14 (all phases complete, milestone v1.0 ready)
+Stopped at: Phase 8 complete — Full Docker pipeline validated end-to-end (7 runtime fixes applied)
 Resume file: None
 
 ---
