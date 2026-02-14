@@ -18,6 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Video Composition** - FFmpeg assembly with text overlays, audio, and final rendering
 - [x] **Phase 5: Review & Output** - File-based review workflow with cost tracking and approval system
 - [x] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
+- [ ] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
+- [ ] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
 
 ## Phase Details
 
@@ -119,10 +121,36 @@ Plans:
 - [x] 06-01-PLAN.md — Pipeline orchestrator task with stage constants, checkpointing, and resume logic
 - [x] 06-02-PLAN.md — REST API endpoints for pipeline trigger, status monitoring, and retry
 
+### Phase 7: Pipeline Data Lineage
+**Goal**: Fix job_id propagation through pipeline so Job records trace to their Script and Video outputs, restoring full data lineage
+**Depends on**: Phase 6
+**Requirements**: ORCH-01 (doc update), ORCH-02 (checkpoint auditability)
+**Gap Closure**: Closes gaps from v1.0 audit (3 integration gaps, 1 flow gap, 2 requirement gaps)
+**Success Criteria** (what must be TRUE):
+  1. `orchestrate_pipeline_task` passes `job_id` to `generate_content_task` and downstream tasks
+  2. `save_production_plan()` accepts `job_id` and populates `Script.job_id` in database
+  3. `compose_video_task` accepts `job_id` and populates `Video.job_id` in database
+  4. After full pipeline run, Job record can query its associated Script and Video records via foreign keys
+  5. REQUIREMENTS.md ORCH-01 updated to reflect 5 orchestration stages (consolidated by design)
+**Plans**: TBD
+
+### Phase 8: Docker Compose Validation
+**Goal**: Validate that Docker Compose stack starts and runs the full pipeline with PostgreSQL, Redis, and all app containers
+**Depends on**: Phase 7
+**Requirements**: INFRA-01
+**Gap Closure**: Closes INFRA-01 gap from v1.0 audit (Docker Compose untested)
+**Success Criteria** (what must be TRUE):
+  1. `docker-compose up` starts all services (API, worker, PostgreSQL, Redis) without errors
+  2. Health check endpoint returns healthy status from within Docker environment
+  3. Full pipeline trigger via REST API completes end-to-end in Docker
+  4. PostgreSQL and Redis connections work correctly from app containers
+  5. Docker logs show visible output from each pipeline stage
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -132,7 +160,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. Video Composition | 2/2 | Complete | 2026-02-14 |
 | 5. Review & Output | 1/1 | Complete | 2026-02-14 |
 | 6. Pipeline Integration | 2/2 | Complete | 2026-02-14 |
+| 7. Pipeline Data Lineage | 0/? | Pending | — |
+| 8. Docker Compose Validation | 0/? | Pending | — |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 6 complete: all 6 phases finished*
+*Last updated: 2026-02-14 -- Gap closure phases 7-8 added from v1.0 audit*
