@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 2 Complete — Ready for Phase 3: Content Generation
+**Current focus:** Phase 3 Complete — Ready for Phase 4: Video Composition
 
 ## Current Position
 
-Phase: 2 of 6 (Trend Intelligence) — COMPLETE
-Plan: 3 of 3 in current phase (all complete, verified 5/5)
-Status: Phase Complete & Verified
-Last activity: 2026-02-13 — Phase 2 verified: 5/5 must-haves passed, engagement_velocity schema fix applied
+Phase: 3 of 6 (Content Generation) — COMPLETE
+Plan: 3 of 3 in current phase (all complete)
+Status: Phase Complete
+Last activity: 2026-02-14 — Phase 3 executed: config reader, video/voiceover providers, script generator, Celery task, API endpoints
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4 min
-- Total execution time: 0.7 hours
+- Total plans completed: 9
+- Average duration: 5 min
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [███████░░░] 70%
 |-------|-------|-------|----------|
 | 01 | 3 | 9 min | 3 min |
 | 02 | 3 | 14 min | 5 min |
+| 03 | 3 | 18 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (2 min), 02-01 (5 min), 02-02 (5 min), 02-03 (4 min)
+- Last 5 plans: 02-02 (5 min), 02-03 (4 min), 03-01 (5 min), 03-02 (7 min), 03-03 (6 min)
 - Trend: Steady
 
 *Updated after each plan completion*
@@ -65,6 +66,13 @@ Recent decisions affecting current work:
 - [Phase 02-03]: Fallback to mock data on Claude API errors ensures analysis always succeeds
 - [Phase 02-03]: Celery Beat runs collection and analysis at same 6h interval but independently
 - [Phase 02-03]: Use 'or 0' pattern for None values in engagement_velocity field (dict.get() default doesn't handle None)
+- [Phase 03-01]: ThemeConfig reads from sample-data.yml with Pydantic validation
+- [Phase 03-01]: Production Plan schema has 11 required fields validated by VideoProductionPlanCreate
+- [Phase 03-02]: Provider abstraction pattern: ABC base + mock + real providers with factory function
+- [Phase 03-02]: MockVideoProvider generates solid-color 720x1280 MP4 clips via moviepy
+- [Phase 03-02]: MockTTSProvider generates silent audio with duration from text length (~15 chars/sec)
+- [Phase 03-03]: Claude 5-step prompt chain optimized to 2 API calls (steps 1-4 analysis + step 5 structured output)
+- [Phase 03-03]: generate_content_task returns {script_id, video_path, audio_path} — compositing deferred to Phase 4
 
 ### Pending Todos
 
@@ -85,10 +93,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13 (phase 2 verification complete)
-Stopped at: Phase 2 verified & complete. Ready for Phase 3 planning.
+Last session: 2026-02-14 (phase 3 execution complete)
+Stopped at: Phase 3 complete. Ready for Phase 4 planning.
 Resume file: None
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-13*
+*Last updated: 2026-02-14*
