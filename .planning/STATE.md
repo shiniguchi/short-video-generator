@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** All phases complete — Milestone v1.0 ready for audit
+**Current focus:** Gap closure phases 9-10 added after v1.0 audit
 
 ## Current Position
 
-Phase: 8 of 8 (Docker Compose Validation)
-Plan: 2 of 2 in current phase (08-01, 08-02 complete)
-Status: Phase Complete
-Last activity: 2026-02-14 — Phase 8 complete: Docker Compose validated end-to-end
+Phase: 9 of 10 (Fix Stale Manual Endpoints)
+Plan: 1 of 1 in current phase
+Status: Complete
+Last activity: 2026-02-14 — Fixed broken manual endpoints and VideoCompositor default
 
-Progress: [███████████] 100%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 3 min
 - Total execution time: 1.6 hours
 
@@ -35,9 +35,10 @@ Progress: [███████████] 100%
 | 06 | 2 | 3 min | 2 min |
 | 07 | 1 | 2 min | 2 min |
 | 08 | 2 | 3 min | 2 min |
+| 09 | 1 | 1 min | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (1 min), 06-02 (2 min), 07-01 (2 min), 08-01 (2 min), 08-02 (1 min)
+- Last 5 plans: 06-02 (2 min), 07-01 (2 min), 08-01 (2 min), 08-02 (1 min), 09-01 (1 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -103,6 +104,7 @@ Recent decisions affecting current work:
 - [Phase 08-01]: Health check start_period accounts for initialization time (postgres 10s, redis 5s, web 30s for migrations)
 - [Phase 08-02]: Created 6-step validation script covering syntax, services, health, pipeline, and logs
 - [Phase 08-02]: Validation script uses POSIX-compatible JSON parsing (grep/cut) avoiding jq dependency
+- [Phase 09]: On-demand Job creation pattern for manual endpoints (job_id optional, creates Job when None)
 
 ### Pending Todos
 
@@ -127,8 +129,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (all phases complete, milestone v1.0 ready)
-Stopped at: Phase 8 complete — Full Docker pipeline validated end-to-end (7 runtime fixes applied)
+Last session: 2026-02-14 (phase 09-01 completed)
+Stopped at: Completed 09-01-PLAN.md - Fixed stale manual endpoints
 Resume file: None
 
 ---
