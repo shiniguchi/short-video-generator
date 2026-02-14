@@ -162,3 +162,75 @@ async def get_latest_trend_report(session: AsyncSession = Depends(get_session)):
         "recommendations": report.recommendations,
         "created_at": report.created_at.isoformat() if report.created_at else None,
     }
+
+
+# --- Phase 3: Content Generation ---
+
+@router.post("/generate-content")
+async def trigger_content_generation():
+    """Trigger full content generation pipeline (config -> script -> video -> voiceover)."""
+    from app.tasks import generate_content_task
+    task = generate_content_task.delay()
+    return {"task_id": str(task.id), "status": "queued", "description": "Generating content: script, video, and voiceover"}
+
+
+@router.get("/scripts")
+async def list_scripts(
+    limit: int = 10,
+    session: AsyncSession = Depends(get_session)
+):
+    """List generated video production plans (scripts)."""
+    from app.models import Script
+
+    query = select(Script).order_by(Script.created_at.desc()).limit(limit)
+    result = await session.execute(query)
+    scripts = result.scalars().all()
+
+    return {
+        "count": len(scripts),
+        "scripts": [
+            {
+                "id": s.id,
+                "title": s.title,
+                "duration_target": s.duration_target,
+                "aspect_ratio": s.aspect_ratio,
+                "scenes_count": len(s.scenes) if s.scenes else 0,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in scripts
+        ]
+    }
+
+
+@router.get("/scripts/{script_id}")
+async def get_script(
+    script_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Get full details of a generated script."""
+    from app.models import Script
+
+    query = select(Script).where(Script.id == script_id)
+    result = await session.execute(query)
+    script = result.scalars().first()
+
+    if not script:
+        raise HTTPException(status_code=404, detail=f"Script {script_id} not found")
+
+    return {
+        "id": script.id,
+        "video_prompt": script.video_prompt,
+        "duration_target": script.duration_target,
+        "aspect_ratio": script.aspect_ratio,
+        "scenes": script.scenes,
+        "voiceover_script": script.voiceover_script,
+        "hook_text": script.hook_text,
+        "cta_text": script.cta_text,
+        "text_overlays": script.text_overlays,
+        "hashtags": script.hashtags,
+        "title": script.title,
+        "description": script.description,
+        "theme_config": script.theme_config,
+        "trend_report_id": script.trend_report_id,
+        "created_at": script.created_at.isoformat() if script.created_at else None,
+    }
