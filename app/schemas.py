@@ -140,3 +140,50 @@ class VideoProductionPlanResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Pipeline Orchestration Schemas (Phase 6)
+
+class PipelineTriggerRequest(BaseModel):
+    """Request body for POST /api/generate."""
+    theme: Optional[str] = None  # Theme override (uses sample-data.yml default if None)
+    config_path: Optional[str] = None  # Custom config file path
+
+
+class PipelineTriggerResponse(BaseModel):
+    """Response for POST /api/generate."""
+    job_id: int
+    task_id: str
+    status: str  # "queued"
+    poll_url: str  # "/api/jobs/{job_id}"
+    message: str
+
+
+class JobStatusResponse(BaseModel):
+    """Response for GET /api/jobs/{id}."""
+    id: int
+    status: str  # pending, running, completed, failed
+    stage: Optional[str]  # Current or last pipeline stage
+    theme: Optional[str]
+    created_at: Optional[str]  # ISO format
+    updated_at: Optional[str]  # ISO format
+    error_message: Optional[str]
+    completed_stages: Optional[List[str]]  # Stages that finished successfully
+    total_stages: int  # Total pipeline stages count
+    progress_pct: Optional[float]  # Percentage complete (completed/total * 100)
+
+
+class JobListResponse(BaseModel):
+    """Response for GET /api/jobs."""
+    count: int
+    jobs: List[JobStatusResponse]
+
+
+class JobRetryResponse(BaseModel):
+    """Response for POST /api/jobs/{id}/retry."""
+    job_id: int
+    task_id: str
+    status: str  # "queued"
+    resume_from: Optional[str]  # Stage resuming from
+    skipping_stages: List[str]  # Already completed stages
+    message: str
