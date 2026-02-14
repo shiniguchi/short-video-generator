@@ -9,6 +9,8 @@ from app.config import get_settings
 from app.services.voiceover_generator.base import TTSProvider
 from app.services.voiceover_generator.mock import MockTTSProvider
 from app.services.voiceover_generator.openai_tts import OpenAITTSProvider
+from app.services.voiceover_generator.elevenlabs_tts import ElevenLabsTTSProvider
+from app.services.voiceover_generator.fish_audio_tts import FishAudioTTSProvider
 
 
 class VoiceoverGeneratorService:
@@ -101,6 +103,8 @@ def get_voiceover_generator() -> VoiceoverGeneratorService:
     Provider is selected based on TTS_PROVIDER_TYPE setting:
     - "mock": MockTTSProvider (default for local dev)
     - "openai": OpenAITTSProvider (requires API key)
+    - "elevenlabs": ElevenLabsTTSProvider (requires API key)
+    - "fish": FishAudioTTSProvider (requires API key)
 
     Returns:
         Configured VoiceoverGeneratorService instance
@@ -116,7 +120,13 @@ def get_voiceover_generator() -> VoiceoverGeneratorService:
     os.makedirs(os.path.join(output_dir, "audio"), exist_ok=True)
 
     # Create provider based on type
-    if provider_type == "openai":
+    if provider_type == "elevenlabs":
+        api_key = getattr(settings, "elevenlabs_api_key", "")
+        provider = ElevenLabsTTSProvider(api_key=api_key, output_dir=output_dir)
+    elif provider_type == "fish":
+        api_key = getattr(settings, "fish_audio_api_key", "")
+        provider = FishAudioTTSProvider(api_key=api_key, output_dir=output_dir)
+    elif provider_type == "openai":
         api_key = getattr(settings, "openai_api_key", "")
         provider = OpenAITTSProvider(api_key=api_key, output_dir=output_dir)
     else:
