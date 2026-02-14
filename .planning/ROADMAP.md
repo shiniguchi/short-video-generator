@@ -98,10 +98,10 @@ Plans:
   3. REST API endpoint accepts approval requests and moves videos to `/output/approved/`
   4. REST API endpoint accepts rejection requests and moves videos to `/output/rejected/`
   5. Per-video cost tracking sums all API call costs (Claude, OpenAI TTS, video generation) and logs to generation record
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- TBD (plans defined during `/gsd:plan-phase 5`)
+- [ ] 05-01-PLAN.md — Review workflow: output to review directory, cost tracking, generation logging, approve/reject API endpoints
 
 ### Phase 6: Pipeline Integration
 **Goal**: Full 8-stage pipeline executes sequentially with checkpointing, error recovery, retries, and status monitoring
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Trend Intelligence | 3/3 | Complete | 2026-02-13 |
 | 3. Content Generation | 3/3 | Complete | 2026-02-14 |
 | 4. Video Composition | 2/2 | Complete | 2026-02-14 |
-| 5. Review & Output | 0/0 | Not started | - |
+| 5. Review & Output | 0/1 | In Progress | - |
 | 6. Pipeline Integration | 0/0 | Not started | - |
 
 ---
