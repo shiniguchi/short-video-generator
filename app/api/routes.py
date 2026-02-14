@@ -496,3 +496,192 @@ async def reject_video(
         response["warnings"] = warnings
 
     return response
+
+
+# --- Phase 6: Pipeline Integration ---
+
+@router.post("/generate")
+async def trigger_pipeline(
+    request: "PipelineTriggerRequest" = None,
+    session: AsyncSession = Depends(get_session)
+):
+    """Trigger full pipeline execution (ORCH-05).
+
+    Creates a Job record and triggers orchestrate_pipeline_task asynchronously.
+    """
+    # Lazy imports to avoid circular dependencies
+    from app.schemas import PipelineTriggerRequest, PipelineTriggerResponse
+    from app.models import Job
+    from app.pipeline import orchestrate_pipeline_task
+
+    # Use default empty request if None
+    if request is None:
+        request = PipelineTriggerRequest()
+
+    # Create Job record
+    job = Job(
+        status="pending",
+        stage="initialization",
+        theme=request.theme or "default",
+        extra_data={
+            "completed_stages": [],
+            "config_path": request.config_path
+        }
+    )
+
+    session.add(job)
+    await session.commit()
+    await session.refresh(job)
+
+    # Trigger pipeline task (non-blocking)
+    task = orchestrate_pipeline_task.delay(
+        job_id=job.id,
+        theme_config_path=request.config_path
+    )
+
+    return PipelineTriggerResponse(
+        job_id=job.id,
+        task_id=str(task.id),
+        status="queued",
+        poll_url=f"/api/jobs/{job.id}",
+        message="Pipeline execution started"
+    )
+
+
+@router.get("/jobs")
+async def list_jobs(
+    status: Optional[str] = None,
+    limit: int = 20,
+    session: AsyncSession = Depends(get_session)
+):
+    """List pipeline jobs with optional status filter (ORCH-04)."""
+    from app.models import Job
+    from app.schemas import JobListResponse, JobStatusResponse
+    from app.pipeline import PIPELINE_STAGES
+
+    # Build query
+    query = select(Job).order_by(Job.created_at.desc()).limit(limit)
+    if status:
+        query = query.where(Job.status == status)
+
+    result = await session.execute(query)
+    jobs = result.scalars().all()
+
+    # Compute progress for each job
+    total_stages = len(PIPELINE_STAGES)
+    job_responses = []
+
+    for job in jobs:
+        completed_stages = job.extra_data.get("completed_stages", []) if job.extra_data else []
+        progress_pct = round(len(completed_stages) / total_stages * 100, 1) if total_stages > 0 else 0
+
+        job_responses.append(JobStatusResponse(
+            id=job.id,
+            status=job.status,
+            stage=job.stage,
+            theme=job.theme,
+            created_at=job.created_at.isoformat() if job.created_at else None,
+            updated_at=job.updated_at.isoformat() if job.updated_at else None,
+            error_message=job.error_message,
+            completed_stages=completed_stages,
+            total_stages=total_stages,
+            progress_pct=progress_pct
+        ))
+
+    return JobListResponse(
+        count=len(job_responses),
+        jobs=job_responses
+    )
+
+
+@router.get("/jobs/{job_id}")
+async def get_job_status(
+    job_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Get detailed status for a single pipeline job (ORCH-04)."""
+    from app.models import Job
+    from app.schemas import JobStatusResponse
+    from app.pipeline import PIPELINE_STAGES
+
+    query = select(Job).where(Job.id == job_id)
+    result = await session.execute(query)
+    job = result.scalars().first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    # Compute progress
+    completed_stages = job.extra_data.get("completed_stages", []) if job.extra_data else []
+    total_stages = len(PIPELINE_STAGES)
+    progress_pct = round(len(completed_stages) / total_stages * 100, 1) if total_stages > 0 else 0
+
+    return JobStatusResponse(
+        id=job.id,
+        status=job.status,
+        stage=job.stage,
+        theme=job.theme,
+        created_at=job.created_at.isoformat() if job.created_at else None,
+        updated_at=job.updated_at.isoformat() if job.updated_at else None,
+        error_message=job.error_message,
+        completed_stages=completed_stages,
+        total_stages=total_stages,
+        progress_pct=progress_pct
+    )
+
+
+@router.post("/jobs/{job_id}/retry")
+async def retry_job(
+    job_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Retry a failed pipeline job from last checkpoint (ORCH-05)."""
+    from app.models import Job
+    from app.schemas import JobRetryResponse
+    from app.pipeline import orchestrate_pipeline_task, PIPELINE_STAGES
+
+    query = select(Job).where(Job.id == job_id)
+    result = await session.execute(query)
+    job = result.scalars().first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    # Validate status
+    if job.status != "failed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot retry job with status '{job.status}'. Only 'failed' jobs can be retried."
+        )
+
+    # Reset job status (keep completed_stages for resume)
+    job.status = "pending"
+    job.error_message = None
+    job.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    # Trigger pipeline with resume=True
+    config_path = job.extra_data.get("config_path") if job.extra_data else None
+    task = orchestrate_pipeline_task.delay(
+        job_id=job.id,
+        theme_config_path=config_path,
+        resume=True
+    )
+
+    # Compute resume info
+    completed_stages = job.extra_data.get("completed_stages", []) if job.extra_data else []
+    resume_from = None
+    for stage in PIPELINE_STAGES:
+        if stage not in completed_stages:
+            resume_from = stage
+            break
+
+    return JobRetryResponse(
+        job_id=job.id,
+        task_id=str(task.id),
+        status="queued",
+        resume_from=resume_from,
+        skipping_stages=completed_stages,
+        message=f"Pipeline retry started from {resume_from}" if resume_from else "Pipeline retry started"
+    )
