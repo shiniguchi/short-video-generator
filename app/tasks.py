@@ -162,6 +162,21 @@ def generate_content_task(self, job_id: int, theme_config_path: Optional[str] = 
     )
     logger.info(f"Voiceover generated: {audio_path}")
 
+    # Step 6b: Generate avatar video if avatar provider is configured
+    # Avatar video replaces both video + voiceover (talking-head includes speech audio)
+    from app.config import get_settings
+    settings = get_settings()
+    if settings.avatar_provider_type in ("heygen",):
+        from app.services.avatar_generator.generator import get_avatar_generator
+        avatar_gen = get_avatar_generator()
+        avatar_path = avatar_gen.generate_avatar_video(
+            script_text=plan['voiceover_script']
+        )
+        logger.info(f"Avatar video generated: {avatar_path}")
+        # Avatar replaces both video and audio (it includes the presenter speaking)
+        video_path = avatar_path
+        audio_path = avatar_path  # Avatar video has embedded audio
+
     # Step 7: Build cost data (REVIEW-05)
     # For mock providers, costs are 0.0. For real providers, costs will be populated when swapped in.
     cost_data = {
