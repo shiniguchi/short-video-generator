@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 5 in progress — Review & Output workflow
+**Current focus:** Phase 6 in progress — Pipeline Integration
 
 ## Current Position
 
-Phase: 5 of 6 (Review & Output)
-Plan: 1 of 1 in current phase (05-01 complete)
-Status: Phase Complete
-Last activity: 2026-02-14 — 05-01 executed: Review workflow with cost tracking and approve/reject endpoints
+Phase: 6 of 6 (Pipeline Integration)
+Plan: 2 of 2 in current phase (06-01 complete)
+Status: In Progress
+Last activity: 2026-02-14 — 06-01 executed: Pipeline orchestration with stage constants and Job helpers
 
-Progress: [█████████░] 95%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 3 min
 - Total execution time: 1.3 hours
 
@@ -32,9 +32,10 @@ Progress: [█████████░] 95%
 | 03 | 3 | 18 min | 6 min |
 | 04 | 2 | 3 min | 2 min |
 | 05 | 1 | 3 min | 3 min |
+| 06 | 1 | 1 min | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (7 min), 03-03 (6 min), 04-01 (2 min), 04-02 (1 min), 05-01 (3 min)
+- Last 5 plans: 03-03 (6 min), 04-01 (2 min), 04-02 (1 min), 05-01 (3 min), 06-01 (1 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -85,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Async database helpers in Celery tasks follow asyncio.run() pattern from Phase 3
 - [Phase 05-01]: Changed composition_output_dir from output/final to output/review for review workflow
 - [Phase 05-01]: Generation metadata stored in Video.extra_data includes gen_id, timestamp, theme, trend_pattern, prompts, model, cost, path, status
+- [Phase 06-01]: orchestrate_pipeline_task has max_retries=0 — individual stages handle their own retries
+- [Phase 06-01]: Composition chained from content generation — extracted compose_task_id and waited for completion
+- [Phase 06-01]: completed_stages list in Job.extra_data enables resume-from-checkpoint capability
+- [Phase 06-01]: Review stage marked complete by orchestrator — manual review happens via API endpoints
 
 ### Pending Todos
 
@@ -105,8 +110,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (phase 5 complete)
-Stopped at: Completed 05-01-PLAN.md — Review workflow with cost tracking and approve/reject endpoints. Phase 5 complete.
+Last session: 2026-02-14 (phase 6 in progress)
+Stopped at: Completed 06-01-PLAN.md — Pipeline orchestration with stage constants and Job helpers
 Resume file: None
 
 ---
