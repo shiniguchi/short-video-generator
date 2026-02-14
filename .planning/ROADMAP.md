@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Infrastructure** - Docker Compose environment with core services and configuration
 - [x] **Phase 2: Trend Intelligence** - Trend collection from TikTok/YouTube and AI-powered pattern analysis
 - [x] **Phase 3: Content Generation** - Script generation, AI video creation, and voiceover synthesis
-- [ ] **Phase 4: Video Composition** - FFmpeg assembly with text overlays, audio, and final rendering
+- [x] **Phase 4: Video Composition** - FFmpeg assembly with text overlays, audio, and final rendering
 - [ ] **Phase 5: Review & Output** - File-based review workflow with cost tracking and approval system
 - [ ] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
 
@@ -85,8 +85,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — VideoCompositor service with text overlay, audio mixer, and thumbnail modules
-- [ ] 04-02-PLAN.md — Celery compose task, API endpoints, and pipeline integration
+- [x] 04-01-PLAN.md — VideoCompositor service with text overlay, audio mixer, and thumbnail modules
+- [x] 04-02-PLAN.md — Celery compose task, API endpoints, and pipeline integration
 
 ### Phase 5: Review & Output
 **Goal**: Generated videos saved to review directory with approval workflow, generation logging, and per-video cost tracking
@@ -128,10 +128,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation & Infrastructure | 3/3 | Complete | 2026-02-13 |
 | 2. Trend Intelligence | 3/3 | Complete | 2026-02-13 |
 | 3. Content Generation | 3/3 | Complete | 2026-02-14 |
-| 4. Video Composition | 0/2 | Planning complete | - |
+| 4. Video Composition | 2/2 | Complete | 2026-02-14 |
 | 5. Review & Output | 0/0 | Not started | - |
 | 6. Pipeline Integration | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 4 planned*
+*Last updated: 2026-02-14 -- Phase 4 complete*
