@@ -170,11 +170,35 @@ async def get_latest_trend_report(session: AsyncSession = Depends(get_session)):
 # --- Phase 3: Content Generation ---
 
 @router.post("/generate-content")
-async def trigger_content_generation():
+async def trigger_content_generation(
+    job_id: Optional[int] = None,
+    theme_config_path: Optional[str] = None,
+    session: AsyncSession = Depends(get_session)
+):
     """Trigger full content generation pipeline (config -> script -> video -> voiceover)."""
     from app.tasks import generate_content_task
-    task = generate_content_task.delay()
-    return {"task_id": str(task.id), "status": "queued", "description": "Generating content: script, video, and voiceover"}
+    from app.models import Job
+
+    # Create Job if not provided
+    if job_id is None:
+        job = Job(
+            status="pending",
+            stage="content_generation",
+            theme="manual",
+            extra_data={"completed_stages": []}
+        )
+        session.add(job)
+        await session.commit()
+        await session.refresh(job)
+        job_id = job.id
+
+    task = generate_content_task.delay(job_id, theme_config_path)
+    return {
+        "task_id": str(task.id),
+        "job_id": job_id,
+        "status": "queued",
+        "description": "Generating content: script, video, and voiceover"
+    }
 
 
 @router.get("/scripts")
@@ -245,12 +269,35 @@ async def get_script(
 async def trigger_video_composition(
     script_id: int,
     video_path: str,
-    audio_path: str
+    audio_path: str,
+    job_id: Optional[int] = None,
+    cost_data: Optional[dict] = None,
+    session: AsyncSession = Depends(get_session)
 ):
     """Trigger video composition task with text overlays and audio mixing."""
     from app.tasks import compose_video_task
-    task = compose_video_task.delay(script_id, video_path, audio_path)
-    return {"task_id": str(task.id), "status": "queued", "description": "Composing final video..."}
+    from app.models import Job
+
+    # Create Job if not provided
+    if job_id is None:
+        job = Job(
+            status="pending",
+            stage="composition",
+            theme="manual",
+            extra_data={"completed_stages": ["content_generation"]}
+        )
+        session.add(job)
+        await session.commit()
+        await session.refresh(job)
+        job_id = job.id
+
+    task = compose_video_task.delay(job_id, script_id, video_path, audio_path, cost_data)
+    return {
+        "task_id": str(task.id),
+        "job_id": job_id,
+        "status": "queued",
+        "description": "Composing final video..."
+    }
 
 
 @router.get("/videos")
