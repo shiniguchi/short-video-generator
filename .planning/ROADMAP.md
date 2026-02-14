@@ -219,11 +219,13 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
   4. At least 2 real TTS providers generate natural voiceover audio from script
   5. Pipeline runs end-to-end with real providers producing watchable marketing video with audio
   6. Mock providers remain as fallback when API keys are not configured
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — fal.ai video providers (Kling 3.0 + Minimax/Hailuo) with factory update
+- [ ] 11-02-PLAN.md — TTS providers (ElevenLabs + Fish Audio) with factory update
+- [ ] 11-03-PLAN.md — HeyGen avatar provider, pipeline integration, and env documentation
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 11 added (Real AI Providers)*
+*Last updated: 2026-02-14 -- Phase 11 planned (3 plans in 3 waves)*
