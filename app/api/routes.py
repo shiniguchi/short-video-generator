@@ -234,3 +234,83 @@ async def get_script(
         "trend_report_id": script.trend_report_id,
         "created_at": script.created_at.isoformat() if script.created_at else None,
     }
+
+
+# --- Phase 4: Video Composition ---
+
+@router.post("/compose-video")
+async def trigger_video_composition(
+    script_id: int,
+    video_path: str,
+    audio_path: str
+):
+    """Trigger video composition task with text overlays and audio mixing."""
+    from app.tasks import compose_video_task
+    task = compose_video_task.delay(script_id, video_path, audio_path)
+    return {"task_id": str(task.id), "status": "queued", "description": "Composing final video..."}
+
+
+@router.get("/videos")
+async def list_videos(
+    limit: int = 10,
+    status: Optional[str] = None,
+    session: AsyncSession = Depends(get_session)
+):
+    """List composed videos with optional status filter."""
+    from app.models import Video
+
+    query = select(Video).order_by(Video.created_at.desc()).limit(limit)
+    if status:
+        query = query.where(Video.status == status)
+
+    result = await session.execute(query)
+    videos = result.scalars().all()
+
+    return {
+        "count": len(videos),
+        "videos": [
+            {
+                "id": v.id,
+                "script_id": v.script_id,
+                "file_path": v.file_path,
+                "thumbnail_path": v.thumbnail_path,
+                "duration_seconds": v.duration_seconds,
+                "status": v.status,
+                "cost_usd": v.cost_usd,
+                "created_at": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in videos
+        ]
+    }
+
+
+@router.get("/videos/{video_id}")
+async def get_video(
+    video_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Get full details of a composed video."""
+    from app.models import Video
+
+    query = select(Video).where(Video.id == video_id)
+    result = await session.execute(query)
+    video = result.scalars().first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail=f"Video {video_id} not found")
+
+    return {
+        "id": video.id,
+        "job_id": video.job_id,
+        "script_id": video.script_id,
+        "status": video.status,
+        "file_path": video.file_path,
+        "thumbnail_path": video.thumbnail_path,
+        "duration_seconds": video.duration_seconds,
+        "cost_usd": video.cost_usd,
+        "created_at": video.created_at.isoformat() if video.created_at else None,
+        "approved_at": video.approved_at.isoformat() if video.approved_at else None,
+        "published_at": video.published_at.isoformat() if video.published_at else None,
+        "published_url": video.published_url,
+        "extra_data": video.extra_data,
+    }
