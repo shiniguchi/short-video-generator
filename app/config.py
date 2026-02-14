@@ -38,7 +38,8 @@ class Settings(BaseSettings):
 
     # Content Generation (Phase 3)
     openai_api_key: str = ""  # For TTS provider (OpenAI)
-    video_provider_type: str = "mock"  # mock/svd/veo
+    fal_key: str = ""  # For fal.ai video providers (Kling, Minimax)
+    video_provider_type: str = "mock"  # mock/svd/kling/minimax
     tts_provider_type: str = "mock"  # mock/openai/elevenlabs
     output_dir: str = "output"  # Base directory for generated files
 
