@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 4 Complete — Ready for Phase 5: Review & Output
+**Current focus:** Phase 5 in progress — Review & Output workflow
 
 ## Current Position
 
-Phase: 4 of 6 (Video Composition) — COMPLETE
-Plan: 2 of 2 in current phase (04-01, 04-02 complete)
+Phase: 5 of 6 (Review & Output)
+Plan: 1 of 1 in current phase (05-01 complete)
 Status: Phase Complete
-Last activity: 2026-02-14 — 04-02 executed: Celery task integration and API endpoints for video composition
+Last activity: 2026-02-14 — 05-01 executed: Review workflow with cost tracking and approve/reject endpoints
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 3 min
-- Total execution time: 1.2 hours
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [█████████░] 92%
 | 02 | 3 | 14 min | 5 min |
 | 03 | 3 | 18 min | 6 min |
 | 04 | 2 | 3 min | 2 min |
+| 05 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (5 min), 03-02 (7 min), 03-03 (6 min), 04-01 (2 min), 04-02 (1 min)
-- Trend: Excellent (Phase 4 very fast execution)
+- Last 5 plans: 03-02 (7 min), 03-03 (6 min), 04-01 (2 min), 04-02 (1 min), 05-01 (3 min)
+- Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: H.264/AAC encoding with 5Mbps video and 128k audio bitrate for platform compatibility
 - [Phase 04-02]: End-to-end pipeline chaining: generate_content_task automatically chains into compose_video_task
 - [Phase 04-02]: Async database helpers in Celery tasks follow asyncio.run() pattern from Phase 3
+- [Phase 05-01]: Changed composition_output_dir from output/final to output/review for review workflow
+- [Phase 05-01]: Generation metadata stored in Video.extra_data includes gen_id, timestamp, theme, trend_pattern, prompts, model, cost, path, status
 
 ### Pending Todos
 
@@ -102,8 +105,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (phase 4 complete)
-Stopped at: Completed 04-02-PLAN.md — Celery task integration and API endpoints for video composition. Phase 4 complete.
+Last session: 2026-02-14 (phase 5 complete)
+Stopped at: Completed 05-01-PLAN.md — Review workflow with cost tracking and approve/reject endpoints. Phase 5 complete.
 Resume file: None
 
 ---
