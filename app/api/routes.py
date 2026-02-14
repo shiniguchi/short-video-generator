@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select
 from typing import Optional
+from datetime import datetime, timezone
+from pathlib import Path
+import shutil
 from app.database import get_session
 from app.config import get_settings
 
@@ -314,3 +317,182 @@ async def get_video(
         "published_url": video.published_url,
         "extra_data": video.extra_data,
     }
+
+
+# --- Phase 5: Review & Output ---
+
+@router.post("/videos/{video_id}/approve")
+async def approve_video(
+    video_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Approve a generated video and move it to approved directory (REVIEW-03)."""
+    from app.models import Video
+
+    # Query video by ID
+    query = select(Video).where(Video.id == video_id)
+    result = await session.execute(query)
+    video = result.scalars().first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail=f"Video {video_id} not found")
+
+    # Validate status
+    if video.status != "generated":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot approve video with status '{video.status}'. Only 'generated' videos can be approved."
+        )
+
+    # Get settings
+    settings = get_settings()
+
+    # Ensure approved directory exists
+    approved_dir = Path(settings.approved_output_dir)
+    approved_dir.mkdir(parents=True, exist_ok=True)
+
+    # Move video file
+    file_moved = False
+    thumbnail_moved = False
+    warnings = []
+
+    try:
+        if video.file_path:
+            source_path = Path(video.file_path)
+            if source_path.exists():
+                new_video_path = approved_dir / source_path.name
+                shutil.move(str(source_path), str(new_video_path))
+                video.file_path = str(new_video_path)
+                file_moved = True
+            else:
+                warnings.append(f"Video file not found: {video.file_path}")
+    except Exception as e:
+        warnings.append(f"Error moving video file: {str(e)}")
+
+    # Move thumbnail file if exists
+    try:
+        if video.thumbnail_path:
+            thumb_source_path = Path(video.thumbnail_path)
+            if thumb_source_path.exists():
+                new_thumb_path = approved_dir / thumb_source_path.name
+                shutil.move(str(thumb_source_path), str(new_thumb_path))
+                video.thumbnail_path = str(new_thumb_path)
+                thumbnail_moved = True
+            else:
+                warnings.append(f"Thumbnail file not found: {video.thumbnail_path}")
+    except Exception as e:
+        warnings.append(f"Error moving thumbnail file: {str(e)}")
+
+    # Update video record
+    video.status = "approved"
+    video.approved_at = datetime.now(timezone.utc)
+
+    # Update extra_data status if exists
+    if video.extra_data:
+        video.extra_data["status"] = "approved"
+
+    await session.commit()
+    await session.refresh(video)
+
+    response = {
+        "id": video.id,
+        "status": video.status,
+        "file_path": video.file_path,
+        "thumbnail_path": video.thumbnail_path,
+        "cost_usd": video.cost_usd,
+        "approved_at": video.approved_at.isoformat() if video.approved_at else None,
+        "message": "Video approved and moved to output/approved/"
+    }
+
+    if warnings:
+        response["warnings"] = warnings
+
+    return response
+
+
+@router.post("/videos/{video_id}/reject")
+async def reject_video(
+    video_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    """Reject a generated video and move it to rejected directory (REVIEW-04)."""
+    from app.models import Video
+
+    # Query video by ID
+    query = select(Video).where(Video.id == video_id)
+    result = await session.execute(query)
+    video = result.scalars().first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail=f"Video {video_id} not found")
+
+    # Validate status
+    if video.status != "generated":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reject video with status '{video.status}'. Only 'generated' videos can be rejected."
+        )
+
+    # Get settings
+    settings = get_settings()
+
+    # Ensure rejected directory exists
+    rejected_dir = Path(settings.rejected_output_dir)
+    rejected_dir.mkdir(parents=True, exist_ok=True)
+
+    # Move video file
+    file_moved = False
+    thumbnail_moved = False
+    warnings = []
+
+    try:
+        if video.file_path:
+            source_path = Path(video.file_path)
+            if source_path.exists():
+                new_video_path = rejected_dir / source_path.name
+                shutil.move(str(source_path), str(new_video_path))
+                video.file_path = str(new_video_path)
+                file_moved = True
+            else:
+                warnings.append(f"Video file not found: {video.file_path}")
+    except Exception as e:
+        warnings.append(f"Error moving video file: {str(e)}")
+
+    # Move thumbnail file if exists
+    try:
+        if video.thumbnail_path:
+            thumb_source_path = Path(video.thumbnail_path)
+            if thumb_source_path.exists():
+                new_thumb_path = rejected_dir / thumb_source_path.name
+                shutil.move(str(thumb_source_path), str(new_thumb_path))
+                video.thumbnail_path = str(new_thumb_path)
+                thumbnail_moved = True
+            else:
+                warnings.append(f"Thumbnail file not found: {video.thumbnail_path}")
+    except Exception as e:
+        warnings.append(f"Error moving thumbnail file: {str(e)}")
+
+    # Update video record
+    video.status = "rejected"
+    # Note: Do NOT set approved_at for rejected videos
+
+    # Update extra_data status if exists
+    if video.extra_data:
+        video.extra_data["status"] = "rejected"
+
+    await session.commit()
+    await session.refresh(video)
+
+    response = {
+        "id": video.id,
+        "status": video.status,
+        "file_path": video.file_path,
+        "thumbnail_path": video.thumbnail_path,
+        "cost_usd": video.cost_usd,
+        "message": "Video rejected and moved to output/rejected/"
+    }
+
+    if warnings:
+        response["warnings"] = warnings
+
+    return response
