@@ -182,7 +182,11 @@ Plans:
   2. Phase 4 (Video Composition) has VERIFICATION.md confirming all success criteria met
   3. Phase 8 VERIFICATION.md updated to reflect completed validation (not human_needed)
   4. All 10 phases have consistent verification documentation
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Create Phase 3 (Content Generation) VERIFICATION.md with evidence-backed claims
+- [ ] 10-02-PLAN.md — Create Phase 4 (Video Composition) VERIFICATION.md and update Phase 8 status to passed
 
 ## Progress
 
@@ -200,8 +204,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 7. Pipeline Data Lineage | 1/1 | Complete | 2026-02-14 |
 | 8. Docker Compose Validation | 2/2 | Complete | 2026-02-14 |
 | 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
-| 10. Documentation Cleanup | 0/? | Pending | — |
+| 10. Documentation Cleanup | 0/2 | Pending | — |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 9 complete*
+*Last updated: 2026-02-14 -- Phase 10 planned*
