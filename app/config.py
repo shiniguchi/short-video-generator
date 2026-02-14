@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     tts_provider_type: str = "mock"  # mock/openai/elevenlabs
     output_dir: str = "output"  # Base directory for generated files
 
+    # Video Composition (Phase 4)
+    background_music_path: str = ""  # Path to background music file (empty = no music)
+    music_volume: float = 0.3  # Background music volume (0.0-1.0), default 30%
+    thumbnail_timestamp: float = 2.0  # Seconds into video to extract thumbnail frame
+    composition_output_dir: str = "output/final"  # Directory for composed videos
+
 
 @lru_cache()
 def get_settings():

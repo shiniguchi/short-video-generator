@@ -161,14 +161,125 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     )
     logger.info(f"Voiceover generated: {audio_path}")
 
+    # Step 7: Chain into compose_video_task for end-to-end pipeline
+    compose_result = compose_video_task.delay(script_id, video_path, audio_path)
+    logger.info(f"Composition task queued: {compose_result.id}")
+
     result = {
         "status": "success",
         "script_id": script_id,
         "video_path": video_path,
         "audio_path": audio_path,
+        "compose_task_id": str(compose_result.id),
         "title": plan.get('title', ''),
         "duration_target": plan.get('duration_target', 0),
         "scenes_count": len(plan.get('scenes', []))
     }
     logger.info(f"Content generation complete: {result}")
     return result
+
+
+@celery_app.task(
+    bind=True,
+    name='app.tasks.compose_video_task',
+    max_retries=2,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def compose_video_task(self, script_id: int, video_path: str, audio_path: str):
+    """Compose final video with text overlays, audio mixing, and thumbnail generation.
+
+    Args:
+        script_id: Database ID of the Script record containing text_overlays
+        video_path: Path to generated video file
+        audio_path: Path to generated voiceover audio file
+
+    Returns:
+        dict with video_id, video_path, thumbnail_path, duration
+    """
+    logger.info(f"Starting video composition for script {script_id} (attempt {self.request.retries + 1})")
+
+    try:
+        # Import inside task to avoid circular imports
+        from app.services.video_compositor import VideoCompositor
+        from app.schemas import TextOverlaySchema
+        from app.config import get_settings
+
+        # Step 1: Load Script from database
+        async def _load_script(script_id: int):
+            from app.database import async_session_factory
+            from app.models import Script
+            from sqlalchemy import select
+
+            async with async_session_factory() as session:
+                query = select(Script).where(Script.id == script_id)
+                result = await session.execute(query)
+                script = result.scalars().first()
+                if not script:
+                    raise ValueError(f"Script {script_id} not found")
+                return script
+
+        script = asyncio.run(_load_script(script_id))
+        logger.info(f"Loaded script: {script.title}")
+
+        # Step 2: Extract text_overlays from Script.text_overlays JSON field
+        text_overlays_raw = script.text_overlays or []
+        text_overlays = [TextOverlaySchema(**t) for t in text_overlays_raw]
+        logger.info(f"Extracted {len(text_overlays)} text overlays")
+
+        # Step 3: Get composition settings
+        settings = get_settings()
+        background_music = settings.background_music_path or None
+
+        # Step 4: Create VideoCompositor and compose
+        compositor = VideoCompositor(output_dir=settings.composition_output_dir)
+        result = compositor.compose(
+            video_path=video_path,
+            audio_path=audio_path,
+            text_overlays=text_overlays,
+            background_music_path=background_music,
+            music_volume=settings.music_volume,
+            thumbnail_timestamp=settings.thumbnail_timestamp
+        )
+        logger.info(f"Composition complete: {result['video_path']}")
+
+        # Step 5: Save Video record to database
+        async def _save_video_record(script_id: int, file_path: str, thumbnail_path: str, duration: float):
+            from app.database import async_session_factory
+            from app.models import Video
+
+            async with async_session_factory() as session:
+                video = Video(
+                    script_id=script_id,
+                    file_path=file_path,
+                    thumbnail_path=thumbnail_path,
+                    duration_seconds=duration,
+                    status="generated"
+                )
+                session.add(video)
+                await session.commit()
+                await session.refresh(video)
+                return video.id
+
+        video_id = asyncio.run(_save_video_record(
+            script_id=script_id,
+            file_path=result["video_path"],
+            thumbnail_path=result["thumbnail_path"],
+            duration=result["duration"]
+        ))
+        logger.info(f"Video record saved to DB: ID {video_id}")
+
+        # Step 6: Return success result
+        return {
+            "status": "success",
+            "video_id": video_id,
+            "video_path": result["video_path"],
+            "thumbnail_path": result["thumbnail_path"],
+            "duration": result["duration"]
+        }
+
+    except Exception as exc:
+        logger.error(f"Video composition failed: {exc}")
+        raise
