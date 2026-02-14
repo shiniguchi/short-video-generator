@@ -20,6 +20,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Pipeline Integration** - End-to-end orchestration with checkpointing, retries, and monitoring
 - [x] **Phase 7: Pipeline Data Lineage** - Fix job_id propagation so Jobs trace to their Script/Video outputs
 - [x] **Phase 8: Docker Compose Validation** - Validate Docker Compose stack runs end-to-end with PostgreSQL and Redis
+- [ ] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
+- [ ] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
 
 ## Phase Details
 
@@ -154,10 +156,38 @@ Plans:
 - [x] 08-01-PLAN.md — Dockerfile, entrypoint, and docker-compose.yml fixes to make stack bootable
 - [x] 08-02-PLAN.md — Validation script and human verification of end-to-end Docker pipeline
 
+### Phase 9: Fix Stale Manual Endpoints
+**Goal**: Update manual per-stage API endpoints broken by Phase 7 job_id refactor, and remove unused legacy artifacts
+**Depends on**: Phase 8
+**Requirements**: INFRA-04 (API completeness)
+**Gap Closure**: Closes 2 integration gaps, 1 flow gap, 1 tech debt item from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. POST /generate-content endpoint passes job_id to generate_content_task (creates Job if needed)
+  2. POST /compose-video endpoint passes job_id to compose_video_task
+  3. Manual content generation flow (POST /generate-content) completes without TypeError
+  4. Unused output/final/ directory removed from codebase
+  5. All 19 API endpoints functional (no stale signatures)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Fix manual endpoint signatures, align VideoCompositor default, remove output/final
+
+### Phase 10: Documentation Cleanup
+**Goal**: Add missing verification files and fix stale verification status to complete audit trail
+**Depends on**: Phase 9
+**Requirements**: None (documentation only)
+**Gap Closure**: Closes 3 documentation tech debt items from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. Phase 3 (Content Generation) has VERIFICATION.md confirming all success criteria met
+  2. Phase 4 (Video Composition) has VERIFICATION.md confirming all success criteria met
+  3. Phase 8 VERIFICATION.md updated to reflect completed validation (not human_needed)
+  4. All 10 phases have consistent verification documentation
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -169,7 +199,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 6. Pipeline Integration | 2/2 | Complete | 2026-02-14 |
 | 7. Pipeline Data Lineage | 1/1 | Complete | 2026-02-14 |
 | 8. Docker Compose Validation | 2/2 | Complete | 2026-02-14 |
+| 9. Fix Stale Manual Endpoints | 0/1 | Pending | — |
+| 10. Documentation Cleanup | 0/? | Pending | — |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 8 complete (all phases done)*
+*Last updated: 2026-02-14 -- Phase 9 planned (1 plan)*
