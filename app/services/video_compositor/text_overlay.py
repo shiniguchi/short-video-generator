@@ -76,8 +76,9 @@ def render_text_overlays(
         # Apply position
         text_clip = text_clip.with_position(pos)
 
-        # Apply fade-in animation (0.3 second fade)
-        text_clip = text_clip.crossfadein(0.3)
+        # Apply fade-in animation (0.3 second fade) — MoviePy v2.x API
+        from moviepy import vfx
+        text_clip = text_clip.with_effects([vfx.CrossFadeIn(0.3)])
 
         text_clips.append(text_clip)
 

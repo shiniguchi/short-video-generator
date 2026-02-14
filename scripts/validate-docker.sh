@@ -93,7 +93,11 @@ echo "[5/6] Triggering full pipeline via POST /generate..."
 pipeline_response=$(curl -s -X POST "$GENERATE_URL" -H "Content-Type: application/json")
 
 # Extract job_id using grep and cut (no jq dependency)
-job_id=$(echo "$pipeline_response" | grep -o '"job_id":"[^"]*"' | cut -d'"' -f4)
+# Handle both integer (job_id:1) and string (job_id:"1") formats
+job_id=$(echo "$pipeline_response" | grep -o '"job_id":[0-9]*' | cut -d: -f2)
+if [ -z "$job_id" ]; then
+    job_id=$(echo "$pipeline_response" | grep -o '"job_id":"[^"]*"' | cut -d'"' -f4)
+fi
 
 if [ -z "$job_id" ]; then
     echo "ERROR: Failed to extract job_id from response"

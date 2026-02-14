@@ -224,11 +224,11 @@ def compose_video_task(self, job_id: int, script_id: int, video_path: str, audio
 
         # Step 1: Load Script from database
         async def _load_script(script_id: int):
-            from app.database import async_session_factory
+            from app.database import get_task_session_factory
             from app.models import Script
             from sqlalchemy import select
 
-            async with async_session_factory() as session:
+            async with get_task_session_factory()() as session:
                 query = select(Script).where(Script.id == script_id)
                 result = await session.execute(query)
                 script = result.scalars().first()
@@ -292,10 +292,10 @@ def compose_video_task(self, job_id: int, script_id: int, video_path: str, audio
         # Step 6: Save Video record to database with cost and metadata
         async def _save_video_record(job_id: int, script_id: int, file_path: str, thumbnail_path: str,
                                       duration: float, cost_usd: float, generation_metadata: dict):
-            from app.database import async_session_factory
+            from app.database import get_task_session_factory
             from app.models import Video
 
-            async with async_session_factory() as session:
+            async with get_task_session_factory()() as session:
                 video = Video(
                     job_id=job_id,
                     script_id=script_id,

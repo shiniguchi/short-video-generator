@@ -372,9 +372,9 @@ async def save_production_plan(
         Script ID in database
     """
     from app.models import Script
-    from app.database import async_session_factory
+    from app.database import get_task_session_factory
 
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         script = Script(
             job_id=job_id,
             video_prompt=plan_data['video_prompt'],

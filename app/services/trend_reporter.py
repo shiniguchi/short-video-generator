@@ -4,7 +4,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from sqlalchemy import select
 from app.models import TrendReport, Trend
-from app.database import async_session_factory
+from app.database import get_task_session_factory
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ async def save_report(
     Returns:
         ID of saved report
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         report = TrendReport(
             analyzed_count=report_data['analyzed_count'],
             date_range_start=date_range_start,
@@ -53,7 +53,7 @@ async def get_latest_report() -> Optional[Dict]:
     Returns:
         Report dict or None if no reports exist
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(TrendReport).order_by(TrendReport.created_at.desc()).limit(1)
         result = await session.execute(query)
         report = result.scalars().first()
@@ -85,7 +85,7 @@ async def get_reports(limit: int = 10) -> List[Dict]:
     Returns:
         List of report dicts
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(TrendReport).order_by(TrendReport.created_at.desc()).limit(limit)
         result = await session.execute(query)
         reports = result.scalars().all()
@@ -119,7 +119,7 @@ async def get_trends_for_analysis(hours: int = 24) -> List[Dict]:
     """
     from datetime import timezone, timedelta
 
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         query = (

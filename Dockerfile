@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     build-essential \
     curl \
+    fontconfig \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -21,6 +22,8 @@ COPY alembic.ini .
 COPY ./alembic /app/alembic
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
+COPY ./fonts /usr/share/fonts/truetype/montserrat
+RUN fc-cache -f
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

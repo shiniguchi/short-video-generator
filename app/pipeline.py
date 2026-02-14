@@ -11,7 +11,7 @@ from celery import Celery
 from datetime import datetime, timezone
 
 from app.worker import celery_app
-from app.database import async_session_factory
+from app.database import get_task_session_factory
 from app.models import Job
 from sqlalchemy import select
 
@@ -41,7 +41,7 @@ async def _load_job(job_id: int) -> Dict[str, Any]:
     Returns:
         dict with id, status, stage, theme, extra_data, error_message
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(Job).where(Job.id == job_id)
         result = await session.execute(query)
         job = result.scalars().first()
@@ -68,7 +68,7 @@ async def _update_job_status(job_id: int, stage: str, status: str, error_msg: Op
         status: Job status (pending, running, completed, failed)
         error_msg: Optional error message
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(Job).where(Job.id == job_id)
         result = await session.execute(query)
         job = result.scalars().first()
@@ -95,7 +95,7 @@ async def _mark_stage_complete(job_id: int, stage: str) -> None:
         job_id: Database ID of Job
         stage: Stage name to mark complete
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(Job).where(Job.id == job_id)
         result = await session.execute(query)
         job = result.scalars().first()
@@ -127,7 +127,7 @@ async def _mark_job_complete(job_id: int) -> None:
     Args:
         job_id: Database ID of Job
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(Job).where(Job.id == job_id)
         result = await session.execute(query)
         job = result.scalars().first()
@@ -152,7 +152,7 @@ async def _mark_job_failed(job_id: int, stage: str, error_msg: str) -> None:
         stage: Stage where failure occurred
         error_msg: Error message
     """
-    async with async_session_factory() as session:
+    async with get_task_session_factory()() as session:
         query = select(Job).where(Job.id == job_id)
         result = await session.execute(query)
         job = result.scalars().first()
@@ -228,9 +228,10 @@ def orchestrate_pipeline_task(self, job_id: int, theme_config_path: Optional[str
             logger.info(f"Starting stage: {stage_name}")
             asyncio.run(_update_job_status(job_id, stage_name, "running"))
 
-            # Execute task synchronously with timeout
+            # Execute task synchronously — disable_sync_subtasks=False allows
+            # calling .get() from within a parent task (safe with threads pool)
             result = task_func.apply_async(args=args)
-            task_result = result.get(timeout=1800)  # 30 minute timeout
+            task_result = result.get(disable_sync_subtasks=False, timeout=1800)
 
             logger.info(f"Stage {stage_name} completed: {task_result}")
 
@@ -243,7 +244,7 @@ def orchestrate_pipeline_task(self, job_id: int, theme_config_path: Optional[str
                 if compose_task_id:
                     logger.info(f"Waiting for composition task {compose_task_id}")
                     compose_result = celery_app.AsyncResult(compose_task_id)
-                    compose_output = compose_result.get(timeout=1800)  # 30 minute timeout
+                    compose_output = compose_result.get(disable_sync_subtasks=False, timeout=1800)
                     logger.info(f"Composition completed: {compose_output}")
 
                     # Mark composition stage complete

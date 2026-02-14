@@ -1,9 +1,9 @@
 import logging
 from typing import List, Dict, Any
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import async_session_factory
+from app.database import get_task_session_factory
+from app.config import get_settings
 from app.models import Trend
 from app.schemas import TrendCreate
 from app.scrapers.tiktok import scrape_tiktok_trends
@@ -31,7 +31,7 @@ async def save_trends(trends: List[Dict[str, Any]], platform: str) -> int:
     saved_count = 0
 
     try:
-        async with async_session_factory() as session:
+        async with get_task_session_factory()() as session:
             for trend_dict in trends:
                 try:
                     # Add platform to the dict before validation
@@ -43,8 +43,13 @@ async def save_trends(trends: List[Dict[str, Any]], platform: str) -> int:
                     # Get values for database insert
                     trend_values = trend_data.model_dump()
 
-                    # UPSERT using SQLite dialect
-                    stmt = sqlite_insert(Trend).values(**trend_values)
+                    # UPSERT using appropriate dialect
+                    settings = get_settings()
+                    if settings.database_url.startswith("sqlite"):
+                        from sqlalchemy.dialects.sqlite import insert as dialect_insert
+                    else:
+                        from sqlalchemy.dialects.postgresql import insert as dialect_insert
+                    stmt = dialect_insert(Trend).values(**trend_values)
 
                     # On conflict (duplicate platform+external_id), update engagement metrics
                     stmt = stmt.on_conflict_do_update(
