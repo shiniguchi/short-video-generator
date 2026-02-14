@@ -161,8 +161,16 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     )
     logger.info(f"Voiceover generated: {audio_path}")
 
-    # Step 7: Chain into compose_video_task for end-to-end pipeline
-    compose_result = compose_video_task.delay(script_id, video_path, audio_path)
+    # Step 7: Build cost data (REVIEW-05)
+    # For mock providers, costs are 0.0. For real providers, costs will be populated when swapped in.
+    cost_data = {
+        "claude_cost": 0.0,  # Will be populated by real Claude provider
+        "tts_cost": 0.0,  # Will be populated by real TTS provider
+        "video_gen_cost": 0.0  # Will be populated by real video provider
+    }
+
+    # Step 8: Chain into compose_video_task for end-to-end pipeline
+    compose_result = compose_video_task.delay(script_id, video_path, audio_path, cost_data)
     logger.info(f"Composition task queued: {compose_result.id}")
 
     result = {
@@ -188,18 +196,23 @@ def generate_content_task(self, theme_config_path: Optional[str] = None):
     retry_backoff_max=600,
     retry_jitter=True,
 )
-def compose_video_task(self, script_id: int, video_path: str, audio_path: str):
+def compose_video_task(self, script_id: int, video_path: str, audio_path: str, cost_data: dict = None):
     """Compose final video with text overlays, audio mixing, and thumbnail generation.
 
     Args:
         script_id: Database ID of the Script record containing text_overlays
         video_path: Path to generated video file
         audio_path: Path to generated voiceover audio file
+        cost_data: Dict with claude_cost, tts_cost, video_gen_cost (REVIEW-05)
 
     Returns:
         dict with video_id, video_path, thumbnail_path, duration
     """
     logger.info(f"Starting video composition for script {script_id} (attempt {self.request.retries + 1})")
+
+    # Initialize cost_data if not provided
+    if cost_data is None:
+        cost_data = {"claude_cost": 0.0, "tts_cost": 0.0, "video_gen_cost": 0.0}
 
     try:
         # Import inside task to avoid circular imports
@@ -245,8 +258,38 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str):
         )
         logger.info(f"Composition complete: {result['video_path']}")
 
-        # Step 5: Save Video record to database
-        async def _save_video_record(script_id: int, file_path: str, thumbnail_path: str, duration: float):
+        # Step 5: Calculate total cost and build generation metadata (REVIEW-02, REVIEW-05)
+        total_cost = sum([
+            cost_data.get("claude_cost", 0.0),
+            cost_data.get("tts_cost", 0.0),
+            cost_data.get("video_gen_cost", 0.0)
+        ])
+
+        # Build generation metadata
+        from uuid import uuid4
+        from datetime import datetime, timezone
+        generation_metadata = {
+            "gen_id": uuid4().hex,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "theme": script.theme_config.get("theme") if script.theme_config else None,
+            "trend_pattern": script.trend_report_id,
+            "prompts": {
+                "video_prompt": script.video_prompt,
+                "voiceover_script": script.voiceover_script
+            },
+            "model": {
+                "script_model": "claude",
+                "video_model": settings.video_provider_type,
+                "tts_model": settings.tts_provider_type
+            },
+            "cost_usd": total_cost,
+            "output_path": result["video_path"],
+            "status": "generated"
+        }
+
+        # Step 6: Save Video record to database with cost and metadata
+        async def _save_video_record(script_id: int, file_path: str, thumbnail_path: str,
+                                      duration: float, cost_usd: float, generation_metadata: dict):
             from app.database import async_session_factory
             from app.models import Video
 
@@ -256,7 +299,9 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str):
                     file_path=file_path,
                     thumbnail_path=thumbnail_path,
                     duration_seconds=duration,
-                    status="generated"
+                    status="generated",
+                    cost_usd=cost_usd,
+                    extra_data=generation_metadata
                 )
                 session.add(video)
                 await session.commit()
@@ -267,17 +312,20 @@ def compose_video_task(self, script_id: int, video_path: str, audio_path: str):
             script_id=script_id,
             file_path=result["video_path"],
             thumbnail_path=result["thumbnail_path"],
-            duration=result["duration"]
+            duration=result["duration"],
+            cost_usd=total_cost,
+            generation_metadata=generation_metadata
         ))
-        logger.info(f"Video record saved to DB: ID {video_id}")
+        logger.info(f"Video record saved to DB: ID {video_id}, cost: ${total_cost:.4f}")
 
-        # Step 6: Return success result
+        # Step 7: Return success result
         return {
             "status": "success",
             "video_id": video_id,
             "video_path": result["video_path"],
             "thumbnail_path": result["thumbnail_path"],
-            "duration": result["duration"]
+            "duration": result["duration"],
+            "cost_usd": total_cost
         }
 
     except Exception as exc:

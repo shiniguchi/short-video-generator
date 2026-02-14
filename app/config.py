@@ -46,7 +46,11 @@ class Settings(BaseSettings):
     background_music_path: str = ""  # Path to background music file (empty = no music)
     music_volume: float = 0.3  # Background music volume (0.0-1.0), default 30%
     thumbnail_timestamp: float = 2.0  # Seconds into video to extract thumbnail frame
-    composition_output_dir: str = "output/final"  # Directory for composed videos
+    composition_output_dir: str = "output/review"  # Directory for composed videos (REVIEW-01)
+
+    # Review & Output (Phase 5)
+    approved_output_dir: str = "output/approved"  # Directory for approved videos
+    rejected_output_dir: str = "output/rejected"  # Directory for rejected videos
 
 
 @lru_cache()
