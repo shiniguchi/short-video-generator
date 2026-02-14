@@ -17,6 +17,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   redis:
@@ -29,6 +30,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   web:
@@ -36,6 +38,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: viralforge-web
+    entrypoint: ["/app/docker-entrypoint.sh"]
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
@@ -48,11 +51,19 @@ services:
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
       - API_SECRET_KEY=${API_SECRET_KEY}
       - LOCAL_CONFIG_PATH=config/sample-data.yml
+      - USE_MOCK_DATA=true
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   celery-worker:
@@ -68,10 +79,14 @@ services:
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
       - API_SECRET_KEY=${API_SECRET_KEY}
       - LOCAL_CONFIG_PATH=config/sample-data.yml
+      - USE_MOCK_DATA=true
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      web:
         condition: service_healthy
     restart: unless-stopped
 
