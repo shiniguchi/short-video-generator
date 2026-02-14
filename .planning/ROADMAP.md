@@ -82,10 +82,11 @@ Plans:
   3. Final output is 9:16 vertical MP4 (H.264 video, AAC audio) with all components synchronized
   4. System generates thumbnail image extracted from configurable video frame
   5. Optional background music mixes correctly at configurable volume level without overpowering voiceover
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- TBD (plans defined during `/gsd:plan-phase 4`)
+- [ ] 04-01-PLAN.md — VideoCompositor service with text overlay, audio mixer, and thumbnail modules
+- [ ] 04-02-PLAN.md — Celery compose task, API endpoints, and pipeline integration
 
 ### Phase 5: Review & Output
 **Goal**: Generated videos saved to review directory with approval workflow, generation logging, and per-video cost tracking
