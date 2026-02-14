@@ -28,12 +28,12 @@ class VideoCompositor:
     into a publish-ready H.264/AAC MP4 file with thumbnail.
     """
 
-    def __init__(self, output_dir: str = "output/final"):
+    def __init__(self, output_dir: str = "output/review"):
         """
         Initialize VideoCompositor.
 
         Args:
-            output_dir: Directory for output videos (default: output/final)
+            output_dir: Directory for output videos (default: output/review)
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
