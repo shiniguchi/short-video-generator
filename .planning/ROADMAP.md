@@ -2,7 +2,7 @@
 
 ## Overview
 
-ViralForge's roadmap follows the natural flow of its 8-stage video pipeline: foundation infrastructure first, then trend intelligence (data collection and analysis), content generation (script, video, voiceover), video composition (assembly and finalization), review gates (quality control and cost tracking), and finally end-to-end pipeline orchestration that ties all stages together into an automated workflow.
+ViralForge's roadmap follows the natural flow of its video pipeline: foundation infrastructure first, then trend intelligence (data collection and analysis), content generation (script, video, voiceover), video composition (assembly and finalization), review gates (quality control and cost tracking), and finally end-to-end pipeline orchestration that ties all stages together into an automated workflow.
 
 ## Phases
 
@@ -104,11 +104,11 @@ Plans:
 - [x] 05-01-PLAN.md — Review workflow: output to review directory, cost tracking, generation logging, approve/reject API endpoints
 
 ### Phase 6: Pipeline Integration
-**Goal**: Full 8-stage pipeline executes sequentially with checkpointing, error recovery, retries, and status monitoring
+**Goal**: Full 5-stage orchestration pipeline executes sequentially with checkpointing, error recovery, retries, and status monitoring. The 5 orchestration stages are: trend_collection, trend_analysis, content_generation (encompasses script generation + video generation + voiceover as a single Celery task), composition (chained automatically from content_generation), and review.
 **Depends on**: Phase 5
 **Requirements**: ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05
 **Success Criteria** (what must be TRUE):
-  1. Pipeline executes all 8 stages in sequence: trend collection -> pattern analysis -> script generation -> video generation -> voiceover -> composition -> review
+  1. Pipeline executes all 5 orchestration stages in sequence: trend collection -> trend analysis -> content generation (script + video + voiceover) -> composition (auto-chained) -> review
   2. Per-stage checkpointing allows resume from last completed stage after failure without restarting pipeline
   3. Failed stages retry up to configurable limit (default: 3) with exponential backoff between attempts
   4. Pipeline status is visible via REST API endpoints and Docker container logs in real-time
@@ -135,4 +135,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 6 planned*
+*Last updated: 2026-02-14 -- Phase 6 planned, revised to 5 orchestration stages*
