@@ -72,7 +72,7 @@ Requirements for initial prototype. Each maps to roadmap phases.
 
 ### Pipeline Orchestration
 
-- [ ] **ORCH-01**: Full 8-stage pipeline executes sequentially: trend → analysis → script → video → voiceover → composition → review
+- [ ] **ORCH-01**: Full 5-stage pipeline executes sequentially: trend_collection → trend_analysis → content_generation (script + video + voiceover) → composition → review
 - [ ] **ORCH-02**: Pipeline has per-stage checkpointing (resume from last completed stage on failure)
 - [ ] **ORCH-03**: Each stage has configurable retry count (default: 3) with exponential backoff
 - [ ] **ORCH-04**: Pipeline status visible via REST API and Docker logs
