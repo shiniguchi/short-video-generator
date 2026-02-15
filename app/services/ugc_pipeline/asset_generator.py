@@ -121,7 +121,7 @@ def generate_aroll_assets(
         voice_direction = scene.get("voice_direction", "")
         camera_angle = scene.get("camera_angle", "medium close-up")
         script_text = scene.get("script_text", "")
-        duration_seconds = scene.get("duration_seconds", 3)
+        duration_seconds = scene.get("duration_seconds", 6)
 
         # Build Veo prompt with camera angle, dialogue, and voice delivery
         full_prompt = (
@@ -185,7 +185,7 @@ def generate_broll_assets(
     for idx, shot in enumerate(broll_shots, 1):
         image_prompt = shot.get("image_prompt", "")
         animation_prompt = shot.get("animation_prompt", "")
-        duration_seconds = shot.get("duration_seconds", 3)
+        duration_seconds = shot.get("duration_seconds", 5)
         ref_index = shot.get("reference_image_index", 0)
 
         # Clamp reference_image_index to valid range

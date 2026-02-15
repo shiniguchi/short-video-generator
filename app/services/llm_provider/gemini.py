@@ -1,11 +1,11 @@
-"""Gemini LLM provider using google-generativeai SDK."""
+"""Gemini LLM provider using google-genai SDK."""
 
 import logging
 from typing import Type, Optional
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
+from google import genai
+from google.genai import types
 
 from app.services.llm_provider.base import LLMProvider
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiLLMProvider(LLMProvider):
-    """LLM provider using Google Gemini API."""
+    """LLM provider using Google Gemini API via google-genai SDK."""
 
     def __init__(self, api_key: str):
         """Initialize Gemini provider.
@@ -21,21 +21,9 @@ class GeminiLLMProvider(LLMProvider):
         Args:
             api_key: Google API key with Gemini access
         """
-        genai.configure(api_key=api_key)
+        self.client = genai.Client(api_key=api_key)
         self.model_name = "gemini-2.5-flash"
         logger.info(f"GeminiLLMProvider initialized with model: {self.model_name}")
-
-    @staticmethod
-    def _strip_titles(obj):
-        """Recursively strip 'title' fields from JSON schema.
-
-        Gemini's response_schema rejects Pydantic's 'title' fields.
-        """
-        if isinstance(obj, dict):
-            return {k: GeminiLLMProvider._strip_titles(v) for k, v in obj.items() if k != "title"}
-        if isinstance(obj, list):
-            return [GeminiLLMProvider._strip_titles(item) for item in obj]
-        return obj
 
     def generate_structured(
         self,
@@ -54,26 +42,16 @@ class GeminiLLMProvider(LLMProvider):
 
         Returns:
             Instance of schema with generated data
-
-        Raises:
-            google.api_core.exceptions.ResourceExhausted: Rate limit hit
-            Exception: API errors
         """
         logger.info(f"GeminiLLMProvider: generating structured output for {schema.__name__}")
 
-        # Build full prompt
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-
-        # Call API with retry
         response_text = self._generate_structured_with_retry(
-            full_prompt=full_prompt,
+            prompt=prompt,
             schema=schema,
+            system_prompt=system_prompt,
             temperature=temperature
         )
 
-        # Parse and validate response
         try:
             result = schema.model_validate_json(response_text)
             logger.info(f"GeminiLLMProvider: successfully generated {schema.__name__}")
@@ -86,46 +64,32 @@ class GeminiLLMProvider(LLMProvider):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=30))
     def _generate_structured_with_retry(
         self,
-        full_prompt: str,
+        prompt: str,
         schema: Type[BaseModel],
+        system_prompt: Optional[str],
         temperature: float
     ) -> str:
-        """Generate structured content with retry logic.
-
-        Args:
-            full_prompt: Complete prompt with system instructions
-            schema: Pydantic model class
-            temperature: Randomness setting
-
-        Returns:
-            Raw JSON response text
-
-        Raises:
-            google.api_core.exceptions.ResourceExhausted: Rate limit (retried)
-            Exception: Other API errors (retried)
-        """
+        """Generate structured content with retry logic."""
         try:
-            # Create fresh model instance for each call
-            model = genai.GenerativeModel(self.model_name)
+            # Build contents with system instruction
+            full_prompt = prompt
+            if system_prompt:
+                full_prompt = f"{system_prompt}\n\n{prompt}"
 
-            # Configure JSON mode with schema
-            generation_config = {
-                "temperature": temperature,
-                "response_mime_type": "application/json",
-                "response_schema": self._strip_titles(schema.model_json_schema())
-            }
+            config = types.GenerateContentConfig(
+                temperature=temperature,
+                response_mime_type="application/json",
+                response_schema=schema,
+            )
 
-            # Generate content
-            response = model.generate_content(
-                full_prompt,
-                generation_config=generation_config
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt,
+                config=config,
             )
 
             return response.text
 
-        except google_exceptions.ResourceExhausted as e:
-            logger.warning(f"Gemini rate limit hit, retrying: {e}")
-            raise
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             raise
@@ -147,21 +111,12 @@ class GeminiLLMProvider(LLMProvider):
 
         Returns:
             Generated text
-
-        Raises:
-            google.api_core.exceptions.ResourceExhausted: Rate limit hit
-            Exception: API errors
         """
         logger.info("GeminiLLMProvider: generating text")
 
-        # Build full prompt
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-
-        # Call API with retry
         return self._generate_text_with_retry(
-            full_prompt=full_prompt,
+            prompt=prompt,
+            system_prompt=system_prompt,
             temperature=temperature,
             max_tokens=max_tokens
         )
@@ -169,46 +124,31 @@ class GeminiLLMProvider(LLMProvider):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=30))
     def _generate_text_with_retry(
         self,
-        full_prompt: str,
+        prompt: str,
+        system_prompt: Optional[str],
         temperature: float,
         max_tokens: int
     ) -> str:
-        """Generate text content with retry logic.
-
-        Args:
-            full_prompt: Complete prompt with system instructions
-            temperature: Randomness setting
-            max_tokens: Maximum output length
-
-        Returns:
-            Generated text
-
-        Raises:
-            google.api_core.exceptions.ResourceExhausted: Rate limit (retried)
-            Exception: Other API errors (retried)
-        """
+        """Generate text content with retry logic."""
         try:
-            # Create fresh model instance
-            model = genai.GenerativeModel(self.model_name)
+            full_prompt = prompt
+            if system_prompt:
+                full_prompt = f"{system_prompt}\n\n{prompt}"
 
-            # Configure generation
-            generation_config = {
-                "temperature": temperature,
-                "max_output_tokens": max_tokens
-            }
+            config = types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+            )
 
-            # Generate content
-            response = model.generate_content(
-                full_prompt,
-                generation_config=generation_config
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt,
+                config=config,
             )
 
             logger.info("GeminiLLMProvider: text generation successful")
             return response.text
 
-        except google_exceptions.ResourceExhausted as e:
-            logger.warning(f"Gemini rate limit hit, retrying: {e}")
-            raise
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             raise

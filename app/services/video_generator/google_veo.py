@@ -1,13 +1,13 @@
-"""Google Veo 3.1 video provider via Google Generative AI API."""
+"""Google Veo 3.1 video provider via google-genai SDK."""
 
 import os
 import time
 from uuid import uuid4
 from typing import Optional
 
-import google.generativeai as genai
-from PIL import Image
-from tenacity import retry, stop_after_attempt, wait_exponential
+import httpx
+from google import genai
+from google.genai import types
 
 from app.config import get_settings
 from app.services.video_generator.base import VideoProvider
@@ -15,7 +15,7 @@ from app.services.video_generator.mock import MockVideoProvider
 
 
 class GoogleVeoProvider(VideoProvider):
-    """Veo 3.1 video generation via Google Generative AI.
+    """Veo 3.1 video generation via google-genai SDK.
 
     Veo 3.1 generates video with built-in voice/audio support.
     Critical limitation: Maximum 8 seconds per clip.
@@ -41,23 +41,50 @@ class GoogleVeoProvider(VideoProvider):
         self.clips_dir = os.path.join(output_dir, "clips")
         os.makedirs(self.clips_dir, exist_ok=True)
 
-        # Configure Google Generative AI if API key is available
+        # Initialize client
         if google_api_key:
-            genai.configure(api_key=google_api_key)
+            self.client = genai.Client(api_key=google_api_key)
+        else:
+            self.client = None
+
+        self.model_name = "veo-3.1-fast-generate-preview"
 
         # Fallback to mock provider when not configured
         self._mock_provider = None
 
     @property
     def mock_provider(self) -> MockVideoProvider:
-        """Lazy initialization of mock provider for fallback.
-
-        Returns:
-            MockVideoProvider instance
-        """
+        """Lazy initialization of mock provider for fallback."""
         if self._mock_provider is None:
             self._mock_provider = MockVideoProvider(output_dir=self.output_dir)
         return self._mock_provider
+
+    def _save_video(self, video_obj, output_path: str):
+        """Save generated video to file, handling both local bytes and remote URI.
+
+        Args:
+            video_obj: GeneratedVideo.video object from Veo response
+            output_path: Path to save the MP4 file
+        """
+        if video_obj.video_bytes:
+            # Video returned as bytes
+            with open(output_path, "wb") as f:
+                f.write(video_obj.video_bytes)
+        elif video_obj.uri:
+            # Video returned as download URI - download with API key auth
+            download_url = video_obj.uri
+            if "?" in download_url:
+                download_url += f"&key={self.google_api_key}"
+            else:
+                download_url += f"?key={self.google_api_key}"
+
+            with httpx.Client(timeout=120, follow_redirects=True) as http_client:
+                response = http_client.get(download_url)
+                response.raise_for_status()
+                with open(output_path, "wb") as f:
+                    f.write(response.content)
+        else:
+            raise ValueError("Veo response has neither video_bytes nor uri")
 
     def generate_clip(
         self,
@@ -67,8 +94,6 @@ class GoogleVeoProvider(VideoProvider):
         height: int = 1280
     ) -> str:
         """Generate a video clip using Veo 3.1.
-
-        Falls back to mock provider if USE_MOCK_DATA is True or google_api_key is empty.
 
         Args:
             prompt: Visual description of the scene
@@ -90,46 +115,44 @@ class GoogleVeoProvider(VideoProvider):
                 height=height
             )
 
-        # CRITICAL: Clamp duration to 8 seconds max
+        # CRITICAL: Veo only accepts even durations: 4, 6, or 8 seconds
         original_duration = duration_seconds
-        duration_seconds = min(duration_seconds, 8)
-        if original_duration > 8:
-            print(f"WARNING: Veo 3.1 max 8s/clip: clamped {original_duration}s to {duration_seconds}s")
+        valid_durations = [4, 6, 8]
+        duration_seconds = min(valid_durations, key=lambda d: abs(d - int(original_duration)))
+        if original_duration != duration_seconds:
+            print(f"WARNING: Veo 3.1 requires 4/6/8s: adjusted {original_duration}s to {duration_seconds}s")
 
-        # Determine aspect ratio and resolution
+        # Determine aspect ratio
         aspect_ratio = "9:16" if height > width else "16:9"
-        resolution = "1080p" if width >= 1080 else "720p"
 
         start_time = time.time()
 
         try:
-            # Create model
-            model = genai.GenerativeModel("veo-3.1-fast-generate-preview")
+            config = types.GenerateVideosConfig(
+                aspect_ratio=aspect_ratio,
+                duration_seconds=duration_seconds,
+            )
 
-            # Call API
-            operation = model.generate_videos(
+            operation = self.client.models.generate_videos(
+                model=self.model_name,
                 prompt=prompt,
-                config={
-                    "aspect_ratio": aspect_ratio,
-                    "resolution": resolution,
-                    "duration_seconds": str(duration_seconds)
-                }
+                config=config,
             )
 
             # Poll until done
             print(f"Veo generation started, polling for completion...")
             while not operation.done:
                 time.sleep(10)
-                operation = operation.refresh()
+                operation = self.client.operations.get(operation)
 
             # Save video
             video = operation.response.generated_videos[0]
             output_path = os.path.join(self.clips_dir, f"veo_{uuid4().hex[:8]}.mp4")
-            video.video.save(output_path)
+            self._save_video(video.video, output_path)
 
             elapsed = time.time() - start_time
             print(f"Veo generation completed in {elapsed:.1f}s "
-                  f"({duration_seconds}s clip at {resolution} {aspect_ratio})")
+                  f"({duration_seconds}s clip at {aspect_ratio})")
 
             return output_path
 
@@ -152,11 +175,6 @@ class GoogleVeoProvider(VideoProvider):
     ) -> str:
         """Generate a video clip from an image using Veo 3.1 (image-to-video mode).
 
-        This is a Veo-specific extension method, not part of VideoProvider ABC.
-        Useful for Phase 13 UGC Product Ad Pipeline where Imagen images are animated.
-
-        Falls back to mock provider if USE_MOCK_DATA is True or google_api_key is empty.
-
         Args:
             prompt: Visual description of the scene/motion
             image_path: Path to input image file
@@ -178,50 +196,56 @@ class GoogleVeoProvider(VideoProvider):
                 height=height
             )
 
-        # CRITICAL: Clamp duration to 8 seconds max
+        # CRITICAL: Veo only accepts even durations: 4, 6, or 8 seconds
         original_duration = duration_seconds
-        duration_seconds = min(duration_seconds, 8)
-        if original_duration > 8:
-            print(f"WARNING: Veo 3.1 max 8s/clip: clamped {original_duration}s to {duration_seconds}s")
+        valid_durations = [4, 6, 8]
+        duration_seconds = min(valid_durations, key=lambda d: abs(d - int(original_duration)))
+        if original_duration != duration_seconds:
+            print(f"WARNING: Veo 3.1 requires 4/6/8s: adjusted {original_duration}s to {duration_seconds}s")
 
-        # Determine aspect ratio and resolution
+        # Determine aspect ratio
         aspect_ratio = "9:16" if height > width else "16:9"
-        resolution = "1080p" if width >= 1080 else "720p"
 
         start_time = time.time()
 
         try:
-            # Load image
-            image = Image.open(image_path)
+            # Load image as bytes with MIME type for Veo API
+            with open(image_path, "rb") as f:
+                image_bytes = f.read()
 
-            # Create model
-            model = genai.GenerativeModel("veo-3.1-fast-generate-preview")
+            # Detect MIME type from extension
+            ext = os.path.splitext(image_path)[1].lower()
+            mime_map = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+            mime_type = mime_map.get(ext, "image/png")
 
-            # Call API with image
-            operation = model.generate_videos(
+            image = types.Image(imageBytes=image_bytes, mimeType=mime_type)
+
+            config = types.GenerateVideosConfig(
+                aspect_ratio=aspect_ratio,
+                duration_seconds=duration_seconds,
+            )
+
+            operation = self.client.models.generate_videos(
+                model=self.model_name,
                 prompt=prompt,
                 image=image,
-                config={
-                    "aspect_ratio": aspect_ratio,
-                    "resolution": resolution,
-                    "duration_seconds": str(duration_seconds)
-                }
+                config=config,
             )
 
             # Poll until done
             print(f"Veo image-to-video generation started, polling for completion...")
             while not operation.done:
                 time.sleep(10)
-                operation = operation.refresh()
+                operation = self.client.operations.get(operation)
 
             # Save video
             video = operation.response.generated_videos[0]
             output_path = os.path.join(self.clips_dir, f"veo_{uuid4().hex[:8]}.mp4")
-            video.video.save(output_path)
+            self._save_video(video.video, output_path)
 
             elapsed = time.time() - start_time
             print(f"Veo image-to-video completed in {elapsed:.1f}s "
-                  f"({duration_seconds}s clip at {resolution} {aspect_ratio})")
+                  f"({duration_seconds}s clip at {aspect_ratio})")
 
             return output_path
 
@@ -235,13 +259,5 @@ class GoogleVeoProvider(VideoProvider):
             )
 
     def supports_resolution(self, width: int, height: int) -> bool:
-        """Check if Veo provider supports the given resolution.
-
-        Args:
-            width: Video width in pixels
-            height: Video height in pixels
-
-        Returns:
-            True if resolution is in supported list
-        """
+        """Check if Veo provider supports the given resolution."""
         return (width, height) in self.SUPPORTED_RESOLUTIONS
