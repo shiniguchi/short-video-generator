@@ -23,6 +23,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
 - [x] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
 - [x] **Phase 11: Real AI Providers** - Replace mock providers with configurable real AI services for video, avatars, and TTS
+- [ ] **Phase 12: Google Veo & Imagen Providers** - Google Veo 3.1 video generation (text-to-video + image-to-video) and Imagen image generation via Google AI APIs
+- [ ] **Phase 13: UGC Product Ad Pipeline** - Automated UGC×product ad creation from product input through hero image, A-Roll/B-Roll generation, to final composite
 
 ## Phase Details
 
@@ -192,7 +194,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -207,6 +209,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
 | 10. Documentation Cleanup | 2/2 | Complete | 2026-02-14 |
 | 11. Real AI Providers | 3/3 | Complete | 2026-02-14 |
+| 12. Google Veo & Imagen Providers | 0/? | Pending | — |
+| 13. UGC Product Ad Pipeline | 0/? | Pending | — |
 
 ### Phase 11: Real AI Providers
 **Goal**: Replace mock providers with configurable real AI services — pluggable video generation (Kling, Runway, Veo, Minimax), AI avatar presenters (HeyGen), and natural TTS voiceover (ElevenLabs, Fish Audio, OpenAI) — selectable per-video via configuration
@@ -226,6 +230,40 @@ Plans:
 - [x] 11-02-PLAN.md — TTS providers (ElevenLabs + Fish Audio) with factory update
 - [x] 11-03-PLAN.md — HeyGen avatar provider, pipeline integration, and env documentation
 
+### Phase 12: Google Veo & Imagen Providers
+**Goal**: Implement Google Veo 3.1 (text-to-video + image-to-video) and Google Imagen (text-to-image + image editing) as production providers via Vertex AI / Google AI APIs, replacing fal.ai Kling/Minimax as the primary video engine and adding image generation capability
+**Depends on**: Phase 11
+**Requirements**: None (new feature)
+**Success Criteria** (what must be TRUE):
+  1. Google Imagen provider generates 9:16 product images from text prompts via API
+  2. Google Veo provider generates 9:16 video clips from text prompts (text-to-video mode)
+  3. Google Veo provider generates video from reference image + prompt (image-to-video mode)
+  4. Both providers fall back to mock when API keys missing or USE_MOCK_DATA=true
+  5. Existing provider abstractions (VideoProvider, ImageProvider) extended cleanly
+  6. Veo3 built-in voice generation eliminates need for separate TTS in A-Roll
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 12 to break down)
+
+### Phase 13: UGC Product Ad Pipeline
+**Goal**: End-to-end automated UGC×product ad video creation — user provides product info (images, description, URL), system generates hero UGC image, writes viral ad script via Claude prompt chain, breaks into A-Roll/B-Roll frames, generates all video/image assets via Veo+Imagen, and composites final marketing video
+**Depends on**: Phase 12
+**Requirements**: None (new feature)
+**Success Criteria** (what must be TRUE):
+  1. API endpoint accepts product input (images, description, website URL) and triggers full pipeline
+  2. Claude prompt chain generates master ad script informed by trend analysis patterns
+  3. Script engine breaks master script into A-Roll frame prompts (8-10s segments) and B-Roll image prompts
+  4. Hero UGC×product image generated via Imagen from product photos + UGC character prompt
+  5. A-Roll video frames generated via Veo from hero image + frame scripts (with built-in voice)
+  6. B-Roll images generated via Imagen, then converted to video clips via Veo image-to-video
+  7. Final video composited from A-Roll base + B-Roll overlays via existing MoviePy/FFmpeg compositor
+  8. Pipeline runs end-to-end with mock providers (no API keys) for local development
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 13 to break down)
+
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14 -- Phase 11 complete (3/3 plans executed)*
+*Last updated: 2026-02-15 -- Phases 12-13 added for UGC Product Ad Pipeline*

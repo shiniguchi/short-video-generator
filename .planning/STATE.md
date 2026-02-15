@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 11 — Real AI provider integration
+**Current focus:** Phase 12 — Google Veo & Imagen Providers (UGC Ad Pipeline prerequisite)
 
 ## Current Position
 
-Phase: 11 of 11 (Real AI Providers)
-Plan: 3 of 3 in current phase
-Status: Complete
-Last activity: 2026-02-14 — Completed plan 11-03 (HeyGen avatar provider)
+Phase: 12 of 13 (Google Veo & Imagen Providers)
+Plan: 0 of ? in current phase
+Status: Not planned yet
+Last activity: 2026-02-15 — Added Phases 12-13 for UGC Product Ad Pipeline
 
-Progress: [██████████] 100%
+Progress: [████████░░] 85%
 
 ## Performance Metrics
 
@@ -135,6 +135,8 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 11 added: Real AI Provider Integration — pluggable video (Kling/Runway/Veo/Minimax), avatar (HeyGen), and TTS (ElevenLabs/Fish Audio/OpenAI) providers
+- Phase 12 added: Google Veo & Imagen Providers — Google-only API providers (Veo 3.1 text-to-video + image-to-video, Imagen text-to-image) via Vertex AI
+- Phase 13 added: UGC Product Ad Pipeline — end-to-end automated UGC×product ad creation (hero image → script → A-Roll → B-Roll → composite)
 
 ### Pending Todos
 
@@ -159,10 +161,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14 (Phase 11 complete)
-Stopped at: Completed 11-03-PLAN.md (HeyGen avatar provider)
+Last session: 2026-02-15 (Phases 12-13 added)
+Stopped at: Added Phases 12-13 to roadmap, ready for planning
 Resume file: None
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-14*
+*Last updated: 2026-02-15*
