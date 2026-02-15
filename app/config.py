@@ -42,10 +42,13 @@ class Settings(BaseSettings):
     fish_audio_api_key: str = ""  # For TTS provider (Fish Audio)
     fal_key: str = ""  # For fal.ai video providers (Kling, Minimax)
     heygen_api_key: str = ""  # For HeyGen avatar provider
-    video_provider_type: str = "mock"  # mock/svd/kling/minimax
+    video_provider_type: str = "mock"  # mock/svd/kling/minimax/veo
     tts_provider_type: str = "mock"  # mock/openai/elevenlabs/fish
     avatar_provider_type: str = "mock"  # mock/heygen
     heygen_avatar_id: str = ""  # Default avatar ID from HeyGen dashboard
+    google_api_key: str = ""  # Google AI API key (Gemini, Imagen, Veo)
+    llm_provider_type: str = "mock"  # mock/gemini
+    image_provider_type: str = "mock"  # mock/imagen
     output_dir: str = "output"  # Base directory for generated files
 
     # Video Composition (Phase 4)

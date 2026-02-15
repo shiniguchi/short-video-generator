@@ -10,6 +10,7 @@ from app.services.video_generator.mock import MockVideoProvider
 from app.services.video_generator.svd import StableVideoDiffusionProvider
 from app.services.video_generator.fal_kling import FalKlingProvider
 from app.services.video_generator.fal_minimax import FalMinimaxProvider
+from app.services.video_generator.google_veo import GoogleVeoProvider
 from app.services.video_generator.chaining import chain_clips_to_duration
 
 
@@ -94,6 +95,7 @@ def get_video_generator() -> VideoGeneratorService:
     - "svd": StableVideoDiffusionProvider (requires GPU)
     - "kling": FalKlingProvider (Kling 3.0 via fal.ai, requires FAL_KEY)
     - "minimax": FalMinimaxProvider (Minimax/Hailuo via fal.ai, requires FAL_KEY)
+    - "veo": GoogleVeoProvider (Veo 3.1 via Google AI, requires GOOGLE_API_KEY)
 
     Returns:
         Configured VideoGeneratorService instance
@@ -114,6 +116,9 @@ def get_video_generator() -> VideoGeneratorService:
     elif provider_type == "minimax":
         fal_key = getattr(settings, "fal_key", "")
         provider = FalMinimaxProvider(fal_key=fal_key, output_dir=output_dir)
+    elif provider_type == "veo":
+        google_api_key = getattr(settings, "google_api_key", "")
+        provider = GoogleVeoProvider(google_api_key=google_api_key, output_dir=output_dir)
     elif provider_type == "svd":
         provider = StableVideoDiffusionProvider()
     else:

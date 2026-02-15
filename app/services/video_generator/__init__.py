@@ -8,6 +8,7 @@ from app.services.video_generator.base import VideoProvider
 from app.services.video_generator.mock import MockVideoProvider
 from app.services.video_generator.fal_kling import FalKlingProvider
 from app.services.video_generator.fal_minimax import FalMinimaxProvider
+from app.services.video_generator.google_veo import GoogleVeoProvider
 
 __all__ = [
     "VideoGeneratorService",
@@ -15,5 +16,6 @@ __all__ = [
     "VideoProvider",
     "MockVideoProvider",
     "FalKlingProvider",
-    "FalMinimaxProvider"
+    "FalMinimaxProvider",
+    "GoogleVeoProvider"
 ]
