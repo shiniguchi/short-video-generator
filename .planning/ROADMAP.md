@@ -23,8 +23,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
 - [x] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
 - [x] **Phase 11: Real AI Providers** - Replace mock providers with configurable real AI services for video, avatars, and TTS
-- [ ] **Phase 12: Google Veo & Imagen Providers** - Google Veo 3.1 video generation (text-to-video + image-to-video) and Imagen image generation via Google AI APIs
-- [ ] **Phase 13: UGC Product Ad Pipeline** - Automated UGC×product ad creation from product input through hero image, A-Roll/B-Roll generation, to final composite
+- [ ] **Phase 12: Google AI Provider Suite** - Unified Gemini (LLM) + Imagen (images) + Veo (video) under single Google API key
+- [ ] **Phase 13: UGC Product Ad Pipeline** - Universal product ad generation: product input → hero image → script → A-Roll/B-Roll → final composite (Google AI only)
 
 ## Phase Details
 
@@ -209,7 +209,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
 | 10. Documentation Cleanup | 2/2 | Complete | 2026-02-14 |
 | 11. Real AI Providers | 3/3 | Complete | 2026-02-14 |
-| 12. Google Veo & Imagen Providers | 0/? | Pending | — |
+| 12. Google AI Provider Suite | 0/? | Pending | — |
 | 13. UGC Product Ad Pipeline | 0/? | Pending | — |
 
 ### Phase 11: Real AI Providers
@@ -230,35 +230,37 @@ Plans:
 - [x] 11-02-PLAN.md — TTS providers (ElevenLabs + Fish Audio) with factory update
 - [x] 11-03-PLAN.md — HeyGen avatar provider, pipeline integration, and env documentation
 
-### Phase 12: Google Veo & Imagen Providers
-**Goal**: Implement Google Veo 3.1 (text-to-video + image-to-video) and Google Imagen (text-to-image + image editing) as production providers via Vertex AI / Google AI APIs, replacing fal.ai Kling/Minimax as the primary video engine and adding image generation capability
+### Phase 12: Google AI Provider Suite
+**Goal**: Unified Google AI provider layer — single GOOGLE_API_KEY drives three capabilities: Gemini (LLM for scripts/prompts/analysis), Imagen (image generation), and Veo 3.1 (text-to-video + image-to-video with built-in voice). One API key replaces separate Claude, fal.ai, and TTS providers. Adds new ImageProvider abstraction alongside existing VideoProvider/TTSProvider.
 **Depends on**: Phase 11
 **Requirements**: None (new feature)
 **Success Criteria** (what must be TRUE):
-  1. Google Imagen provider generates 9:16 product images from text prompts via API
-  2. Google Veo provider generates 9:16 video clips from text prompts (text-to-video mode)
-  3. Google Veo provider generates video from reference image + prompt (image-to-video mode)
-  4. Both providers fall back to mock when API keys missing or USE_MOCK_DATA=true
-  5. Existing provider abstractions (VideoProvider, ImageProvider) extended cleanly
-  6. Veo3 built-in voice generation eliminates need for separate TTS in A-Roll
+  1. Single GOOGLE_API_KEY authenticates Gemini, Imagen, and Veo services
+  2. GeminiLLMProvider generates structured text (scripts, prompts, analysis) — drop-in alternative to Claude for any LLM task
+  3. GoogleImagenProvider generates images from text prompts and optional reference images (new ImageProvider ABC)
+  4. GoogleVeoProvider generates video in two modes: text-to-video and image-to-video (extends existing VideoProvider)
+  5. Veo built-in voice generation eliminates separate TTS for talking-head content
+  6. All three providers fall back to mock when API key missing or USE_MOCK_DATA=true
+  7. Provider selection is config-driven: LLM_PROVIDER_TYPE, IMAGE_PROVIDER_TYPE, VIDEO_PROVIDER_TYPE
 **Plans**: 0 plans
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 12 to break down)
 
 ### Phase 13: UGC Product Ad Pipeline
-**Goal**: End-to-end automated UGC×product ad video creation — user provides product info (images, description, URL), system generates hero UGC image, writes viral ad script via Claude prompt chain, breaks into A-Roll/B-Roll frames, generates all video/image assets via Veo+Imagen, and composites final marketing video
+**Goal**: Universal UGC×product ad pipeline — user provides product info (images, description, URL), system generates complete marketing video automatically. All AI tasks run through Google AI suite (Gemini for scripts, Imagen for images, Veo for video). Dynamic script engine adapts to any product category. Pipeline: product analysis → hero image → master script → A-Roll/B-Roll breakdown → asset generation → final composite.
 **Depends on**: Phase 12
 **Requirements**: None (new feature)
 **Success Criteria** (what must be TRUE):
-  1. API endpoint accepts product input (images, description, website URL) and triggers full pipeline
-  2. Claude prompt chain generates master ad script informed by trend analysis patterns
-  3. Script engine breaks master script into A-Roll frame prompts (8-10s segments) and B-Roll image prompts
-  4. Hero UGC×product image generated via Imagen from product photos + UGC character prompt
-  5. A-Roll video frames generated via Veo from hero image + frame scripts (with built-in voice)
-  6. B-Roll images generated via Imagen, then converted to video clips via Veo image-to-video
-  7. Final video composited from A-Roll base + B-Roll overlays via existing MoviePy/FFmpeg compositor
-  8. Pipeline runs end-to-end with mock providers (no API keys) for local development
+  1. API endpoint accepts product input (images, description, URL) and returns final video path
+  2. Gemini analyzes product + existing trend data → generates dynamic master ad script tailored to product category
+  3. Gemini breaks master script into A-Roll frame prompts (8-10s video segments with voice direction) and B-Roll image prompts
+  4. Imagen generates hero UGC×product image from product photos + dynamic UGC character prompt
+  5. Veo generates A-Roll video frames with built-in voice from hero image + frame scripts
+  6. Imagen generates B-Roll product shots, Veo converts each to 5s video clip (image-to-video)
+  7. Existing MoviePy/FFmpeg compositor assembles A-Roll base + B-Roll overlays into final 9:16 MP4
+  8. Works for any product category without code changes (cosmetics, tech, food, fashion, SaaS, etc.)
+  9. Pipeline runs end-to-end with mock providers (no API keys) for local development
 **Plans**: 0 plans
 
 Plans:

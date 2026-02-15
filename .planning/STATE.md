@@ -5,11 +5,11 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
-**Current focus:** Phase 12 — Google Veo & Imagen Providers (UGC Ad Pipeline prerequisite)
+**Current focus:** Phase 12 — Google AI Provider Suite (single API key for Gemini + Imagen + Veo)
 
 ## Current Position
 
-Phase: 12 of 13 (Google Veo & Imagen Providers)
+Phase: 12 of 13 (Google AI Provider Suite)
 Plan: 0 of ? in current phase
 Status: Not planned yet
 Last activity: 2026-02-15 — Added Phases 12-13 for UGC Product Ad Pipeline
@@ -135,8 +135,8 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 11 added: Real AI Provider Integration — pluggable video (Kling/Runway/Veo/Minimax), avatar (HeyGen), and TTS (ElevenLabs/Fish Audio/OpenAI) providers
-- Phase 12 added: Google Veo & Imagen Providers — Google-only API providers (Veo 3.1 text-to-video + image-to-video, Imagen text-to-image) via Vertex AI
-- Phase 13 added: UGC Product Ad Pipeline — end-to-end automated UGC×product ad creation (hero image → script → A-Roll → B-Roll → composite)
+- Phase 12 added: Google AI Provider Suite — unified Gemini (LLM) + Imagen (images) + Veo (video) under single GOOGLE_API_KEY, replaces need for separate Claude/fal.ai/TTS APIs
+- Phase 13 added: UGC Product Ad Pipeline — universal UGC×product ad creation using Google AI only (Gemini scripts → Imagen images → Veo video → FFmpeg composite)
 
 ### Pending Todos
 
