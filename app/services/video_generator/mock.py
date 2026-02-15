@@ -80,6 +80,37 @@ class MockVideoProvider(VideoProvider):
 
         return output_path
 
+    def generate_clip_from_image(
+        self,
+        prompt: str,
+        image_path: str,
+        duration_seconds: int,
+        width: int = 720,
+        height: int = 1280
+    ) -> str:
+        """Generate a mock clip from image (delegates to generate_clip).
+
+        In mock mode, the image_path is ignored and a solid-color clip
+        is generated instead. This enables the UGC pipeline to run
+        end-to-end without real Veo API access.
+
+        Args:
+            prompt: Visual description
+            image_path: Source image (ignored in mock)
+            duration_seconds: Length of clip in seconds
+            width: Video width in pixels
+            height: Video height in pixels
+
+        Returns:
+            Path to generated MP4 file
+        """
+        return self.generate_clip(
+            prompt=prompt,
+            duration_seconds=duration_seconds,
+            width=width,
+            height=height
+        )
+
     def supports_resolution(self, width: int, height: int) -> bool:
         """Mock provider supports any resolution.
 

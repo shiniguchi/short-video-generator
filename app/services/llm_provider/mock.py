@@ -56,16 +56,52 @@ class MockLLMProvider(LLMProvider):
         for field_name, field_info in properties.items():
             field_type = field_info.get("type")
 
+            # Use schema default if available
+            if "default" in field_info:
+                defaults[field_name] = field_info["default"]
+                continue
+
             if field_type == "string":
                 defaults[field_name] = ""
             elif field_type == "integer":
-                defaults[field_name] = 0
+                # Respect minimum/maximum constraints if present
+                minimum = field_info.get("minimum", None)
+                if minimum is not None:
+                    defaults[field_name] = minimum
+                else:
+                    defaults[field_name] = 0
             elif field_type == "number":
                 defaults[field_name] = 0.0
             elif field_type == "boolean":
                 defaults[field_name] = False
             elif field_type == "array":
-                defaults[field_name] = []
+                # Check if items are model references — generate 1 item if so
+                items = field_info.get("items", {})
+                item_ref = items.get("$ref", "")
+                if item_ref:
+                    ref_name = item_ref.split("/")[-1]
+                    if ref_name in definitions:
+                        # Get the actual item model type from annotation
+                        import typing
+                        annotation = schema.model_fields[field_name].annotation
+                        # Extract inner type from List[X]
+                        args = getattr(annotation, "__args__", None)
+                        if args:
+                            item_model = args[0]
+                            defaults[field_name] = [
+                                self.generate_structured(
+                                    prompt=f"Mock {ref_name} item",
+                                    schema=item_model
+                                )
+                            ]
+                        else:
+                            defaults[field_name] = []
+                    else:
+                        defaults[field_name] = []
+                elif items.get("type") == "string":
+                    defaults[field_name] = ["mock_item"]
+                else:
+                    defaults[field_name] = []
             elif field_type == "object":
                 # Check if this is a nested Pydantic model (has $ref)
                 if "$ref" in field_info:

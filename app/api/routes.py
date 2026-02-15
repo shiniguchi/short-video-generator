@@ -821,6 +821,6 @@ async def generate_ugc_ad(
         job_id=job.id,
         task_id=str(task.id),
         status="queued",
-        poll_url=f"/api/jobs/{job.id}",
+        poll_url=f"/jobs/{job.id}",
         message=f"UGC ad generation started for '{product_name}'"
     )
