@@ -1,9 +1,10 @@
-"""Trend analysis using Claude API with structured outputs."""
+"""Trend analysis using LLM provider abstraction with structured outputs."""
 import logging
 from typing import List, Dict, Any, Optional
 from collections import Counter
 from app.config import get_settings
 from app.schemas import TrendReportCreate
+from app.services.llm_provider import get_llm_provider
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -107,14 +108,10 @@ def analyze_trends(trends: List[Dict]) -> Dict:
         validated = TrendReportCreate(**mock_report)
         return validated.model_dump()
 
-    # Real mode: Use Claude API
-    logger.info(f"Analyzing {len(trends)} trends with Claude API")
+    # Real mode: Use LLM API
+    logger.info(f"Analyzing {len(trends)} trends with LLM provider")
 
     try:
-        from anthropic import Anthropic
-        from tenacity import retry, stop_after_attempt, wait_exponential
-
-        client = Anthropic(api_key=settings.anthropic_api_key)
 
         # Prepare trend summary (limit to top 50 by engagement velocity)
         sorted_trends = sorted(trends, key=lambda t: t.get('engagement_velocity', 0), reverse=True)
@@ -159,50 +156,18 @@ Please analyze these videos and provide:
 
 5. RECOMMENDATIONS: Provide 3-5 actionable recommendations for creating viral content based on these patterns.
 
-Use the generate_trend_report tool to structure your response."""
+Provide your analysis with these exact fields."""
 
-        # Get schema from Pydantic model and add additionalProperties: false
-        base_schema = TrendReportCreate.model_json_schema()
-        schema = _add_additional_properties_false(base_schema)
-
-        # Use tool-use pattern for reliable structured output
-        @retry(
-            stop=stop_after_attempt(3),
-            wait=wait_exponential(multiplier=2, min=4, max=30)
+        # Use LLMProvider structured output
+        llm = get_llm_provider()
+        result = llm.generate_structured(
+            prompt=prompt,
+            schema=TrendReportCreate,
+            temperature=0.7
         )
-        def call_claude():
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=4096,
-                tools=[
-                    {
-                        "name": "generate_trend_report",
-                        "description": "Generate a structured trend analysis report",
-                        "input_schema": schema
-                    }
-                ],
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response
 
-        response = call_claude()
-
-        # Extract tool use from response
-        tool_use_block = None
-        for block in response.content:
-            if block.type == "tool_use" and block.name == "generate_trend_report":
-                tool_use_block = block
-                break
-
-        if not tool_use_block:
-            raise ValueError("Claude did not return a tool_use block")
-
-        # Validate with Pydantic
-        report_data = tool_use_block.input
-        validated = TrendReportCreate(**report_data)
-
-        logger.info(f"Claude analysis complete: {validated.analyzed_count} trends analyzed")
-        return validated.model_dump()
+        logger.info(f"LLM analysis complete: {result.analyzed_count} trends analyzed")
+        return result.model_dump()
 
     except Exception as exc:
         logger.error(f"Claude analysis failed: {exc}")

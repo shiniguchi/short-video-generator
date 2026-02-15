@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     fish_audio_api_key: str = ""  # For TTS provider (Fish Audio)
     fal_key: str = ""  # For fal.ai video providers (Kling, Minimax)
     heygen_api_key: str = ""  # For HeyGen avatar provider
-    video_provider_type: str = "mock"  # mock/svd/kling/minimax/veo
+    video_provider_type: str = "mock"  # mock/svd/kling/minimax/veo/veo
     tts_provider_type: str = "mock"  # mock/openai/elevenlabs/fish
     avatar_provider_type: str = "mock"  # mock/heygen
     heygen_avatar_id: str = ""  # Default avatar ID from HeyGen dashboard
