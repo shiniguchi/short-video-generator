@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Fix Stale Manual Endpoints** - Update manual API endpoints broken by Phase 7 job_id refactor
 - [x] **Phase 10: Documentation Cleanup** - Add missing VERIFICATION.md files and fix stale verification status
 - [x] **Phase 11: Real AI Providers** - Replace mock providers with configurable real AI services for video, avatars, and TTS
-- [ ] **Phase 12: Google AI Provider Suite** - Unified Gemini (LLM) + Imagen (images) + Veo (video) under single Google API key
+- [x] **Phase 12: Google AI Provider Suite** - Unified Gemini (LLM) + Imagen (images) + Veo (video) under single Google API key
 - [ ] **Phase 13: UGC Product Ad Pipeline** - Universal product ad generation: product input → hero image → script → A-Roll/B-Roll → final composite (Google AI only)
 
 ## Phase Details
@@ -209,7 +209,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Fix Stale Manual Endpoints | 1/1 | Complete | 2026-02-14 |
 | 10. Documentation Cleanup | 2/2 | Complete | 2026-02-14 |
 | 11. Real AI Providers | 3/3 | Complete | 2026-02-14 |
-| 12. Google AI Provider Suite | 0/? | Pending | — |
+| 12. Google AI Provider Suite | 4/4 | Complete | 2026-02-15 |
 | 13. UGC Product Ad Pipeline | 0/? | Pending | — |
 
 ### Phase 11: Real AI Providers
@@ -245,10 +245,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — LLM Provider abstraction (base + mock + Gemini) with config settings
-- [ ] 12-02-PLAN.md — Image Provider abstraction (base + mock + Imagen) with factory
-- [ ] 12-03-PLAN.md — Google Veo 3.1 video provider with factory update
-- [ ] 12-04-PLAN.md — Refactor script_generator and trend_analyzer to use LLMProvider, update requirements and env
+- [x] 12-01-PLAN.md — LLM Provider abstraction (base + mock + Gemini) with config settings
+- [x] 12-02-PLAN.md — Image Provider abstraction (base + mock + Imagen) with factory
+- [x] 12-03-PLAN.md — Google Veo 3.1 video provider with factory update
+- [x] 12-04-PLAN.md — Refactor script_generator and trend_analyzer to use LLMProvider, update requirements and env
 
 ### Phase 13: UGC Product Ad Pipeline
 **Goal**: Universal UGC×product ad pipeline — user provides product info (images, description, URL), system generates complete marketing video automatically. All AI tasks run through Google AI suite (Gemini for scripts, Imagen for images, Veo for video). Dynamic script engine adapts to any product category. Pipeline: product analysis → hero image → master script → A-Roll/B-Roll breakdown → asset generation → final composite.
