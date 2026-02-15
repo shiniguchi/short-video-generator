@@ -350,3 +350,160 @@ def compose_video_task(self, job_id: int, script_id: int, video_path: str, audio
     except Exception as exc:
         logger.error(f"Video composition failed: {exc}")
         raise
+
+
+@celery_app.task(
+    bind=True,
+    name='app.tasks.generate_ugc_ad_task',
+    max_retries=1,
+    time_limit=1800,  # 30 minutes for full pipeline
+)
+def generate_ugc_ad_task(self, job_id, product_name, description, product_images, product_url=None, target_duration=30, style_preference=None):
+    """Generate UGC product ad through full pipeline.
+
+    Orchestrates: product analysis -> hero image -> script -> A-Roll -> B-Roll -> composition.
+    Uses mock providers when USE_MOCK_DATA=true (default).
+
+    Args:
+        job_id: Database ID of the Job record
+        product_name: Name of the product
+        description: Product description
+        product_images: List of paths to uploaded product images
+        product_url: Optional product URL
+        target_duration: Target video duration in seconds (default 30)
+        style_preference: Optional UGC style preference
+
+    Returns:
+        dict with status, video_id, video_path, product_name, category, scene counts
+    """
+    from typing import List, Optional
+    from uuid import uuid4
+    import os
+
+    logger.info(f"Starting UGC ad generation for job {job_id}, product '{product_name}' (attempt {self.request.retries + 1})")
+
+    try:
+        # Import helpers (lazy to avoid circular imports)
+        from app.pipeline import _update_job_status, _mark_job_failed, _mark_job_complete
+
+        # Step 1: Update Job status to running
+        asyncio.run(_update_job_status(job_id, "ugc_product_analysis", "running"))
+
+        # Step 2: Product Analysis
+        from app.services.ugc_pipeline.product_analyzer import analyze_product
+        analysis = analyze_product(
+            product_name=product_name,
+            description=description,
+            image_count=len(product_images),
+            style_preference=style_preference
+        )
+        logger.info(f"Product analysis: category={analysis.category}, style={analysis.ugc_style}")
+
+        # Step 3: Hero Image Generation
+        from app.services.ugc_pipeline.asset_generator import generate_hero_image
+        hero_image_path = generate_hero_image(
+            product_image_path=product_images[0],  # Use first uploaded image
+            ugc_style=analysis.ugc_style,
+            emotional_tone=analysis.emotional_tone,
+            visual_keywords=analysis.visual_keywords
+        )
+        logger.info(f"Hero image: {hero_image_path}")
+
+        # Step 4: Script Generation
+        from app.services.ugc_pipeline.script_engine import generate_ugc_script
+        breakdown = generate_ugc_script(
+            product_name=product_name,
+            description=description,
+            analysis=analysis,
+            target_duration=target_duration
+        )
+        logger.info(f"Script: {len(breakdown.aroll_scenes)} A-Roll scenes, {len(breakdown.broll_shots)} B-Roll shots")
+
+        # Step 5: A-Roll Asset Generation
+        from app.services.ugc_pipeline.asset_generator import generate_aroll_assets
+        aroll_scenes_dicts = [s.model_dump() if hasattr(s, 'model_dump') else s for s in breakdown.aroll_scenes]
+        aroll_paths = generate_aroll_assets(
+            aroll_scenes=aroll_scenes_dicts,
+            hero_image_path=hero_image_path
+        )
+        logger.info(f"A-Roll clips: {len(aroll_paths)}")
+
+        # Step 6: B-Roll Asset Generation
+        from app.services.ugc_pipeline.asset_generator import generate_broll_assets
+        broll_shots_dicts = [s.model_dump() if hasattr(s, 'model_dump') else s for s in breakdown.broll_shots]
+        broll_paths = generate_broll_assets(
+            broll_shots=broll_shots_dicts,
+            product_image_path=product_images[0]
+        )
+        logger.info(f"B-Roll clips: {len(broll_paths)}")
+
+        # Step 7: Final Composition
+        from app.services.ugc_pipeline.ugc_compositor import compose_ugc_ad
+        from app.config import get_settings
+
+        settings = get_settings()
+        output_path = os.path.join(settings.composition_output_dir, f"ugc_ad_{uuid4().hex[:8]}.mp4")
+        os.makedirs(settings.composition_output_dir, exist_ok=True)
+
+        # Build broll_metadata with paths and overlay_start from breakdown
+        broll_metadata = []
+        for i, shot_dict in enumerate(broll_shots_dicts):
+            broll_metadata.append({
+                "path": broll_paths[i],
+                "overlay_start": shot_dict.get("overlay_start", 0.0)
+            })
+
+        final_path = compose_ugc_ad(
+            aroll_paths=aroll_paths,
+            broll_metadata=broll_metadata,
+            output_path=output_path
+        )
+        logger.info(f"Final video: {final_path}")
+
+        # Step 8: Save Video Record to DB
+        async def _save_ugc_video(job_id, file_path, product_name, analysis_category):
+            from app.database import get_task_session_factory
+            from app.models import Video
+            from datetime import datetime, timezone
+
+            async with get_task_session_factory()() as session:
+                video = Video(
+                    job_id=job_id,
+                    file_path=file_path,
+                    status="generated",
+                    cost_usd=0.0,  # Mock providers have zero cost
+                    extra_data={
+                        "gen_id": uuid4().hex,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "pipeline": "ugc_product_ad",
+                        "product_name": product_name,
+                        "category": analysis_category,
+                        "status": "generated"
+                    }
+                )
+                session.add(video)
+                await session.commit()
+                await session.refresh(video)
+                return video.id
+
+        video_id = asyncio.run(_save_ugc_video(job_id, final_path, product_name, analysis.category))
+
+        # Step 9: Mark Job Complete
+        asyncio.run(_mark_job_complete(job_id))
+
+        # Step 10: Return result
+        return {
+            "status": "completed",
+            "job_id": job_id,
+            "video_id": video_id,
+            "video_path": final_path,
+            "product_name": product_name,
+            "category": analysis.category,
+            "aroll_scenes": len(breakdown.aroll_scenes),
+            "broll_shots": len(breakdown.broll_shots)
+        }
+
+    except Exception as exc:
+        logger.error(f"UGC ad generation failed: {exc}")
+        asyncio.run(_mark_job_failed(job_id, "ugc_pipeline", str(exc)))
+        raise
