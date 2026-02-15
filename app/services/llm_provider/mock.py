@@ -31,6 +31,7 @@ class MockLLMProvider(LLMProvider):
         - bool: False
         - List: empty list
         - dict: empty dict
+        - Nested BaseModel: recursively create instance
         - Optional: None
 
         Args:
@@ -48,6 +49,7 @@ class MockLLMProvider(LLMProvider):
         schema_dict = schema.model_json_schema()
         properties = schema_dict.get("properties", {})
         required = schema_dict.get("required", [])
+        definitions = schema_dict.get("$defs", {})
 
         # Build defaults based on field types
         defaults = {}
@@ -65,15 +67,42 @@ class MockLLMProvider(LLMProvider):
             elif field_type == "array":
                 defaults[field_name] = []
             elif field_type == "object":
-                defaults[field_name] = {}
+                # Check if this is a nested Pydantic model (has $ref)
+                if "$ref" in field_info:
+                    # Extract the nested model name from $ref: "#/$defs/ModelName"
+                    ref_path = field_info["$ref"].split("/")[-1]
+                    if ref_path in definitions:
+                        # Recursively create nested model
+                        # Get the actual Pydantic model from schema's model_fields
+                        nested_model = schema.model_fields[field_name].annotation
+                        defaults[field_name] = self.generate_structured(
+                            prompt=f"Mock nested {ref_path}",
+                            schema=nested_model
+                        )
+                    else:
+                        defaults[field_name] = {}
+                else:
+                    defaults[field_name] = {}
             elif field_type == "null":
                 defaults[field_name] = None
             else:
-                # For complex types or anyOf, provide None for optional or empty string
-                if field_name in required:
-                    defaults[field_name] = ""
+                # For complex types or anyOf, check for $ref (nested model)
+                if "$ref" in field_info:
+                    ref_path = field_info["$ref"].split("/")[-1]
+                    if ref_path in definitions:
+                        nested_model = schema.model_fields[field_name].annotation
+                        defaults[field_name] = self.generate_structured(
+                            prompt=f"Mock nested {ref_path}",
+                            schema=nested_model
+                        )
+                    else:
+                        defaults[field_name] = "" if field_name in required else None
                 else:
-                    defaults[field_name] = None
+                    # For complex types or anyOf, provide None for optional or empty string
+                    if field_name in required:
+                        defaults[field_name] = ""
+                    else:
+                        defaults[field_name] = None
 
         # Create and validate instance
         return schema(**defaults)
