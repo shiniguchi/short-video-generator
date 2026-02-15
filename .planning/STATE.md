@@ -53,6 +53,7 @@ Progress: [████████░░] 88%
 | Phase 11 P03 | 2 | 2 tasks | 8 files |
 | Phase 12 P02 | 164 | 2 tasks | 4 files |
 | Phase 12 P03 | 2 | 2 tasks | 5 files |
+| Phase 12 P01 | 284 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -138,6 +139,9 @@ Recent decisions affecting current work:
 - [Phase 12-02]: Aspect ratio derived from width/height ratio for Imagen API (9:16/16:9/1:1)
 - [Phase 12-03]: Veo 3.1 duration clamping to 8s max with warning log
 - [Phase 12-03]: Image-to-video as Veo extension method (not part of VideoProvider ABC)
+- [Phase 12-01]: Use deprecated google-generativeai SDK for Python 3.9 compatibility
+- [Phase 12-01]: LLMProvider.generate_structured() accepts Pydantic schema and returns validated instance
+- [Phase 12-01]: MockLLMProvider inspects schema.model_json_schema() to generate type-appropriate defaults
 
 ### Roadmap Evolution
 
