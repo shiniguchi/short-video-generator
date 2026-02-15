@@ -242,10 +242,13 @@ Plans:
   5. Veo built-in voice generation eliminates separate TTS for talking-head content
   6. All three providers fall back to mock when API key missing or USE_MOCK_DATA=true
   7. Provider selection is config-driven: LLM_PROVIDER_TYPE, IMAGE_PROVIDER_TYPE, VIDEO_PROVIDER_TYPE
-**Plans**: 0 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — LLM Provider abstraction (base + mock + Gemini) with config settings
+- [ ] 12-02-PLAN.md — Image Provider abstraction (base + mock + Imagen) with factory
+- [ ] 12-03-PLAN.md — Google Veo 3.1 video provider with factory update
+- [ ] 12-04-PLAN.md — Refactor script_generator and trend_analyzer to use LLMProvider, update requirements and env
 
 ### Phase 13: UGC Product Ad Pipeline
 **Goal**: Universal UGC×product ad pipeline — user provides product info (images, description, URL), system generates complete marketing video automatically. All AI tasks run through Google AI suite (Gemini for scripts, Imagen for images, Veo for video). Dynamic script engine adapts to any product category. Pipeline: product analysis → hero image → master script → A-Roll/B-Roll breakdown → asset generation → final composite.
