@@ -210,7 +210,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 10. Documentation Cleanup | 2/2 | Complete | 2026-02-14 |
 | 11. Real AI Providers | 3/3 | Complete | 2026-02-14 |
 | 12. Google AI Provider Suite | 4/4 | Complete | 2026-02-15 |
-| 13. UGC Product Ad Pipeline | 0/? | Pending | — |
+| 13. UGC Product Ad Pipeline | 0/3 | Planned | — |
 
 ### Phase 11: Real AI Providers
 **Goal**: Replace mock providers with configurable real AI services — pluggable video generation (Kling, Runway, Veo, Minimax), AI avatar presenters (HeyGen), and natural TTS voiceover (ElevenLabs, Fish Audio, OpenAI) — selectable per-video via configuration
@@ -264,11 +264,13 @@ Plans:
   7. Existing MoviePy/FFmpeg compositor assembles A-Roll base + B-Roll overlays into final 9:16 MP4
   8. Works for any product category without code changes (cosmetics, tech, food, fashion, SaaS, etc.)
   9. Pipeline runs end-to-end with mock providers (no API keys) for local development
-**Plans**: 0 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 13 to break down)
+- [ ] 13-01-PLAN.md — UGC pipeline schemas and LLM services (product analyzer + script engine)
+- [ ] 13-02-PLAN.md — Asset generation (hero image, A-Roll, B-Roll) and UGC compositor
+- [ ] 13-03-PLAN.md — Celery orchestrator task and API endpoint for end-to-end pipeline
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-15 -- Phases 12-13 added for UGC Product Ad Pipeline*
+*Last updated: 2026-02-15 -- Phase 13 planned (3 plans in 2 waves)*
