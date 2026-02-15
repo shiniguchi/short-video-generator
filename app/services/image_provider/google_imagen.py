@@ -2,7 +2,7 @@
 
 import os
 from uuid import uuid4
-from typing import List, Optional
+from typing import List, Optional, Any
 
 try:
     import google.generativeai as genai
@@ -59,7 +59,7 @@ class GoogleImagenProvider(ImageProvider):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=30))
     def _generate_with_retry(
         self,
-        model: ImageGenerationModel,
+        model: Any,
         prompt: str,
         num_images: int,
         aspect_ratio: str,
