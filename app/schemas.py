@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from datetime import datetime
 
@@ -186,4 +186,70 @@ class JobRetryResponse(BaseModel):
     status: str  # "queued"
     resume_from: Optional[str]  # Stage resuming from
     skipping_stages: List[str]  # Already completed stages
+    message: str
+
+
+# UGC Product Ad Pipeline Schemas (Phase 13)
+
+class ProductInput(BaseModel):
+    """Input schema for UGC product ad creation."""
+    product_name: str
+    description: str
+    product_url: Optional[str] = None  # Use str not HttpUrl for Form parsing simplicity
+    target_duration: int = 30  # seconds, 25-30s range
+    style_preference: Optional[str] = None  # selfie-review, unboxing, tutorial, lifestyle
+
+
+class ProductAnalysis(BaseModel):
+    """LLM-generated product analysis for UGC ad creation."""
+    category: str = Field(description="Product category: cosmetics, tech, food, fashion, SaaS, etc.")
+    key_features: List[str] = Field(description="3-5 standout features")
+    target_audience: str = Field(description="Primary demographic and psychographic profile")
+    ugc_style: str = Field(description="Best UGC style: selfie-review, unboxing, tutorial, lifestyle")
+    emotional_tone: str = Field(description="Tone: excited, authentic, educational, aspirational")
+    visual_keywords: List[str] = Field(description="5-8 visual keywords for image/video generation")
+
+
+class MasterScript(BaseModel):
+    """Hook-Problem-Proof-CTA script structure."""
+    hook: str = Field(description="Opening line, first 3 seconds")
+    problem: str = Field(description="Pain point, 3-8 seconds")
+    proof: str = Field(description="Product solution with social proof, 8-20 seconds")
+    cta: str = Field(description="Call-to-action, final 5-10 seconds")
+    full_script: str = Field(description="Complete voiceover script combining all sections")
+    total_duration: int = Field(description="Total script duration in seconds")
+
+
+class ArollScene(BaseModel):
+    """A-Roll scene (UGC creator talking) for Veo generation."""
+    frame_number: int
+    duration_seconds: int = Field(ge=4, le=8, description="Veo max 8s per clip")
+    visual_prompt: str = Field(description="UGC creator visual + action for Veo")
+    voice_direction: str = Field(description="Voice tone and delivery for Veo audio")
+    script_text: str = Field(description="Actual words spoken in this scene")
+
+
+class BrollShot(BaseModel):
+    """B-Roll shot (product close-up/lifestyle) for Imagen + Veo."""
+    shot_number: int
+    image_prompt: str = Field(description="Imagen prompt for product close-up/lifestyle")
+    animation_prompt: str = Field(description="Veo image-to-video motion description")
+    duration_seconds: int = Field(default=5, description="Standard 5s B-roll")
+    overlay_start: float = Field(description="When to start overlay in final timeline (seconds)")
+
+
+class AdBreakdown(BaseModel):
+    """Complete UGC ad breakdown with A-Roll scenes and B-Roll shots."""
+    master_script: MasterScript
+    aroll_scenes: List[ArollScene]
+    broll_shots: List[BrollShot]
+    total_duration: int
+
+
+class UGCAdResponse(BaseModel):
+    """API response for UGC ad generation request."""
+    job_id: int
+    task_id: str
+    status: str = "queued"
+    poll_url: str
     message: str
