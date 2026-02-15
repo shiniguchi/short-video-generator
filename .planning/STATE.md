@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 12 of 13 (Google AI Provider Suite)
-Plan: 0 of ? in current phase
-Status: Not planned yet
-Last activity: 2026-02-15 — Added Phases 12-13 for UGC Product Ad Pipeline
+Plan: 2 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-15 — Completed 12-02-PLAN.md (Image Provider abstraction)
 
-Progress: [████████░░] 85%
+Progress: [████████░░] 87%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 3 min
-- Total execution time: 2.0 hours
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -38,9 +38,10 @@ Progress: [████████░░] 85%
 | 09 | 1 | 1 min | 1 min |
 | 10 | 2 | 7 min | 4 min |
 | 11 | 3 | 7 min | 2 min |
+| 12 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-01 (3 min), 10-02 (4 min), 11-01 (3 min), 11-02 (2 min), 11-03 (2 min)
+- Last 5 plans: 10-02 (4 min), 11-01 (3 min), 11-02 (2 min), 11-03 (2 min), 12-02 (3 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -50,6 +51,7 @@ Progress: [████████░░] 85%
 | Phase 11 P02 | 2 | 2 tasks | 6 files |
 | Phase 11 P03 | 2 | 2 tasks | 8 files |
 | Phase 11 P03 | 2 | 2 tasks | 8 files |
+| Phase 12 P02 | 164 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -131,6 +133,8 @@ Recent decisions affecting current work:
 - [Phase 11-03]: Avatar generation as Step 6b (after voiceover generation) for pipeline flexibility
 - [Phase 11-03]: Avatar provider only activates when AVATAR_PROVIDER_TYPE in ('heygen',), mock stays default
 - [Phase 11]: HeyGen avatar video replaces both video + voiceover (complete talking-head with embedded audio)
+- [Phase 12]: Imagen 4 via google.generativeai SDK (deprecated, needs migration to google.genai)
+- [Phase 12-02]: Aspect ratio derived from width/height ratio for Imagen API (9:16/16:9/1:1)
 
 ### Roadmap Evolution
 
@@ -161,8 +165,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15 (Phases 12-13 added)
-Stopped at: Added Phases 12-13 to roadmap, ready for planning
+Last session: 2026-02-15 (Phase 12 in progress)
+Stopped at: Completed 12-02-PLAN.md
 Resume file: None
 
 ---
