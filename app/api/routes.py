@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timezone
 from pathlib import Path
 import shutil
@@ -731,4 +731,96 @@ async def retry_job(
         resume_from=resume_from,
         skipping_stages=completed_stages,
         message=f"Pipeline retry started from {resume_from}" if resume_from else "Pipeline retry started"
+    )
+
+
+# --- Phase 13: UGC Product Ad Pipeline ---
+
+@router.post("/ugc-ad-generate")
+async def generate_ugc_ad(
+    product_name: str = Form(...),
+    description: str = Form(...),
+    product_url: Optional[str] = Form(None),
+    target_duration: int = Form(30),
+    style_preference: Optional[str] = Form(None),
+    images: List[UploadFile] = File(..., description="Product photos (1-5 images)"),
+    session: AsyncSession = Depends(get_session)
+):
+    """Generate UGC product ad video from product images + metadata.
+
+    Accepts multipart form data with product details and up to 5 product images.
+    Queues UGC pipeline task and returns job_id for status tracking.
+
+    Args:
+        product_name: Name of the product
+        description: Product description
+        product_url: Optional product URL
+        target_duration: Target video duration in seconds (default 30)
+        style_preference: Optional UGC style preference
+        images: Product photos (1-5 images)
+
+    Returns:
+        UGCAdResponse with job_id, task_id, status, poll_url
+    """
+    import os
+    from uuid import uuid4
+    from app.models import Job
+    from app.schemas import UGCAdResponse
+    from app.tasks import generate_ugc_ad_task
+
+    # Validate image count
+    if len(images) > 5:
+        raise HTTPException(400, "Maximum 5 product images allowed")
+
+    # Validate each image is actually an image
+    for image in images:
+        if not image.content_type or not image.content_type.startswith("image/"):
+            raise HTTPException(400, f"File {image.filename} is not an image")
+
+    # Save uploaded images to output/uploads/
+    upload_dir = "output/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    product_image_paths = []
+    for image in images:
+        filename = f"{uuid4().hex[:8]}_{image.filename}"
+        image_path = os.path.join(upload_dir, filename)
+        content = await image.read()
+        with open(image_path, "wb") as f:
+            f.write(content)
+        product_image_paths.append(image_path)
+
+    # Create Job record
+    job = Job(
+        status="pending",
+        stage="ugc_product_analysis",
+        theme=f"ugc:{product_name}",
+        extra_data={
+            "completed_stages": [],
+            "pipeline": "ugc_product_ad",
+            "product_name": product_name
+        }
+    )
+    session.add(job)
+    await session.commit()
+    await session.refresh(job)
+
+    # Queue Celery task
+    task = generate_ugc_ad_task.delay(
+        job_id=job.id,
+        product_name=product_name,
+        description=description,
+        product_images=product_image_paths,
+        product_url=product_url,
+        target_duration=target_duration,
+        style_preference=style_preference
+    )
+
+    # Return UGCAdResponse
+    return UGCAdResponse(
+        job_id=job.id,
+        task_id=str(task.id),
+        status="queued",
+        poll_url=f"/api/jobs/{job.id}",
+        message=f"UGC ad generation started for '{product_name}'"
     )
