@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 12 of 13 (Google AI Provider Suite)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-15 — Completed 12-02-PLAN.md (Image Provider abstraction)
+Last activity: 2026-02-15 — Completed 12-03-PLAN.md (Veo Video Provider)
 
-Progress: [████████░░] 87%
+Progress: [████████░░] 88%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [████████░░] 87%
 | Phase 11 P03 | 2 | 2 tasks | 8 files |
 | Phase 11 P03 | 2 | 2 tasks | 8 files |
 | Phase 12 P02 | 164 | 2 tasks | 4 files |
+| Phase 12 P03 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,8 @@ Recent decisions affecting current work:
 - [Phase 11]: HeyGen avatar video replaces both video + voiceover (complete talking-head with embedded audio)
 - [Phase 12]: Imagen 4 via google.generativeai SDK (deprecated, needs migration to google.genai)
 - [Phase 12-02]: Aspect ratio derived from width/height ratio for Imagen API (9:16/16:9/1:1)
+- [Phase 12-03]: Veo 3.1 duration clamping to 8s max with warning log
+- [Phase 12-03]: Image-to-video as Veo extension method (not part of VideoProvider ABC)
 
 ### Roadmap Evolution
 
