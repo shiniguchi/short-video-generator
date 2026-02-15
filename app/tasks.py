@@ -395,7 +395,8 @@ def generate_ugc_ad_task(self, job_id, product_name, description, product_images
             product_name=product_name,
             description=description,
             image_count=len(product_images),
-            style_preference=style_preference
+            style_preference=style_preference,
+            product_url=product_url
         )
         logger.info(f"Product analysis: category={analysis.category}, style={analysis.ugc_style}")
 
@@ -433,7 +434,7 @@ def generate_ugc_ad_task(self, job_id, product_name, description, product_images
         broll_shots_dicts = [s.model_dump() if hasattr(s, 'model_dump') else s for s in breakdown.broll_shots]
         broll_paths = generate_broll_assets(
             broll_shots=broll_shots_dicts,
-            product_image_path=product_images[0]
+            product_images=product_images
         )
         logger.info(f"B-Roll clips: {len(broll_paths)}")
 

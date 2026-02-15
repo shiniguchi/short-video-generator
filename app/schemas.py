@@ -227,6 +227,7 @@ class ArollScene(BaseModel):
     visual_prompt: str = Field(description="UGC creator visual + action for Veo")
     voice_direction: str = Field(description="Voice tone and delivery for Veo audio")
     script_text: str = Field(description="Actual words spoken in this scene")
+    camera_angle: str = Field(default="medium close-up", description="Camera angle for Veo: close-up, medium close-up, medium shot, POV, over-shoulder")
 
 
 class BrollShot(BaseModel):
@@ -236,6 +237,7 @@ class BrollShot(BaseModel):
     animation_prompt: str = Field(description="Veo image-to-video motion description")
     duration_seconds: int = Field(default=5, description="Standard 5s B-roll")
     overlay_start: float = Field(description="When to start overlay in final timeline (seconds)")
+    reference_image_index: int = Field(default=0, description="Index into product_images list for Imagen reference")
 
 
 class AdBreakdown(BaseModel):

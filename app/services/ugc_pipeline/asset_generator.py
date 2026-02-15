@@ -59,11 +59,15 @@ def generate_hero_image(
     # Build prompt combining UGC character + product integration
     visual_style = ", ".join(visual_keywords) if visual_keywords else "natural, authentic"
     prompt = (
-        f"A photo of a {ugc_style} UGC creator holding and showcasing the product. "
-        f"The creator appears {emotional_tone}. "
+        f"Selfie-style photo of a {ugc_style} UGC creator, medium close-up, "
+        f"phone camera angle slightly below eye level. "
+        f"Creator holds the product at chest height facing camera with one hand. "
+        f"Expression: {emotional_tone}, natural and unposed. "
+        f"Well-lit indoor setting, soft natural window light. "
+        f"Raw smartphone aesthetic, not studio-lit. "
         f"Style: {visual_style}. "
-        f"Raw UGC feel, not overly polished, authentic social media content. "
-        f"The product should be clearly visible and match the reference image."
+        f"Product clearly visible and matching reference image. "
+        f"Vertical 9:16 composition."
     )
 
     logger.info(f"Generating hero image with UGC style: {ugc_style}, tone: {emotional_tone}")
@@ -115,10 +119,16 @@ def generate_aroll_assets(
     for idx, scene in enumerate(aroll_scenes, 1):
         visual_prompt = scene.get("visual_prompt", "")
         voice_direction = scene.get("voice_direction", "")
+        camera_angle = scene.get("camera_angle", "medium close-up")
+        script_text = scene.get("script_text", "")
         duration_seconds = scene.get("duration_seconds", 3)
 
-        # Combine visual prompt and voice direction for full scene description
-        full_prompt = f"{visual_prompt} {voice_direction}".strip()
+        # Build Veo prompt with camera angle, dialogue, and voice delivery
+        full_prompt = (
+            f"{visual_prompt} Camera: {camera_angle}. "
+            f"The person speaks to camera: \"{script_text}\" "
+            f"Voice delivery: {voice_direction}"
+        )
 
         logger.info(f"Generating A-Roll scene {idx}/{len(aroll_scenes)} "
                    f"(duration: {duration_seconds}s)")
@@ -142,7 +152,7 @@ def generate_aroll_assets(
 
 def generate_broll_assets(
     broll_shots: List[Dict[str, Any]],
-    product_image_path: str
+    product_images: List[str]
 ) -> List[str]:
     """Generate B-Roll product shots via Imagen + Veo pipeline.
 
@@ -150,17 +160,22 @@ def generate_broll_assets(
     1. Generate product image via Imagen (using product photo as reference)
     2. Animate the image via Veo image-to-video
 
+    Each shot specifies a reference_image_index to select which uploaded product
+    image to use as the Imagen reference, enabling varied angles across shots.
+
     Args:
         broll_shots: List of B-Roll shot dicts with keys:
             - image_prompt: Static product image description
             - animation_prompt: Motion/animation description
             - duration_seconds: Clip duration
-        product_image_path: Path to product photo reference
+            - reference_image_index: Index into product_images list
+        product_images: List of paths to uploaded product photos
 
     Returns:
         List of paths to B-Roll video clips in shot order
     """
-    logger.info(f"Generating {len(broll_shots)} B-Roll clips via Imagen → Veo pipeline")
+    logger.info(f"Generating {len(broll_shots)} B-Roll clips via Imagen → Veo pipeline "
+                f"(using {len(product_images)} reference images)")
 
     # Get providers
     image_provider = get_image_provider()
@@ -171,9 +186,14 @@ def generate_broll_assets(
         image_prompt = shot.get("image_prompt", "")
         animation_prompt = shot.get("animation_prompt", "")
         duration_seconds = shot.get("duration_seconds", 3)
+        ref_index = shot.get("reference_image_index", 0)
+
+        # Clamp reference_image_index to valid range
+        ref_index = max(0, min(ref_index, len(product_images) - 1))
+        reference_image = product_images[ref_index]
 
         logger.info(f"Generating B-Roll shot {idx}/{len(broll_shots)} "
-                   f"(Step 1: Imagen, Step 2: Veo)")
+                   f"(ref image {ref_index}, Step 1: Imagen, Step 2: Veo)")
         logger.debug(f"B-Roll shot {idx} image prompt: {image_prompt}")
         logger.debug(f"B-Roll shot {idx} animation prompt: {animation_prompt}")
 
@@ -183,7 +203,7 @@ def generate_broll_assets(
             width=720,
             height=1280,
             num_images=1,
-            reference_images=[product_image_path]
+            reference_images=[reference_image]
         )
         product_shot_path = product_shot_paths[0]
         logger.info(f"B-Roll shot {idx} product image generated: {product_shot_path}")
