@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 13 of 13 (UGC Product Ad Pipeline)
-Plan: 1 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-15 — Completed 13-01-PLAN.md (UGC Pipeline Schemas & Services)
+Plan: 3 of 3 in current phase
+Status: Complete
+Last activity: 2026-02-15 — Completed 13-03-PLAN.md (UGC Pipeline API & Orchestrator)
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
+- Total plans completed: 28
 - Average duration: 3 min
-- Total execution time: 2.2 hours
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -39,10 +39,10 @@ Progress: [█████████░] 93%
 | 10 | 2 | 7 min | 4 min |
 | 11 | 3 | 7 min | 2 min |
 | 12 | 4 | 13 min | 3 min |
-| 13 | 1 | 5 min | 5 min |
+| 13 | 3 | 11 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 11-03 (2 min), 12-01 (3 min), 12-03 (2 min), 12-04 (2 min), 13-01 (5 min)
+- Last 5 plans: 12-03 (2 min), 12-04 (2 min), 13-01 (5 min), 13-02 (3 min), 13-03 (2 min)
 - Trend: Excellent (Consistent fast execution)
 
 *Updated after each plan completion*
@@ -57,6 +57,8 @@ Progress: [█████████░] 93%
 | Phase 12 P01 | 284 | 2 tasks | 6 files |
 | Phase 12 P04 | 2 | 2 tasks | 4 files |
 | Phase 13 P01 | 284 | 2 tasks | 5 files |
+| Phase 13 P02 | 161 | 2 tasks | 3 files |
+| Phase 13 P03 | 147 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -151,6 +153,14 @@ Recent decisions affecting current work:
 - [Phase 13-01]: Category-aware prompts via CATEGORY_PROMPTS dict lookup (cosmetics, tech, food, fashion, saas, default)
 - [Phase 13-01]: A-Roll scenes constrained to 4-8 seconds (Veo 3.1 max), B-Roll shots default 5 seconds
 - [Phase 13-01]: MockLLMProvider handles nested Pydantic models via recursive generate_structured() calls
+- [Phase 13-02]: Direct GoogleVeoProvider usage for image-to-video (not via VideoGeneratorService abstraction)
+- [Phase 13-02]: B-Roll audio stripped via without_audio() to preserve A-Roll voice track
+- [Phase 13-02]: B-Roll overlays at 80% scale centered for picture-in-picture effect
+- [Phase 13-02]: Hero image and B-Roll shots use product photo as reference_images for visual consistency
+- [Phase 13-03]: python-multipart dependency required for FastAPI multipart form data (file uploads)
+- [Phase 13-03]: Uploaded product images saved to output/uploads/ directory with UUID prefix
+- [Phase 13-03]: First uploaded image used for both hero image and B-Roll reference (visual consistency)
+- [Phase 13-03]: Celery orchestrator task with 30-minute time_limit for full UGC pipeline execution
 
 ### Roadmap Evolution
 
@@ -181,8 +191,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15 (Phase 13 in progress)
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-02-15 (Phase 13 complete)
+Stopped at: Completed 13-03-PLAN.md (Final plan - all 13 phases complete)
 Resume file: None
 
 ---
