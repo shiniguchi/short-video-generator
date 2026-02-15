@@ -1,9 +1,10 @@
-"""Claude-powered script generator with 5-step prompt chain."""
+"""LLM-powered script generator with provider abstraction and 5-step prompt chain."""
 import logging
 from typing import List, Dict, Any, Optional
 
 from app.config import get_settings
 from app.schemas import VideoProductionPlanCreate
+from app.services.llm_provider import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ CONTENT REFERENCES:
 ANALYSIS FROM PREVIOUS STEPS:
 {analysis_text}
 
-Now create the final Video Production Plan using the create_production_plan tool. Include:
+Create the final Video Production Plan with these exact fields:
 - video_prompt: Master visual prompt describing the overall video concept
 - duration_target: {duration_target} seconds
 - aspect_ratio: "9:16"
@@ -149,29 +150,25 @@ def generate_production_plan(
     """
     settings = get_settings()
 
-    if settings.use_mock_data or not settings.anthropic_api_key:
-        logger.info("Using mock production plan (mock mode or no API key)")
+    if settings.use_mock_data:
+        logger.info("Using mock production plan (mock mode)")
         return _generate_mock_plan(theme_config, content_refs)
 
     try:
-        return _generate_claude_plan(theme_config, content_refs, trend_report)
+        return _generate_llm_plan(theme_config, content_refs, trend_report)
     except Exception as exc:
-        logger.error(f"Claude plan generation failed: {exc}")
+        logger.error(f"LLM plan generation failed: {exc}")
         logger.info("Falling back to mock production plan")
         return _generate_mock_plan(theme_config, content_refs)
 
 
-def _generate_claude_plan(
+def _generate_llm_plan(
     theme_config: dict,
     content_refs: List[dict],
     trend_report: Optional[dict] = None
 ) -> dict:
-    """Generate plan using Claude API with 2-call optimization."""
-    from anthropic import Anthropic
-    from app.services.trend_analyzer import _add_additional_properties_false
-
-    settings = get_settings()
-    client = Anthropic(api_key=settings.anthropic_api_key)
+    """Generate plan using LLMProvider with 2-call optimization."""
+    llm = get_llm_provider()
 
     duration_target = theme_config.get('video_duration_seconds', 20)
     theme_info = _format_theme_info(theme_config)
@@ -186,17 +183,15 @@ def _generate_claude_plan(
         duration_target=duration_target
     )
 
-    logger.info("Claude Call 1/2: Running steps 1-4 analysis")
-    response1 = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": analysis_prompt}]
+    logger.info("LLM Call 1/2: Running steps 1-4 analysis")
+    analysis_text = llm.generate_text(
+        prompt=analysis_prompt,
+        temperature=0.8,
+        max_tokens=4096
     )
-
-    analysis_text = response1.content[0].text
     logger.info(f"Call 1 complete: {len(analysis_text)} chars of analysis")
 
-    # Call 2: Step 5 (structured output via tool-use)
+    # Call 2: Step 5 (structured output)
     structured_prompt = STRUCTURED_OUTPUT_PROMPT.format(
         theme_info=theme_info,
         content_refs_text=content_refs_text,
@@ -204,40 +199,16 @@ def _generate_claude_plan(
         duration_target=duration_target
     )
 
-    base_schema = VideoProductionPlanCreate.model_json_schema()
-    schema = _add_additional_properties_false(base_schema)
-
-    logger.info("Claude Call 2/2: Generating structured production plan")
-    response2 = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
-        tools=[
-            {
-                "name": "create_production_plan",
-                "description": "Create a complete Video Production Plan with all required fields",
-                "input_schema": schema
-            }
-        ],
-        messages=[{"role": "user", "content": structured_prompt}]
+    logger.info("LLM Call 2/2: Generating structured production plan")
+    result = llm.generate_structured(
+        prompt=structured_prompt,
+        schema=VideoProductionPlanCreate,
+        temperature=0.7
     )
+    plan_data = result.model_dump()
 
-    # Extract tool use from response
-    tool_use_block = None
-    for block in response2.content:
-        if block.type == "tool_use" and block.name == "create_production_plan":
-            tool_use_block = block
-            break
-
-    if not tool_use_block:
-        raise ValueError("Claude did not return a create_production_plan tool_use block")
-
-    # Validate with Pydantic
-    plan_data = tool_use_block.input
-    validated = VideoProductionPlanCreate(**plan_data)
-    result = validated.model_dump()
-
-    logger.info(f"Production plan generated: '{result['title']}' with {len(result['scenes'])} scenes")
-    return result
+    logger.info(f"Production plan generated: '{plan_data['title']}' with {len(plan_data['scenes'])} scenes")
+    return plan_data
 
 
 def _generate_mock_plan(theme_config: dict, content_refs: List[dict]) -> dict:
