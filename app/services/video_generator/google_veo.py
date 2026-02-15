@@ -104,7 +104,7 @@ class GoogleVeoProvider(VideoProvider):
 
         try:
             # Create model
-            model = genai.GenerativeModel("veo-3.1-generate-preview")
+            model = genai.GenerativeModel("veo-3.1-fast-generate-preview")
 
             # Call API
             operation = model.generate_videos(
@@ -195,7 +195,7 @@ class GoogleVeoProvider(VideoProvider):
             image = Image.open(image_path)
 
             # Create model
-            model = genai.GenerativeModel("veo-3.1-generate-preview")
+            model = genai.GenerativeModel("veo-3.1-fast-generate-preview")
 
             # Call API with image
             operation = model.generate_videos(

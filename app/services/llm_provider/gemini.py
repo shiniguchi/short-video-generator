@@ -25,6 +25,18 @@ class GeminiLLMProvider(LLMProvider):
         self.model_name = "gemini-2.5-flash"
         logger.info(f"GeminiLLMProvider initialized with model: {self.model_name}")
 
+    @staticmethod
+    def _strip_titles(obj):
+        """Recursively strip 'title' fields from JSON schema.
+
+        Gemini's response_schema rejects Pydantic's 'title' fields.
+        """
+        if isinstance(obj, dict):
+            return {k: GeminiLLMProvider._strip_titles(v) for k, v in obj.items() if k != "title"}
+        if isinstance(obj, list):
+            return [GeminiLLMProvider._strip_titles(item) for item in obj]
+        return obj
+
     def generate_structured(
         self,
         prompt: str,
@@ -100,7 +112,7 @@ class GeminiLLMProvider(LLMProvider):
             generation_config = {
                 "temperature": temperature,
                 "response_mime_type": "application/json",
-                "response_schema": schema.model_json_schema()
+                "response_schema": self._strip_titles(schema.model_json_schema())
             }
 
             # Generate content

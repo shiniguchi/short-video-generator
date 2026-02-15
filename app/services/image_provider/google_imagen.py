@@ -133,7 +133,7 @@ class GoogleImagenProvider(ImageProvider):
 
         try:
             # Initialize model
-            model = ImageGenerationModel("imagen-4.0-generate-001")
+            model = ImageGenerationModel("imagen-4.0-fast-generate-001")
 
             # Load reference images if provided
             reference_pil_images = None
