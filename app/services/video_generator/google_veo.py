@@ -2,6 +2,7 @@
 
 import os
 import time
+from urllib.parse import urlparse
 from uuid import uuid4
 from typing import Optional
 
@@ -12,6 +13,13 @@ from google.genai import types
 from app.config import get_settings
 from app.services.video_generator.base import VideoProvider
 from app.services.video_generator.mock import MockVideoProvider
+
+# Allowlisted domains for Veo video downloads
+_ALLOWED_DOWNLOAD_HOSTS = {
+    "storage.googleapis.com",
+    "generativelanguage.googleapis.com",
+    "generativeai.googleapis.com",
+}
 
 
 class GoogleVeoProvider(VideoProvider):
@@ -71,15 +79,19 @@ class GoogleVeoProvider(VideoProvider):
             with open(output_path, "wb") as f:
                 f.write(video_obj.video_bytes)
         elif video_obj.uri:
-            # Video returned as download URI - download with API key auth
-            download_url = video_obj.uri
-            if "?" in download_url:
-                download_url += f"&key={self.google_api_key}"
-            else:
-                download_url += f"?key={self.google_api_key}"
+            # Validate download URL against allowlist to prevent SSRF
+            parsed = urlparse(video_obj.uri)
+            if parsed.hostname not in _ALLOWED_DOWNLOAD_HOSTS:
+                raise ValueError(
+                    f"Unexpected Veo download domain: {parsed.hostname}"
+                )
 
-            with httpx.Client(timeout=120, follow_redirects=True) as http_client:
-                response = http_client.get(download_url)
+            # Use Authorization header instead of leaking API key in URL params
+            with httpx.Client(timeout=120, follow_redirects=False) as http_client:
+                response = http_client.get(
+                    video_obj.uri,
+                    headers={"X-Goog-Api-Key": self.google_api_key},
+                )
                 response.raise_for_status()
                 with open(output_path, "wb") as f:
                     f.write(response.content)

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select
 from typing import Optional, List
@@ -9,6 +10,17 @@ from app.database import get_session
 from app.config import get_settings
 
 router = APIRouter()
+_security = HTTPBearer()
+
+
+async def require_api_key(
+    credentials: HTTPAuthorizationCredentials = Depends(_security),
+) -> str:
+    """Validate Bearer token against API_SECRET_KEY. Returns the key on success."""
+    settings = get_settings()
+    if credentials.credentials != settings.api_secret_key:
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    return credentials.credentials
 
 
 @router.get("/health")
@@ -48,7 +60,7 @@ async def health_check(session: AsyncSession = Depends(get_session)):
 
 
 @router.post("/test-task")
-async def trigger_test_task():
+async def trigger_test_task(_: str = Depends(require_api_key)):
     """Trigger a test Celery task"""
     from app.tasks import test_task
     task = test_task.delay()
@@ -56,7 +68,7 @@ async def trigger_test_task():
 
 
 @router.post("/collect-trends")
-async def trigger_trend_collection():
+async def trigger_trend_collection(_: str = Depends(require_api_key)):
     """Trigger trend collection from TikTok and YouTube."""
     from app.tasks import collect_trends_task
     task = collect_trends_task.delay()
@@ -67,7 +79,8 @@ async def trigger_trend_collection():
 async def list_trends(
     platform: Optional[str] = None,
     limit: int = 50,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """List collected trends, optionally filtered by platform."""
     from app.models import Trend
@@ -102,7 +115,7 @@ async def list_trends(
 
 
 @router.post("/analyze-trends")
-async def trigger_trend_analysis():
+async def trigger_trend_analysis(_: str = Depends(require_api_key)):
     """Trigger trend analysis with Claude API."""
     from app.tasks import analyze_trends_task
     task = analyze_trends_task.delay()
@@ -112,7 +125,8 @@ async def trigger_trend_analysis():
 @router.get("/trend-reports")
 async def list_trend_reports(
     limit: int = 10,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """List trend analysis reports."""
     from app.models import TrendReport
@@ -142,7 +156,10 @@ async def list_trend_reports(
 
 
 @router.get("/trend-reports/latest")
-async def get_latest_trend_report(session: AsyncSession = Depends(get_session)):
+async def get_latest_trend_report(
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
+):
     """Get the most recent trend analysis report."""
     from app.models import TrendReport
 
@@ -173,7 +190,8 @@ async def get_latest_trend_report(session: AsyncSession = Depends(get_session)):
 async def trigger_content_generation(
     job_id: Optional[int] = None,
     theme_config_path: Optional[str] = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Trigger full content generation pipeline (config -> script -> video -> voiceover)."""
     from app.tasks import generate_content_task
@@ -204,7 +222,8 @@ async def trigger_content_generation(
 @router.get("/scripts")
 async def list_scripts(
     limit: int = 10,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """List generated video production plans (scripts)."""
     from app.models import Script
@@ -232,7 +251,8 @@ async def list_scripts(
 @router.get("/scripts/{script_id}")
 async def get_script(
     script_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Get full details of a generated script."""
     from app.models import Script
@@ -272,11 +292,18 @@ async def trigger_video_composition(
     audio_path: str,
     job_id: Optional[int] = None,
     cost_data: Optional[dict] = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Trigger video composition task with text overlays and audio mixing."""
     from app.tasks import compose_video_task
     from app.models import Job
+
+    # Validate paths stay within the output directory
+    output_base = Path("output").resolve()
+    for p, label in [(video_path, "video_path"), (audio_path, "audio_path")]:
+        if not Path(p).resolve().is_relative_to(output_base):
+            raise HTTPException(400, f"{label} must be inside the output directory")
 
     # Create Job if not provided
     if job_id is None:
@@ -304,7 +331,8 @@ async def trigger_video_composition(
 async def list_videos(
     limit: int = 10,
     status: Optional[str] = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """List composed videos with optional status filter."""
     from app.models import Video
@@ -337,7 +365,8 @@ async def list_videos(
 @router.get("/videos/{video_id}")
 async def get_video(
     video_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Get full details of a composed video."""
     from app.models import Video
@@ -371,7 +400,8 @@ async def get_video(
 @router.post("/videos/{video_id}/approve")
 async def approve_video(
     video_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Approve a generated video and move it to approved directory (REVIEW-03)."""
     from app.models import Video
@@ -460,7 +490,8 @@ async def approve_video(
 @router.post("/videos/{video_id}/reject")
 async def reject_video(
     video_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Reject a generated video and move it to rejected directory (REVIEW-04)."""
     from app.models import Video
@@ -550,7 +581,8 @@ async def reject_video(
 @router.post("/generate")
 async def trigger_pipeline(
     request: "PipelineTriggerRequest" = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Trigger full pipeline execution (ORCH-05).
 
@@ -599,7 +631,8 @@ async def trigger_pipeline(
 async def list_jobs(
     status: Optional[str] = None,
     limit: int = 20,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """List pipeline jobs with optional status filter (ORCH-04)."""
     from app.models import Job
@@ -644,7 +677,8 @@ async def list_jobs(
 @router.get("/jobs/{job_id}")
 async def get_job_status(
     job_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Get detailed status for a single pipeline job (ORCH-04)."""
     from app.models import Job
@@ -680,7 +714,8 @@ async def get_job_status(
 @router.post("/jobs/{job_id}/retry")
 async def retry_job(
     job_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Retry a failed pipeline job from last checkpoint (ORCH-05)."""
     from app.models import Job
@@ -744,7 +779,8 @@ async def generate_ugc_ad(
     target_duration: int = Form(30),
     style_preference: Optional[str] = Form(None),
     images: List[UploadFile] = File(..., description="Product photos (1-5 images)"),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_api_key),
 ):
     """Generate UGC product ad video from product images + metadata.
 
@@ -781,11 +817,17 @@ async def generate_ugc_ad(
     upload_dir = "output/uploads"
     os.makedirs(upload_dir, exist_ok=True)
 
+    max_image_size = 10 * 1024 * 1024  # 10 MB
     product_image_paths = []
     for image in images:
-        filename = f"{uuid4().hex[:8]}_{image.filename}"
-        image_path = os.path.join(upload_dir, filename)
         content = await image.read()
+        if len(content) > max_image_size:
+            raise HTTPException(400, f"Image too large (max 10 MB)")
+        # Use only UUID + guessed extension — never trust user-supplied filenames
+        import mimetypes
+        ext = mimetypes.guess_extension(image.content_type or "") or ".png"
+        filename = f"{uuid4().hex}{ext}"
+        image_path = os.path.join(upload_dir, filename)
         with open(image_path, "wb") as f:
             f.write(content)
         product_image_paths.append(image_path)

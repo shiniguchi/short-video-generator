@@ -11,6 +11,24 @@ from pathlib import Path
 
 from app.config import get_settings
 
+# Allowed base directory for config files (resolved at import time)
+_CONFIG_BASE_DIR = Path("config").resolve()
+
+
+def _validate_config_path(path: str) -> Path:
+    """Ensure the config path resolves within the allowed config directory.
+
+    Raises:
+        ValueError: If path escapes the allowed config directory.
+    """
+    resolved = Path(path).resolve()
+    if not resolved.is_relative_to(_CONFIG_BASE_DIR):
+        raise ValueError(
+            f"Config path must be inside '{_CONFIG_BASE_DIR}'. "
+            f"Got: '{resolved}'"
+        )
+    return resolved
+
 
 class ThemeConfig(BaseModel):
     """Theme configuration from sample-data.yml config section."""
@@ -52,7 +70,7 @@ def read_theme_config(config_path: Optional[str] = None) -> ThemeConfig:
     settings = get_settings()
     path = config_path or settings.local_config_path
 
-    config_file = Path(path)
+    config_file = _validate_config_path(path)
     if not config_file.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
 
@@ -82,7 +100,7 @@ def read_content_references(config_path: Optional[str] = None) -> List[ContentRe
     settings = get_settings()
     path = config_path or settings.local_config_path
 
-    config_file = Path(path)
+    config_file = _validate_config_path(path)
     if not config_file.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
 
