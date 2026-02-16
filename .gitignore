@@ -1,8 +1,15 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 
 # Environment
 .env
@@ -19,3 +26,7 @@ output/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
