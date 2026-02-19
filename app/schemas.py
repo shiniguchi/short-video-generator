@@ -325,3 +325,53 @@ class LandingPageResult(BaseModel):
     product_idea: str
     color_scheme: ColorScheme
     sections: List[str]
+
+
+# Section-scoped edit schemas (Phase 15: AI Section Editing)
+
+class HeroEditCopy(BaseModel):
+    """Copy fields for hero section editing."""
+    headline: str       # 5-8 words, benefit-driven
+    subheadline: str    # 15-25 words
+    cta_text: str       # 2-4 words
+    trust_text: Optional[str] = None
+
+
+class BenefitsEditCopy(BaseModel):
+    """Copy fields for benefits section editing."""
+    benefits: List[dict]  # Each: {title, description, icon_emoji}
+
+
+class FeaturesEditCopy(BaseModel):
+    """Copy fields for features section editing."""
+    features: List[dict]  # Each: {title, description, stat}
+
+
+class HowItWorksEditCopy(BaseModel):
+    """Copy fields for how_it_works section editing."""
+    how_it_works: List[dict]  # Each: {step_number, title, description}
+
+
+class CtaRepeatEditCopy(BaseModel):
+    """Copy fields for cta_repeat section editing."""
+    headline: str
+    subtext: str
+    cta_text: str
+    urgency_text: Optional[str] = None
+
+
+class FaqEditCopy(BaseModel):
+    """Copy fields for FAQ section editing."""
+    faq_items: List[dict]  # Each: {question, answer}
+
+
+class WaitlistEditCopy(BaseModel):
+    """Copy fields for waitlist section editing."""
+    cta_text: str
+    social_proof_text: str
+    trust_text: Optional[str] = None
+
+
+class FooterEditCopy(BaseModel):
+    """Copy fields for footer section editing."""
+    footer_text: str
