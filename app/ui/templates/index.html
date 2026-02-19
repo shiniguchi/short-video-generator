@@ -1,10 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Landing Pages</h1>
+<div class="page-header">
+  <h1>Landing Pages</h1>
+  <a class="btn btn-primary" href="/ui/generate">+ Generate New</a>
+</div>
+
 {% if lps %}
-  <!-- LP list table rendered in Plan 03 -->
+<table class="lp-table">
+  <thead>
+    <tr>
+      <th>Product Idea</th>
+      <th>Status</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for lp in lps %}
+    <tr>
+      <td>{{ lp.product_idea[:60] }}{% if lp.product_idea|length > 60 %}…{% endif %}</td>
+      <td><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
+      <td>{{ lp.created_at.strftime("%Y-%m-%d %H:%M") if lp.created_at else "—" }}</td>
+      <td><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-  <p class="empty-msg">No LPs generated yet. Generate your first LP.</p>
+<p class="empty-msg">No landing pages yet. <a href="/ui/generate">Generate your first LP</a>.</p>
 {% endif %}
 {% endblock %}

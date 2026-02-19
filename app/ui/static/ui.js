@@ -29,3 +29,27 @@ function connectSSE(jobId) {
         if (statusEl) statusEl.textContent = "Connection lost. Check server logs.";
     };
 }
+
+/* Deploy stub — sends POST to /ui/deploy/{run_id}, shows Phase 19 message */
+async function deployLP(runId) {
+    const btn = document.getElementById("deploy-btn");
+    const result = document.getElementById("deploy-result");
+    btn.disabled = true;
+    btn.textContent = "Deploying...";
+
+    try {
+        const resp = await fetch("/ui/deploy/" + runId, { method: "POST" });
+        const data = await resp.json();
+        if (result) {
+            result.textContent = data.message;
+            result.style.display = "block";
+        }
+    } catch (err) {
+        if (result) {
+            result.textContent = "Error: " + err.message;
+            result.style.display = "block";
+        }
+    }
+    btn.disabled = false;
+    btn.textContent = "Deploy to Cloudflare";
+}

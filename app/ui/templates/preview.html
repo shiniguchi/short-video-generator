@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Preview: {{ lp.product_idea[:60] }}{% if lp.product_idea|length > 60 %}…{% endif %}</h1>
+  <a href="/ui/" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="lp-meta">
+  <span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span>
+  <span class="meta-date">Created: {{ lp.created_at.strftime("%Y-%m-%d %H:%M") if lp.created_at else "—" }}</span>
+</div>
+
+<div class="preview-container">
+  <iframe src="/output/{{ run_id }}/landing-page.html" style="width:100%; height:80vh; border:1px solid #ddd; border-radius:4px;"></iframe>
+</div>
+
+<div class="action-row">
+  <button id="deploy-btn" class="btn btn-primary" onclick="deployLP('{{ run_id }}')">Deploy to Cloudflare</button>
+  <a href="/ui/" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<div id="deploy-result" class="deploy-result" style="display:none;"></div>
+{% endblock %}

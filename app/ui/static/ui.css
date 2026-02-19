@@ -142,3 +142,87 @@ input:focus, textarea:focus, select:focus {
   padding: 10px 14px;
   margin-top: 12px;
 }
+
+/* Page header row (title + action button) */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* LP list table */
+.lp-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.lp-table th,
+.lp-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+.lp-table th {
+  background: #f0f0f2;
+  font-weight: 600;
+  color: #555;
+}
+.lp-table tr:last-child td { border-bottom: none; }
+.lp-table tbody tr:nth-child(even) { background: #fafafa; }
+.lp-table a { color: #1a1a2e; font-weight: 600; }
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-generated { background: #dbeafe; color: #1d4ed8; }
+.status-deployed  { background: #dcfce7; color: #15803d; }
+.status-archived  { background: #e5e7eb; color: #6b7280; }
+
+/* LP metadata row (badge + date) */
+.lp-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.meta-date { font-size: 0.85rem; color: #666; }
+
+/* Preview iframe container */
+.preview-container {
+  margin-bottom: 16px;
+}
+
+/* Action buttons row */
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+.btn-secondary:hover { background: #d1d5db; }
+
+/* Deploy result message */
+.deploy-result {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f9fafb;
+  color: #444;
+  font-size: 0.9rem;
+}
