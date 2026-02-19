@@ -2,11 +2,24 @@
 
 ## What This Is
 
-ViralForge is a fully containerized (Docker Compose) Python web application that automatically generates short-form marketing videos (TikTok / YouTube Shorts) from product or theme input. It analyzes trending viral content, generates AI scripts and visuals, and composites final 9:16 MP4 videos — all through a pluggable multi-provider AI stack (Google Gemini/Imagen/Veo, Kling, ElevenLabs, HeyGen, and more). Includes a dedicated UGC product ad pipeline for universal product-to-video generation.
+ViralForge is a product smoke test platform that generates short-form video ads and landing pages from a product idea, deploys LPs to free static hosting, and tracks waitlist signups to validate demand. Colleagues clone the repo, run locally via Docker, input a product idea, and get publish-ready TikTok/YouTube videos + a live landing page with conversion tracking — all automated. Built on a pluggable multi-provider AI stack (Google Gemini/Imagen/Veo, Kling, ElevenLabs, HeyGen).
 
 ## Core Value
 
-Reliably produce publish-ready short-form videos from a theme/product input — full pipeline from trend analysis through composition — without manual intervention between stages.
+Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
+
+## Current Milestone: v2.0 Smoke Test Platform
+
+**Goal:** Extend ViralForge from a video generator into a full smoke test tool with LP generation, free static hosting deployment, analytics collection, and an admin dashboard.
+
+**Target features:**
+- Landing page generation (AI writes copy, fills HTML template, single-file output)
+- Auto-deploy LPs to Cloudflare Pages via Wrangler CLI
+- Analytics collection via Cloudflare Worker + D1 (free tier: pageviews, clicks, form submissions)
+- Waitlist CTA on LP (email collection stored in D1)
+- Admin dashboard in-app (per-LP traffic, CVR, signup counts)
+- Web UI for colleagues (browser-based product idea input + generation trigger)
+- Switchable hosting design (local Docker now → cheap public server later)
 
 ## Requirements
 
@@ -28,17 +41,24 @@ Reliably produce publish-ready short-form videos from a theme/product input — 
 
 ### Active
 
-(None — next milestone not yet planned)
+- [ ] AI-generated landing pages from product idea input
+- [ ] Auto-deployment of LPs to Cloudflare Pages
+- [ ] Analytics collection (pageviews, clicks, form submissions) via Cloudflare Worker + D1
+- [ ] Waitlist email collection on LP
+- [ ] Admin dashboard with per-LP traffic, CVR, and signup counts
+- [ ] Browser-based web UI for product idea input and generation
+- [ ] Switchable architecture (local Docker ↔ hosted server)
 
 ### Out of Scope
 
-- Dashboard UI — Google Sheets or API-only for control plane
 - Multi-language support — English only for all generated content
-- Cloud deployment (GCP) — local Docker first; Cloud Run migration is post-MVP
 - Real-time streaming — batch pipeline only
 - Custom model training — uses pre-trained APIs only
 - Voice cloning — legal considerations; use pre-built TTS voices
-- Auto-publishing to social platforms — deferred to v2
+- Auto-publishing to social platforms — separate concern, manual post for now
+- Payment processing — LPs collect waitlist signups only, no actual purchases
+- A/B testing — single LP per product idea for v2; A/B is future scope
+- Custom domain per LP — single domain with subpaths (e.g., domain.com/product-a)
 
 ## Context
 
@@ -50,6 +70,8 @@ Reliably produce publish-ready short-form videos from a theme/product input — 
 - **UGC Pipeline**: Product input → Gemini analysis → Imagen hero image → Veo A-Roll/B-Roll → MoviePy composite
 - **Tech stack**: Python 3.9+, FastAPI, Celery + Redis, PostgreSQL/SQLite, MoviePy v2, Docker Compose
 - **Local dev**: SQLite + aiosqlite, USE_MOCK_DATA=true default, no API keys required
+
+**v2.0 distribution model**: Colleagues clone private GitHub repo, run via Docker Compose locally. Code designed to switch to hosted public server deployment without changes. LPs always deployed to Cloudflare (publicly accessible for TikTok/YouTube traffic). Analytics always via Cloudflare Worker + D1 (works regardless of whether app is local or hosted).
 
 ## Constraints
 
@@ -72,6 +94,9 @@ Reliably produce publish-ready short-form videos from a theme/product input — 
 | LLMProvider two-call pattern | generate_text() for freeform + generate_structured() for schema | ✓ Good — reliable structured output |
 | MoviePy v2 immutable API | with_* methods instead of set_*, explicit resource cleanup | ✓ Good — prevented memory leaks |
 | UGC Hook-Problem-Proof-CTA structure | Proven ad script framework, category-agnostic | ✓ Good — works for any product type |
+| Cloudflare Pages + Worker + D1 for LP hosting + analytics | $0 cost, globally distributed, works with local or hosted app | — Pending |
+| Single-file HTML LPs | No build step, no framework, deploy = copy one file | — Pending |
+| Web UI as FastAPI templates (Jinja2) | No separate frontend build, stays in Python ecosystem | — Pending |
 
 ---
-*Last updated: 2026-02-15 after v1.0 milestone*
+*Last updated: 2026-02-19 after v2.0 milestone start*
