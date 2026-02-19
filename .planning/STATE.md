@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 15 - Landing Page Hosting (next)
+**Current focus:** Phase 16 - Waitlist Collection (in progress)
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 15 of 19 (AI Section Editing) - COMPLETE
-Plan: 2 of 2 - COMPLETE
-Status: Phase 15 complete — CLI and section editor core shipped
-Last activity: 2026-02-19 - Completed Plan 15-02 (CLI for section editing)
+Phase: 16 of 19 (Waitlist Collection) - IN PROGRESS
+Plan: 1 of 2 - COMPLETE
+Status: Phase 16 plan 01 complete — waitlist backend shipped
+Last activity: 2026-02-19 - Completed Plan 16-01 (waitlist backend)
 
-Progress: [█████████████████████] 80% (35/44 plans total, v1.0 complete, v2.0 phase 15 complete)
+Progress: [█████████████████████] 82% (36/44 plans total, v1.0 complete, v2.0 phase 16 in progress)
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [█████████████████████] 80% 
 - Phase 14 Plan 03: 32 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
 - Phase 15 Plan 01: 1 minute, 1 task, 1 commit
 - Phase 15 Plan 02: 3 minutes, 1 task, 1 commit
+- Phase 16 Plan 01: 4 minutes, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -70,6 +71,11 @@ Progress: [█████████████████████] 80% 
 - [Phase 15-02]: Sidecar written by CLI on first edit (not by generator) — generator stays simple, CLI owns persistence
 - [Phase 15-02]: product_idea fallback order: --product flag > landing-page.json sidecar > error with tip
 
+**Phase 16 Plan 01:**
+- [Phase 16-01]: Public endpoint pattern — no require_api_key on submit_waitlist, LP visitors don't have API keys
+- [Phase 16-01]: Two-layer duplicate protection: SELECT before INSERT + catch IntegrityError for race conditions
+- [Phase 16-01]: CORS_ALLOWED_ORIGINS defaults to "*" for dev — single env var change tightens for production
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -88,10 +94,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 15-02-PLAN.md (CLI for section editing) — Phase 15 complete
+Stopped at: Completed 16-01-PLAN.md (waitlist backend) — Phase 16 plan 1 of 2 done
 Resume file: None
-Next step: Execute Phase 16
+Next step: Execute Phase 16 Plan 02
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 15 Plan 02 complete (CLI for section editing)*
+*Last updated: 2026-02-19 - Phase 16 Plan 01 complete (waitlist backend)*
