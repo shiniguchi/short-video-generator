@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 15 of 19 (AI Section Editing) - IN PROGRESS
-Plan: 1 of 2 - COMPLETE
-Status: Phase 15 Plan 01 complete, ready for Plan 02 (CLI)
-Last activity: 2026-02-19 - Completed Plan 15-01 (Section Editor Core)
+Phase: 15 of 19 (AI Section Editing) - COMPLETE
+Plan: 2 of 2 - COMPLETE
+Status: Phase 15 complete — CLI and section editor core shipped
+Last activity: 2026-02-19 - Completed Plan 15-02 (CLI for section editing)
 
-Progress: [████████████████████] 77% (34/44 plans total, v1.0 complete, v2.0 phase 15 in progress)
+Progress: [█████████████████████] 80% (35/44 plans total, v1.0 complete, v2.0 phase 15 complete)
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [████████████████████] 77% (34
 - Phase 14 Plan 02: 3.8 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 03: 32 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
 - Phase 15 Plan 01: 1 minute, 1 task, 1 commit
+- Phase 15 Plan 02: 3 minutes, 1 task, 1 commit
 
 ## Accumulated Context
 
@@ -65,6 +66,10 @@ Progress: [████████████████████] 77% (34
 - [Phase 15-01]: gallery excluded from EDITABLE_SECTIONS — image paths not copy, clear error returned
 - [Phase 15-01]: Always call optimize_html() after replacement — prevents CSS duplication on repeated edits
 
+**Phase 15 Plan 02:**
+- [Phase 15-02]: Sidecar written by CLI on first edit (not by generator) — generator stays simple, CLI owns persistence
+- [Phase 15-02]: product_idea fallback order: --product flag > landing-page.json sidecar > error with tip
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -83,10 +88,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 15-01-PLAN.md (Section Editor Core) — Phase 15 Plan 01 complete
+Stopped at: Completed 15-02-PLAN.md (CLI for section editing) — Phase 15 complete
 Resume file: None
-Next step: Execute Phase 15 Plan 02 (CLI for section editing)
+Next step: Execute Phase 16
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 15 Plan 01 complete (section editor core)*
+*Last updated: 2026-02-19 - Phase 15 Plan 02 complete (CLI for section editing)*
