@@ -102,10 +102,11 @@ Plans:
   4. Visitor sees confirmation message after successful signup
   5. Waitlist entries are stored in database with timestamp and source LP
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 16-01-PLAN.md -- Backend: WaitlistEntry model, migration, schemas, endpoint, CORS
+- [ ] 16-02-PLAN.md -- Frontend wiring: lp_source threading, waitlist form fetch() to backend
 
 ### Phase 17: Web UI
 **Goal**: Users can interact with ViralForge via browser instead of CLI, triggering LP generation and viewing results.
