@@ -38,8 +38,8 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 14: Landing Page Generation** - AI-generated single-file HTML LPs with video embed
-- [ ] **Phase 15: AI Section Editing** - Edit LP sections via AI prompts after generation
+- [x] **Phase 14: Landing Page Generation** - AI-generated single-file HTML LPs with video embed — completed 2026-02-19
+- [x] **Phase 15: AI Section Editing** - Edit LP sections via AI prompts after generation — completed 2026-02-19
 - [ ] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention
 - [ ] **Phase 17: Web UI** - Browser-based product idea input and generation trigger
 - [ ] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1
@@ -65,9 +65,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 14-01-PLAN.md -- Foundation, schemas, color extractor, and LP research module
-- [ ] 14-02-PLAN.md -- AI copy generator and Jinja2 template system
-- [ ] 14-03-PLAN.md -- Optimizer, CLI command, pipeline integration, and visual verification
+- [x] 14-01-PLAN.md -- Foundation, schemas, color extractor, and LP research module
+- [x] 14-02-PLAN.md -- AI copy generator and Jinja2 template system
+- [x] 14-03-PLAN.md -- Optimizer, CLI command, pipeline integration, and visual verification
 
 ### Phase 15: AI Section Editing
 **Goal**: User can refine generated landing pages by editing individual sections using AI prompts without touching HTML.
@@ -85,8 +85,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md -- Section editor module with section-scoped schemas and AI copy regeneration
-- [ ] 15-02-PLAN.md -- CLI command, sidecar metadata, and module exports
+- [x] 15-01-PLAN.md -- Section editor module with section-scoped schemas and AI copy regeneration
+- [x] 15-02-PLAN.md -- CLI command, sidecar metadata, and module exports
 
 ### Phase 16: Waitlist Collection
 **Goal**: Visitors can submit emails via LP waitlist form with server-side validation, duplicate prevention, and database storage.
@@ -187,8 +187,8 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 11. Real AI Providers | v1.0 | 3/3 | Complete | 2026-02-14 |
 | 12. Google AI Provider Suite | v1.0 | 4/4 | Complete | 2026-02-15 |
 | 13. UGC Product Ad Pipeline | v1.0 | 3/3 | Complete | 2026-02-15 |
-| 14. Landing Page Generation | v2.0 | 0/3 | Planning complete | - |
-| 15. AI Section Editing | v2.0 | 0/2 | Planning complete | - |
+| 14. Landing Page Generation | v2.0 | 3/3 | Complete | 2026-02-19 |
+| 15. AI Section Editing | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 16. Waitlist Collection | v2.0 | 0/TBD | Not started | - |
 | 17. Web UI | v2.0 | 0/TBD | Not started | - |
 | 18. Cloudflare Analytics | v2.0 | 0/TBD | Not started | - |
@@ -196,4 +196,4 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 14 planning complete (3 plans)*
+*Last updated: 2026-02-19 - Phase 15 complete (2/2 plans)*
