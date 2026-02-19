@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     approved_output_dir: str = "output/approved"  # Directory for approved videos
     rejected_output_dir: str = "output/rejected"  # Directory for rejected videos
 
+    # Landing Page Generation (Phase 14)
+    lp_color_scheme: str = "research"  # Options: "extract", "research" (default), "preset"
+    lp_color_preset: str = ""  # Preset palette name when lp_color_scheme=preset
+
 
 @lru_cache()
 def get_settings():

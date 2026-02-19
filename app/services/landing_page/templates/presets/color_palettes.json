@@ -1,0 +1,60 @@
+{
+  "palettes": [
+    {
+      "name": "Ocean Blue",
+      "primary": "#0066CC",
+      "secondary": "#004C99",
+      "accent": "#00A3FF",
+      "background": "#FFFFFF",
+      "text": "#1A1A1A"
+    },
+    {
+      "name": "Sunset Warm",
+      "primary": "#FF6B35",
+      "secondary": "#F7931E",
+      "accent": "#FFB347",
+      "background": "#FFF8F0",
+      "text": "#2C1810"
+    },
+    {
+      "name": "Forest Green",
+      "primary": "#2D5016",
+      "secondary": "#4A7C28",
+      "accent": "#7CB342",
+      "background": "#F5F9F2",
+      "text": "#1A1A1A"
+    },
+    {
+      "name": "Royal Purple",
+      "primary": "#6A1B9A",
+      "secondary": "#8E24AA",
+      "accent": "#BA68C8",
+      "background": "#F9F5FB",
+      "text": "#1A1A1A"
+    },
+    {
+      "name": "Coral Pink",
+      "primary": "#E91E63",
+      "secondary": "#C2185B",
+      "accent": "#F48FB1",
+      "background": "#FFF0F5",
+      "text": "#1A1A1A"
+    },
+    {
+      "name": "Midnight Dark",
+      "primary": "#212121",
+      "secondary": "#424242",
+      "accent": "#00BCD4",
+      "background": "#121212",
+      "text": "#FFFFFF"
+    },
+    {
+      "name": "Clean Minimal",
+      "primary": "#333333",
+      "secondary": "#666666",
+      "accent": "#0099FF",
+      "background": "#FFFFFF",
+      "text": "#1A1A1A"
+    }
+  ]
+}

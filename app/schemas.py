@@ -255,3 +255,68 @@ class UGCAdResponse(BaseModel):
     status: str = "queued"
     poll_url: str
     message: str
+
+
+# Landing Page Generation Schemas (Phase 14)
+
+class LandingPageRequest(BaseModel):
+    """Input schema for landing page generation."""
+    product_idea: str
+    target_audience: str
+    industry: Optional[str] = None
+    region: Optional[str] = None
+    color_preference: Optional[str] = None  # "extract", "research", "preset"
+    color_preset: Optional[str] = None
+    video_path: Optional[str] = None
+    hero_image_path: Optional[str] = None
+    product_images: Optional[List[str]] = None
+
+
+class LPResearchPattern(BaseModel):
+    """Single landing page research pattern extracted from competitor LP."""
+    url: str
+    hero_headline: str
+    cta_texts: List[str]
+    section_order: List[str]
+    has_video: bool
+    video_placement: Optional[str] = None
+    color_scheme: Optional[dict] = None
+
+
+class LPResearchResult(BaseModel):
+    """Aggregated research results from multiple competitor LPs."""
+    patterns: List[LPResearchPattern]
+    common_sections: List[str]
+    dominant_cta_style: str
+    video_placement_trend: str
+    color_trends: List[dict]
+
+
+class LandingPageCopy(BaseModel):
+    """AI-generated landing page copy content."""
+    headline: str
+    subheadline: str
+    benefits: List[dict]  # Each with title, description, icon_emoji
+    cta_text: str
+    social_proof_text: str
+    footer_text: str
+    meta_title: str
+    meta_description: str
+
+
+class ColorScheme(BaseModel):
+    """Color scheme for landing page."""
+    primary: str
+    secondary: str
+    accent: str
+    background: str
+    text: str
+    source: str  # "extracted", "research", "preset"
+
+
+class LandingPageResult(BaseModel):
+    """Result of landing page generation."""
+    html_path: str
+    product_idea: str
+    color_scheme: ColorScheme
+    sections: List[str]
