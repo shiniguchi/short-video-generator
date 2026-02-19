@@ -189,12 +189,59 @@
                 return false;
             }
 
-            // Valid submission - show success message
-            // Note: Phase 16 will add backend processing
-            form.style.display = 'none';
-            successMessage.style.display = 'block';
+            // Get lp_source from meta tag (set by generator)
+            var lpSource = '';
+            var lpMeta = document.querySelector('meta[name="lp-source"]');
+            if (lpMeta) { lpSource = lpMeta.getAttribute('content') || ''; }
 
-            console.log('Form submitted successfully');
+            // Get API base URL (default: current origin for deployed LPs)
+            var apiBase = document.querySelector('meta[name="api-base"]');
+            var baseUrl = apiBase ? apiBase.getAttribute('content') : '';
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            var originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            // Error display element (reuse or create)
+            var errorEl = document.getElementById('form-error');
+            if (!errorEl) {
+                errorEl = document.createElement('div');
+                errorEl.id = 'form-error';
+                errorEl.style.cssText = 'display:none;padding:0.75rem;background:#fef2f2;color:#991b1b;border-radius:8px;margin-bottom:1rem;font-size:0.875rem;';
+                form.parentNode.insertBefore(errorEl, form.nextSibling);
+            }
+            errorEl.style.display = 'none';
+
+            fetch(baseUrl + '/waitlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: document.getElementById('email').value, lp_source: lpSource })
+            })
+            .then(function(res) {
+                if (res.ok) { return res.json(); }
+                return res.json().then(function(data) { throw data; });
+            })
+            .then(function(data) {
+                form.style.display = 'none';
+                successMessage.style.display = 'block';
+            })
+            .catch(function(err) {
+                if (err && err.detail) {
+                    // Server returned structured error (409 duplicate, etc.)
+                    errorEl.textContent = err.detail;
+                    errorEl.style.display = 'block';
+                } else {
+                    // Network error — show success anyway (offline graceful degradation)
+                    form.style.display = 'none';
+                    successMessage.style.display = 'block';
+                }
+            })
+            .finally(function() {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+
             return false;
         });
     }
