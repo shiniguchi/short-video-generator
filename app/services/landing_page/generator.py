@@ -82,11 +82,36 @@ async def generate_landing_page(request: LandingPageRequest, use_mock: bool = Fa
     # STEP 4: Build HTML
     step_start = time.time()
     logger.info("STEP 4/6: Build landing page HTML")
+
+    # Resolve asset paths relative to the output HTML location
+    output_dir = Path(settings.output_dir) / run_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    html_path = output_dir / "landing-page.html"
+
+    video_url_for_template = None
+    hero_image_for_template = None
+    product_images_for_template = []
+
+    html_parent = html_path.parent.resolve()
+
+    if request.video_path:
+        abs_video = Path(request.video_path).resolve()
+        video_url_for_template = os.path.relpath(abs_video, html_parent)
+    if request.hero_image_path:
+        abs_image = Path(request.hero_image_path).resolve()
+        hero_image_for_template = os.path.relpath(abs_image, html_parent)
+    if request.product_images:
+        for img_path in request.product_images:
+            abs_img = Path(img_path).resolve()
+            product_images_for_template.append(os.path.relpath(abs_img, html_parent))
+        logger.info(f"Resolved {len(product_images_for_template)} product images for LP")
+
     raw_html = build_landing_page(
         copy=copy,
         color_scheme=color_scheme,
-        video_url=request.video_path,
-        hero_image=request.hero_image_path
+        video_url=video_url_for_template,
+        hero_image=hero_image_for_template,
+        product_images=product_images_for_template
     )
     logger.info(f"HTML built: {len(raw_html)} chars ({time.time() - step_start:.1f}s)")
 
@@ -105,20 +130,18 @@ async def generate_landing_page(request: LandingPageRequest, use_mock: bool = Fa
     # STEP 6: Save
     step_start = time.time()
     logger.info("STEP 6/6: Save to output directory")
-    output_dir = Path(settings.output_dir) / run_id
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    html_path = output_dir / "landing-page.html"
     html_path.write_text(optimized_html, encoding='utf-8')
     logger.info(f"Saved to: {html_path} ({time.time() - step_start:.1f}s)")
 
-    # Build result
-    sections_order = ["hero", "benefits", "waitlist", "footer"]
+    # Extract actual section names from generated HTML
+    import re
+    actual_sections = re.findall(r'data-section="([^"]+)"', optimized_html)
+
     result = LandingPageResult(
         html_path=str(html_path),
         product_idea=request.product_idea,
         color_scheme=color_scheme,
-        sections=sections_order
+        sections=actual_sections
     )
 
     total_time = time.time() - pipeline_start

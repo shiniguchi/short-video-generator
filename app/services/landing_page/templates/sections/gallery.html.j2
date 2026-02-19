@@ -1,0 +1,91 @@
+<section class="gallery" id="gallery" data-section="gallery">
+    <div class="gallery__container">
+        <h2 class="gallery__heading">{{ heading }}</h2>
+        <div class="gallery__grid">
+            {% for image in images %}
+            <div class="gallery__item{% if loop.index <= 2 %} gallery__item--tall{% endif %}">
+                <img src="{{ image }}" alt="{{ product_name }} product image {{ loop.index }}" class="gallery__image" loading="lazy">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.gallery {
+    padding: 3rem 1rem;
+    background-color: #f9fafb;
+}
+
+.gallery__container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.gallery__heading {
+    text-align: center;
+    color: var(--color-text);
+    margin-bottom: 2.5rem;
+    font-size: 2rem;
+}
+
+.gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.gallery__item {
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+}
+
+.gallery__item--tall {
+    aspect-ratio: 2 / 3;
+}
+
+.gallery__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s;
+}
+
+.gallery__item:hover .gallery__image {
+    transform: scale(1.05);
+}
+
+/* Tablet: 3 columns with featured first item */
+@media (min-width: 768px) {
+    .gallery {
+        padding: 4rem 2rem;
+    }
+
+    .gallery__grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+    }
+
+    .gallery__item--tall {
+        grid-row: span 2;
+        aspect-ratio: auto;
+    }
+
+    .gallery__item:not(.gallery__item--tall) {
+        aspect-ratio: 1 / 1;
+    }
+}
+
+/* Desktop: wider gaps */
+@media (min-width: 1024px) {
+    .gallery {
+        padding: 5rem 2rem;
+    }
+
+    .gallery__grid {
+        gap: 1.5rem;
+    }
+}
+</style>

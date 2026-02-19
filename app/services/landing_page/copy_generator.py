@@ -8,84 +8,44 @@ from app.services.llm_provider import get_llm_provider
 logger = logging.getLogger(__name__)
 
 
-# PAS (Problem-Agitate-Solution) formula template
-_PAS_PROMPT = """
-Generate landing page copy using the Problem-Agitate-Solution (PAS) formula.
+_COPY_PROMPT = """
+Generate high-converting landing page copy for a product waitlist page.
 
-Product Idea: {product_idea}
+Product: {product_idea}
 Target Audience: {target_audience}
+Formula: {formula}
 
 Research Context (patterns from top-performing LPs):
 {research_context}
 
-PAS Formula Structure:
-1. HEADLINE: State the problem as a compelling hook
-   - Make it relatable and immediate
-   - Second-person ("you") address
-   - 8-12 words max
+CRITICAL RULES — follow these exactly:
+- HEADLINE: 5-8 words ONLY. Benefit-driven. Specific to THIS product. Second-person "you".
+  BAD: "Your Product Awaits" or "Transform Your Workflow"
+  GOOD: "Never Drink Warm Water Again" or "Clean Water, Zero Effort"
+- SUBHEADLINE: 15-25 words. Expands the headline with a specific, quantified claim.
+- BENEFITS: 3 items. Each MUST be specific to this product's actual features.
+  Each has: title (3-5 words), description (15-20 words with a number/stat), icon_emoji
+  BAD: "Save Time" / "Zero Hassle" / "Join Early" (generic, applies to anything)
+  GOOD: "24-Hour Cold Retention" / "Self-Cleans Every 2 Hours" / "30-Day Battery Life"
+- FEATURES: 3-4 items. Product specs turned into benefits.
+  Each has: title, description, stat (a number like "24hrs", "2min", "99.9%")
+- HOW IT WORKS: Exactly 3 steps. Simple, visual, numbered.
+  Each has: step_number (1/2/3), title (2-4 words), description (10-15 words)
+- FAQ: 3-5 items. Answer real objections the target audience would have.
+  Each has: question, answer (2-3 sentences max)
+- CTA TEXT: 2-4 words. Action verb + benefit. NOT "Submit" or "Click Here".
+  GOOD: "Get Early Access", "Reserve Yours", "Join Free"
+- URGENCY TEXT: One line creating scarcity. "Limited early access" or "First 500 get priority".
+- SOCIAL PROOF: Include a specific number. "Join 2,000+ early adopters" not "Join others".
+- TRUST TEXT: Privacy reassurance. "We'll never spam you. Unsubscribe anytime."
+- META TITLE: Under 60 characters. Product name + value prop.
+- META DESCRIPTION: ~160 characters. Compelling reason to click.
 
-2. SUBHEADLINE: Agitate the emotional cost of the problem
-   - What pain/frustration does this problem cause?
-   - Build urgency without fear-mongering
-   - 15-25 words
+TONE: Conversational, friendly, direct. Second-person "you". NO corporate jargon. NO hype.
+FORMULA: If PAS — headline = problem hook, subheadline = agitate, benefits = solution.
+         If AIDA — headline = attention, subheadline = interest, benefits = desire.
 
-3. BENEFITS: Present the solution in 3 specific benefits
-   - Each benefit: title (3-5 words), description (10-15 words), icon emoji
-   - Focus on transformation/outcome, not features
-   - Be concrete and specific
-
-4. CTA: Clear, direct action
-   - 2-4 words max
-   - Action-oriented ("Get Started", "Join Waitlist", "Start Free")
-
-5. SOCIAL PROOF: Use implied proof only
-   - Soft signals like "Join 1,000+ early users" or "Built by the team behind..."
-   - NO fake testimonials or fabricated stats
-   - Keep it authentic and modest
-
-TONE: Conversational, friendly, direct, second-person ("you"). NOT corporate or salesy.
-
-Generate all required fields following the research patterns above.
-"""
-
-# AIDA (Attention-Interest-Desire-Action) formula template
-_AIDA_PROMPT = """
-Generate landing page copy using the AIDA (Attention-Interest-Desire-Action) formula.
-
-Product Idea: {product_idea}
-Target Audience: {target_audience}
-
-Research Context (patterns from top-performing LPs):
-{research_context}
-
-AIDA Formula Structure:
-1. HEADLINE: Grab attention with a bold statement
-   - Surprising, provocative, or intriguing
-   - Second-person ("you") address
-   - 8-12 words max
-
-2. SUBHEADLINE: Build interest with specificity
-   - What makes this unique or different?
-   - Hint at the value proposition
-   - 15-25 words
-
-3. BENEFITS: Create desire through 3 specific outcomes
-   - Each benefit: title (3-5 words), description (10-15 words), icon emoji
-   - Paint the picture of life after using the product
-   - Be aspirational yet believable
-
-4. CTA: Direct call to action
-   - 2-4 words max
-   - Action-oriented ("Get Started", "Join Waitlist", "Start Free")
-
-5. SOCIAL PROOF: Use implied proof only
-   - Soft signals like "Join 1,000+ early users" or "Built by the team behind..."
-   - NO fake testimonials or fabricated stats
-   - Keep it authentic and modest
-
-TONE: Conversational, friendly, direct, second-person ("you"). NOT corporate or salesy.
-
-Generate all required fields following the research patterns above.
+Generate ALL fields. Every benefit, feature, and FAQ must be specific to this exact product.
 """
 
 
@@ -150,14 +110,12 @@ def generate_lp_copy(
     # Format research context
     research_context = _format_research_context(research_result)
 
-    # Select formula template
-    prompt_template = _PAS_PROMPT if formula == "PAS" else _AIDA_PROMPT
-
     # Build prompt
-    prompt = prompt_template.format(
+    prompt = _COPY_PROMPT.format(
         product_idea=product_idea,
         target_audience=target_audience,
-        research_context=research_context
+        research_context=research_context,
+        formula=formula
     )
 
     # System prompt
@@ -186,6 +144,7 @@ def generate_lp_copy(
 def get_mock_copy(product_idea: str) -> LandingPageCopy:
     """
     Returns realistic mock copy for development without LLM API calls.
+    Follows LP_DESIGN_CHECKLIST.md rules for high-converting copy.
 
     Args:
         product_idea: The product being marketed (used in headline for realism)
@@ -193,31 +152,90 @@ def get_mock_copy(product_idea: str) -> LandingPageCopy:
     Returns:
         LandingPageCopy with mock data
     """
+    # Extract a short product name from a potentially long description
+    product_name = product_idea.split(" - ")[0].split(". ")[0].split(", ")[0]
+    if len(product_name.split()) > 6:
+        product_name = " ".join(product_name.split()[:5])
+
     return LandingPageCopy(
-        headline=f"Transform Your Workflow with {product_idea}",
-        subheadline="Stop wasting hours on manual tasks. Get back to what matters most with our AI-powered solution.",
+        headline=f"Never Settle for Less Than {product_name}",
+        subheadline=f"The smarter way to get exactly what you need — designed for people who demand more from their everyday gear.",
         benefits=[
             {
-                "title": "Save Time Daily",
-                "description": "Automate repetitive work and reclaim hours every week for strategic thinking.",
+                "title": "Built Around You",
+                "description": f"Every detail of {product_name} is engineered for how you actually live and move.",
+                "icon_emoji": "🎯"
+            },
+            {
+                "title": "Works Instantly",
+                "description": "Zero setup, zero learning curve. Unbox it and start using it in under 2 minutes.",
                 "icon_emoji": "⚡"
             },
             {
-                "title": "Boost Productivity",
-                "description": "Get more done with less effort using intelligent automation and smart workflows.",
-                "icon_emoji": "🚀"
-            },
-            {
-                "title": "Scale Effortlessly",
-                "description": "Grow your output without growing your team or your stress levels.",
-                "icon_emoji": "📈"
+                "title": "Lasts and Lasts",
+                "description": "Premium materials built to handle your daily routine for years, not months.",
+                "icon_emoji": "🛡️"
             }
         ],
-        cta_text="Join the Waitlist",
-        social_proof_text="Join 1,000+ early users already transforming their workflow",
-        footer_text="© 2026 ViralForge. Built for modern teams.",
-        meta_title=f"{product_idea} - Transform Your Workflow",
-        meta_description=f"Stop wasting time on manual tasks. {product_idea} helps you automate, scale, and focus on what matters most."
+        features=[
+            {
+                "title": "Smart Design",
+                "description": f"Intelligent engineering that adapts to your needs throughout the day.",
+                "stat": "24/7"
+            },
+            {
+                "title": "Premium Build",
+                "description": "Medical-grade materials that are safe, durable, and eco-friendly.",
+                "stat": "100%"
+            },
+            {
+                "title": "Long-Lasting Power",
+                "description": "One charge lasts weeks, not days. USB-C fast charging included.",
+                "stat": "30 days"
+            }
+        ],
+        how_it_works=[
+            {
+                "step_number": 1,
+                "title": "Unbox & Charge",
+                "description": "Plug in via USB-C. Full charge in under an hour."
+            },
+            {
+                "step_number": 2,
+                "title": "Fill & Go",
+                "description": "Add your favorite drink. The smart system handles the rest."
+            },
+            {
+                "step_number": 3,
+                "title": "Enjoy All Day",
+                "description": "Perfect temperature, pure taste, zero maintenance required."
+            }
+        ],
+        faq=[
+            {
+                "question": "When does it ship?",
+                "answer": "We're targeting Q2 2026 for first shipments. Waitlist members get priority access and early-bird pricing."
+            },
+            {
+                "question": "Is the waitlist free?",
+                "answer": "Yes, completely free. No credit card required. You'll just be first to know when we launch."
+            },
+            {
+                "question": "What makes this different?",
+                "answer": f"{product_name} combines smart technology with premium materials. It's not just another product — it's designed for people who want the best."
+            },
+            {
+                "question": "Can I cancel anytime?",
+                "answer": "The waitlist has zero obligations. You can unsubscribe with one click anytime."
+            }
+        ],
+        cta_text="Get Early Access",
+        urgency_text="Limited to first 500 signups",
+        social_proof_text="Join 2,000+ early adopters",
+        trust_text="No spam, ever. Unsubscribe anytime.",
+        footer_text=f"\u00a9 2026 {product_name}. All rights reserved.",
+        meta_title=f"{product_name} — Get Early Access",
+        meta_description=f"Join the waitlist for {product_name}. Be first to experience the next generation. Limited early access — sign up free."
     )
 
 

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ meta_title }}</title>
     <meta name="description" content="{{ meta_description }}">
+    <meta property="og:title" content="{{ meta_title }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:type" content="website">
     <style>
         /* CSS Reset */
         *, *::before, *::after {
@@ -37,24 +40,13 @@
             margin-bottom: 0.5em;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
+        h1 { font-size: 2.5rem; font-weight: 700; }
+        h2 { font-size: 2rem; font-weight: 600; }
+        h3 { font-size: 1.5rem; font-weight: 600; }
+        p { margin-bottom: 1em; }
 
-        h2 {
-            font-size: 2rem;
-            font-weight: 600;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        p {
-            margin-bottom: 1em;
-        }
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
 
         /* Section-specific styles */
         {{ inline_css }}

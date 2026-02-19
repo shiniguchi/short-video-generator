@@ -34,6 +34,9 @@
         </div>
 
         <p class="waitlist__social-proof">{{ social_proof_text }}</p>
+        {% if trust_text %}
+        <p class="waitlist__trust">{{ trust_text }}</p>
+        {% endif %}
     </div>
 </section>
 
@@ -113,6 +116,12 @@
 .waitlist__social-proof {
     color: #6b7280;
     font-size: 0.875rem;
+}
+
+.waitlist__trust {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
 }
 
 /* Honeypot field - hidden off-screen (NOT display:none, which bots detect) */

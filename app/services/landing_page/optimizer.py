@@ -44,9 +44,9 @@ def optimize_html(html: str) -> str:
     # Remove all existing <style> blocks
     html_no_styles = style_pattern.sub('', html)
 
-    # Insert single minified <style> block in <head>
-    head_pattern = re.compile(r'(<head[^>]*>)', re.IGNORECASE)
-    optimized_html = head_pattern.sub(f'\\1\n<style>{minified_css}</style>\n', html_no_styles, count=1)
+    # Insert single minified <style> block before </head> (after meta tags)
+    head_close_pattern = re.compile(r'(</head>)', re.IGNORECASE)
+    optimized_html = head_close_pattern.sub(f'<style>{minified_css}</style>\n\\1', html_no_styles, count=1)
 
     return optimized_html
 

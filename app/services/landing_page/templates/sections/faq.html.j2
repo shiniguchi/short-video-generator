@@ -1,0 +1,85 @@
+<section class="faq" id="faq" data-section="faq">
+    <div class="faq__container">
+        <h2 class="faq__heading">Frequently Asked Questions</h2>
+        <div class="faq__list">
+            {% for item in faq_items %}
+            <details class="faq__item">
+                <summary class="faq__question">{{ item.question }}</summary>
+                <p class="faq__answer">{{ item.answer }}</p>
+            </details>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.faq {
+    padding: 4rem 1rem;
+    background-color: var(--color-bg);
+}
+
+.faq__container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.faq__heading {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    color: var(--color-text);
+}
+
+.faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.faq__item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0;
+}
+
+.faq__question {
+    padding: 1.25rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq__question::-webkit-details-marker {
+    display: none;
+}
+
+.faq__question::after {
+    content: "+";
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--color-primary);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.faq__item[open] .faq__question::after {
+    content: "−";
+}
+
+.faq__answer {
+    padding: 0 0 1.25rem 0;
+    color: #666;
+    line-height: 1.7;
+    margin: 0;
+}
+
+@media (min-width: 1024px) {
+    .faq {
+        padding: 5rem 2rem;
+    }
+}
+</style>

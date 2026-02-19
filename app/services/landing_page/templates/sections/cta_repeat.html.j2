@@ -1,0 +1,74 @@
+<section class="cta-repeat" id="cta-repeat" data-section="cta_repeat">
+    <div class="cta-repeat__container">
+        <h2 class="cta-repeat__heading">{{ headline }}</h2>
+        <p class="cta-repeat__text">{{ subtext }}</p>
+        <a href="#waitlist" class="cta-repeat__button">{{ cta_text }}</a>
+        {% if urgency_text %}
+        <p class="cta-repeat__urgency">{{ urgency_text }}</p>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.cta-repeat {
+    padding: 4rem 1rem;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: white;
+    text-align: center;
+}
+
+.cta-repeat__container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cta-repeat__heading {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.cta-repeat__text {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.cta-repeat__button {
+    display: inline-block;
+    min-height: 48px;
+    min-width: 48px;
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-primary);
+    background-color: white;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cta-repeat__button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.cta-repeat__urgency {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-style: italic;
+}
+
+@media (min-width: 1024px) {
+    .cta-repeat {
+        padding: 5rem 2rem;
+    }
+    .cta-repeat__heading {
+        font-size: 2.5rem;
+    }
+}
+</style>

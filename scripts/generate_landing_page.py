@@ -80,6 +80,15 @@ Examples:
         help='Path to hero image (used as fallback or for color extraction)'
     )
     parser.add_argument(
+        '--images',
+        nargs='+',
+        help='Paths to product images for visual sections (benefits, gallery, how-it-works)'
+    )
+    parser.add_argument(
+        '--images-dir',
+        help='Directory containing product images (alternative to --images). Uses all .png/.jpg files.'
+    )
+    parser.add_argument(
         '--mock',
         action='store_true',
         help='Use mock data for all AI/scraping calls (faster, no API keys needed)'
@@ -99,6 +108,14 @@ Examples:
     if args.color == 'extract' and not args.image:
         parser.error("--image required when --color=extract")
 
+    # Collect product images
+    product_images = args.images or []
+    if args.images_dir:
+        img_dir = Path(args.images_dir)
+        if img_dir.is_dir():
+            for ext in ['*.png', '*.jpg', '*.jpeg', '*.webp']:
+                product_images.extend(str(p) for p in sorted(img_dir.glob(ext)))
+
     # Import here to avoid loading heavy modules during --help
     from app.services.landing_page import generate_landing_page_sync, LandingPageRequest
 
@@ -111,7 +128,8 @@ Examples:
         color_preference=args.color,
         color_preset=args.preset,
         video_path=args.video,
-        hero_image_path=args.image
+        hero_image_path=args.image,
+        product_images=product_images if product_images else None
     )
 
     # Display configuration
@@ -129,6 +147,8 @@ Examples:
         print(f"Video: {args.video}")
     if args.image:
         print(f"Image: {args.image}")
+    if product_images:
+        print(f"Product Images: {len(product_images)} files")
     print(f"Mock Mode: {args.mock}")
     print()
 

@@ -1,11 +1,19 @@
 <section class="benefits" id="benefits" data-section="benefits">
     <div class="benefits__container">
+        <h2 class="benefits__heading">{{ heading }}</h2>
         <div class="benefits__grid">
             {% for benefit in benefits %}
             <div class="benefits__card">
-                <div class="benefits__icon">{{ benefit.icon_emoji }}</div>
-                <h3 class="benefits__title">{{ benefit.title }}</h3>
-                <p class="benefits__description">{{ benefit.description }}</p>
+                {% if benefit.image %}
+                <div class="benefits__image-wrap">
+                    <img src="{{ benefit.image }}" alt="{{ benefit.title }}" class="benefits__image" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="benefits__body">
+                    <div class="benefits__icon">{{ benefit.icon_emoji }}</div>
+                    <h3 class="benefits__title">{{ benefit.title }}</h3>
+                    <p class="benefits__description">{{ benefit.description }}</p>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -23,6 +31,13 @@
     margin: 0 auto;
 }
 
+.benefits__heading {
+    text-align: center;
+    color: var(--color-text);
+    margin-bottom: 2.5rem;
+    font-size: 2rem;
+}
+
 .benefits__grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -30,11 +45,10 @@
 }
 
 .benefits__card {
-    padding: 2rem;
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    text-align: center;
+    overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -43,9 +57,27 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+.benefits__image-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+}
+
+.benefits__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.benefits__body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
 .benefits__icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .benefits__title {

@@ -294,14 +294,19 @@ class LPResearchResult(BaseModel):
 
 class LandingPageCopy(BaseModel):
     """AI-generated landing page copy content."""
-    headline: str
-    subheadline: str
-    benefits: List[dict]  # Each with title, description, icon_emoji
-    cta_text: str
-    social_proof_text: str
+    headline: str  # 5-8 words, benefit-driven, specific
+    subheadline: str  # 15-25 words, expands headline with specificity
+    benefits: List[dict]  # Each with title, description, icon_emoji — product-specific
+    features: Optional[List[dict]] = None  # Each with title, description, stat (quantified)
+    how_it_works: Optional[List[dict]] = None  # 3 steps: step_number, title, description
+    faq: Optional[List[dict]] = None  # Each with question, answer
+    cta_text: str  # 2-4 words, action verb + benefit
+    urgency_text: Optional[str] = None  # Scarcity/urgency near CTA
+    social_proof_text: str  # Specific number + context
+    trust_text: Optional[str] = None  # Privacy/guarantee micro-copy
     footer_text: str
-    meta_title: str
-    meta_description: str
+    meta_title: str  # Under 60 chars
+    meta_description: str  # ~160 chars
 
 
 class ColorScheme(BaseModel):

@@ -1,0 +1,122 @@
+<section class="how-it-works" id="how-it-works" data-section="how_it_works">
+    <div class="how-it-works__container">
+        <h2 class="how-it-works__heading">How It Works</h2>
+        <div class="how-it-works__steps">
+            {% for step in steps %}
+            <div class="how-it-works__step">
+                {% if step.image %}
+                <div class="how-it-works__image-wrap">
+                    <img src="{{ step.image }}" alt="Step {{ step.step_number }}: {{ step.title }}" class="how-it-works__image" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="how-it-works__number">{{ step.step_number }}</div>
+                <h3 class="how-it-works__title">{{ step.title }}</h3>
+                <p class="how-it-works__description">{{ step.description }}</p>
+            </div>
+            {% if not loop.last %}
+            <div class="how-it-works__connector" aria-hidden="true"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.how-it-works {
+    padding: 4rem 1rem;
+    background-color: var(--color-bg);
+}
+
+.how-it-works__container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.how-it-works__heading {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--color-text);
+}
+
+.how-it-works__steps {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+.how-it-works__step {
+    text-align: center;
+    padding: 1.5rem;
+    max-width: 320px;
+}
+
+.how-it-works__image-wrap {
+    width: 180px;
+    height: 240px;
+    margin: 0 auto 1.25rem;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.how-it-works__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.how-it-works__number {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.how-it-works__title {
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.how-it-works__description {
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.how-it-works__connector {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--color-primary), var(--color-accent));
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .how-it-works__steps {
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .how-it-works__connector {
+        width: 60px;
+        height: 2px;
+        margin-top: 148px;
+        background: linear-gradient(to right, var(--color-primary), var(--color-accent));
+    }
+}
+
+@media (min-width: 1024px) {
+    .how-it-works {
+        padding: 5rem 2rem;
+    }
+}
+</style>

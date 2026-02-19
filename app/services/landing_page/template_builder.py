@@ -66,6 +66,7 @@ def build_landing_page(
     color_scheme: ColorScheme,
     video_url: Optional[str] = None,
     hero_image: Optional[str] = None,
+    product_images: Optional[List[str]] = None,
     sections_order: Optional[List[str]] = None
 ) -> str:
     """
@@ -76,16 +77,52 @@ def build_landing_page(
         color_scheme: ColorScheme with colors
         video_url: Optional URL to hero video
         hero_image: Optional URL to hero image (fallback or poster)
-        sections_order: Custom section order (default: ["hero", "benefits", "waitlist", "footer"])
+        product_images: Optional list of product image paths for visual sections
+        sections_order: Custom section order
 
     Returns:
         Complete HTML string ready to save as .html file
     """
-    # Default section order (lean)
+    # Default section order — high-converting LP structure
     if sections_order is None:
-        sections_order = ["hero", "benefits", "waitlist", "footer"]
+        sections_order = ["hero", "benefits", "gallery", "features", "how_it_works", "cta_repeat", "faq", "waitlist", "footer"]
 
     logger.info(f"Building landing page with sections: {sections_order}")
+
+    # Extract product name for sections that need it
+    product_name = copy.meta_title.split("—")[0].split("-")[0].strip() if copy.meta_title else "this product"
+
+    # Distribute product images across sections
+    imgs = product_images or []
+    # benefits: first N images (one per benefit)
+    benefits_count = len(copy.benefits) if copy.benefits else 0
+    benefits_imgs = imgs[:benefits_count]
+    # how_it_works: next N images (one per step)
+    steps_count = len(copy.how_it_works) if copy.how_it_works else 0
+    hiw_imgs = imgs[benefits_count:benefits_count + steps_count]
+    # gallery: next batch (up to 6)
+    gallery_start = benefits_count + steps_count
+    gallery_imgs = imgs[gallery_start:gallery_start + 6]
+
+    # Inject images into benefits
+    benefits_with_images = []
+    for i, benefit in enumerate(copy.benefits or []):
+        b = dict(benefit)
+        if i < len(benefits_imgs):
+            b["image"] = benefits_imgs[i]
+        benefits_with_images.append(b)
+
+    # Inject images into how_it_works steps
+    steps_with_images = []
+    for i, step in enumerate(copy.how_it_works or []):
+        s = dict(step)
+        if i < len(hiw_imgs):
+            s["image"] = hiw_imgs[i]
+        steps_with_images.append(s)
+
+    # Skip gallery section if no gallery images
+    if not gallery_imgs and "gallery" in sections_order:
+        sections_order = [s for s in sections_order if s != "gallery"]
 
     # Prepare section contexts
     section_contexts = {
@@ -93,15 +130,39 @@ def build_landing_page(
             "headline": copy.headline,
             "subheadline": copy.subheadline,
             "cta_text": copy.cta_text,
+            "trust_text": copy.trust_text,
             "video_url": video_url,
             "hero_image": hero_image
         },
         "benefits": {
-            "benefits": copy.benefits
+            "heading": f"Why {product_name}?",
+            "benefits": benefits_with_images
+        },
+        "gallery": {
+            "images": gallery_imgs,
+            "product_name": product_name,
+            "heading": f"See {product_name} in Action"
+        },
+        "features": {
+            "features": copy.features or [],
+            "product_name": product_name
+        },
+        "how_it_works": {
+            "steps": steps_with_images
+        },
+        "cta_repeat": {
+            "headline": "Ready to Get Started?",
+            "subtext": copy.subheadline,
+            "cta_text": copy.cta_text,
+            "urgency_text": copy.urgency_text
+        },
+        "faq": {
+            "faq_items": copy.faq or []
         },
         "waitlist": {
             "cta_text": copy.cta_text,
-            "social_proof_text": copy.social_proof_text
+            "social_proof_text": copy.social_proof_text,
+            "trust_text": copy.trust_text
         },
         "footer": {
             "footer_text": copy.footer_text
