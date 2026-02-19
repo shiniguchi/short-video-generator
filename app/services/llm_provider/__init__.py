@@ -4,7 +4,7 @@ import logging
 from app.config import get_settings
 from app.services.llm_provider.base import LLMProvider
 from app.services.llm_provider.mock import MockLLMProvider
-from app.services.llm_provider.gemini import GeminiLLMProvider
+# GeminiLLMProvider imported lazily in get_llm_provider() — google-genai may not be installed
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,8 @@ def get_llm_provider() -> LLMProvider:
                 logger.info("USE_MOCK_DATA=True, using MockLLMProvider")
             return MockLLMProvider()
 
+        # Lazy import — only load google-genai when actually needed
+        from app.services.llm_provider.gemini import GeminiLLMProvider  # noqa: PLC0415
         return GeminiLLMProvider(api_key=google_api_key)
     else:
         # Default to mock for local development
@@ -50,6 +52,5 @@ def get_llm_provider() -> LLMProvider:
 __all__ = [
     "LLMProvider",
     "MockLLMProvider",
-    "GeminiLLMProvider",
     "get_llm_provider"
 ]

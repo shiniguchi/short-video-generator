@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Generating Landing Page...</h1>
+
+<div id="status">Starting generation...</div>
+
+<div class="progress-track">
+  <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+</div>
+
+<div id="error" style="display: none;" class="error-msg"></div>
+
+<script>
+  connectSSE("{{ job_id }}");
+</script>
+{% endblock %}
