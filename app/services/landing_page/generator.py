@@ -111,7 +111,8 @@ async def generate_landing_page(request: LandingPageRequest, use_mock: bool = Fa
         color_scheme=color_scheme,
         video_url=video_url_for_template,
         hero_image=hero_image_for_template,
-        product_images=product_images_for_template
+        product_images=product_images_for_template,
+        lp_source=run_id
     )
     logger.info(f"HTML built: {len(raw_html)} chars ({time.time() - step_start:.1f}s)")
 

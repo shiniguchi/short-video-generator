@@ -67,7 +67,8 @@ def build_landing_page(
     video_url: Optional[str] = None,
     hero_image: Optional[str] = None,
     product_images: Optional[List[str]] = None,
-    sections_order: Optional[List[str]] = None
+    sections_order: Optional[List[str]] = None,
+    lp_source: Optional[str] = None
 ) -> str:
     """
     Build complete landing page HTML from copy and design elements.
@@ -197,7 +198,8 @@ def build_landing_page(
         color_bg=color_scheme.background,
         color_text=color_scheme.text,
         inline_css=inline_css,
-        sections=rendered_sections
+        sections=rendered_sections,
+        lp_source=lp_source or ""
     )
 
     logger.info(f"Generated landing page HTML: {len(html)} characters")
