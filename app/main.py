@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from pathlib import Path
 import os
 import time
 from collections import defaultdict
 
 from app.api import routes
+from app.ui import router as ui_router
 from app.config import get_settings
 
 settings = get_settings()
@@ -75,5 +78,14 @@ async def rate_limit_middleware(request: Request, call_next):
 
     return await call_next(request)
 
+
+# Web UI — static files + HTML router
+app.mount("/ui/static", StaticFiles(directory=str(Path(__file__).parent / "ui" / "static")), name="ui-static")
+app.include_router(ui_router.router)
+
+# Serve generated LP files for preview
+_output_dir = Path(__file__).parent.parent / "output"
+_output_dir.mkdir(exist_ok=True)
+app.mount("/output", StaticFiles(directory=str(_output_dir)), name="lp-output")
 
 app.include_router(routes.router)

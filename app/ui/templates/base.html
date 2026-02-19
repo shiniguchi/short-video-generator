@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViralForge</title>
+  <link rel="stylesheet" href="/ui/static/ui.css">
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav-brand" href="/ui/">ViralForge</a>
+    <div class="nav-links">
+      <a href="/ui/">Dashboard</a>
+      <a href="/ui/generate">Generate</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="/ui/static/ui.js"></script>
+</body>
+</html>

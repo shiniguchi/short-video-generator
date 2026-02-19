@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Landing Pages</h1>
+{% if lps %}
+  <!-- LP list table rendered in Plan 03 -->
+{% else %}
+  <p class="empty-msg">No LPs generated yet. Generate your first LP.</p>
+{% endif %}
+{% endblock %}
