@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 16 - Waitlist Collection (in progress)
+**Current focus:** Phase 16 - Waitlist Collection (COMPLETE) — next: Phase 17
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 16 of 19 (Waitlist Collection) - IN PROGRESS
-Plan: 1 of 2 - COMPLETE
-Status: Phase 16 plan 01 complete — waitlist backend shipped
-Last activity: 2026-02-19 - Completed Plan 16-01 (waitlist backend)
+Phase: 16 of 19 (Waitlist Collection) - COMPLETE
+Plan: 2 of 2 - COMPLETE
+Status: Phase 16 complete — waitlist backend + LP form wiring shipped
+Last activity: 2026-02-19 - Completed Plan 16-02 (waitlist form wiring)
 
-Progress: [█████████████████████] 82% (36/44 plans total, v1.0 complete, v2.0 phase 16 in progress)
+Progress: [█████████████████████] 84% (37/44 plans total, v1.0 complete, v2.0 phase 16 complete)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [█████████████████████] 82% 
 - Phase 15 Plan 01: 1 minute, 1 task, 1 commit
 - Phase 15 Plan 02: 3 minutes, 1 task, 1 commit
 - Phase 16 Plan 01: 4 minutes, 2 tasks, 2 commits
+- Phase 16 Plan 02: 2 minutes, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -76,6 +77,11 @@ Progress: [█████████████████████] 82% 
 - [Phase 16-01]: Two-layer duplicate protection: SELECT before INSERT + catch IntegrityError for race conditions
 - [Phase 16-01]: CORS_ALLOWED_ORIGINS defaults to "*" for dev — single env var change tightens for production
 
+**Phase 16 Plan 02:**
+- [Phase 16-02]: Meta tag data bridge — lp_source in `<meta name="lp-source">` lets section JS read it without Jinja2 in section templates, keeping sections modular
+- [Phase 16-02]: Graceful degradation on network error — show success locally rather than error, better UX when LP can't reach API server
+- [Phase 16-02]: api-base meta tag pattern — optional override for base URL, empty = same origin, handles both local dev and deployed LP
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -94,10 +100,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 16-01-PLAN.md (waitlist backend) — Phase 16 plan 1 of 2 done
+Stopped at: Completed 16-02-PLAN.md (waitlist form wiring) — Phase 16 complete (2/2 plans)
 Resume file: None
-Next step: Execute Phase 16 Plan 02
+Next step: Execute Phase 17 (Web UI)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 16 Plan 01 complete (waitlist backend)*
+*Last updated: 2026-02-19 - Phase 16 Plan 02 complete (waitlist form wiring) — Phase 16 done*
