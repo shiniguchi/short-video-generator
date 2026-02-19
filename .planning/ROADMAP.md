@@ -122,10 +122,12 @@ Plans:
   4. User can trigger deployment to Cloudflare from web UI
   5. User can view list of all generated LPs with status (generated, deployed, archived)
 
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-01-PLAN.md -- LandingPage model, migration 005, UI scaffold (router + templates + static)
+- [ ] 17-02-PLAN.md -- Generate form, background task runner, SSE progress streaming
+- [ ] 17-03-PLAN.md -- LP list dashboard, inline preview, deploy stub, human verification
 
 ### Phase 18: Cloudflare Analytics
 **Goal**: Every deployed LP automatically tracks pageviews, form submissions, and traffic sources via Cloudflare Worker + D1, queryable from Python backend.
