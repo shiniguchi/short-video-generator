@@ -9,6 +9,7 @@ import logging
 from typing import Optional, List, Dict, Any
 from celery import Celery
 from datetime import datetime, timezone
+from pathlib import Path
 
 from app.worker import celery_app
 from app.database import get_task_session_factory
@@ -274,3 +275,64 @@ def orchestrate_pipeline_task(self, job_id: int, theme_config_path: Optional[str
         logger.error(f"Pipeline orchestration failed at stage {current_stage}: {exc}")
         asyncio.run(_mark_job_failed(job_id, current_stage, str(exc)))
         raise
+
+
+def generate_lp_from_pipeline(run_context: Dict[str, Any]) -> Optional[str]:
+    """
+    Generate landing page from pipeline run context.
+
+    This is called as the final step of the video pipeline, reusing
+    assets and metadata from the video generation process.
+
+    Args:
+        run_context: Pipeline context dict containing:
+            - product_idea: str (product name/idea)
+            - target_audience: str (audience description)
+            - video_path: Optional[str] (path to generated video)
+            - hero_image_path: Optional[str] (path to hero image)
+            - product_images: Optional[List[str]] (product reference images)
+
+    Returns:
+        Path to generated landing page HTML, or None if generation failed
+    """
+    try:
+        from app.services.landing_page import generate_landing_page_sync, LandingPageRequest
+
+        # Extract required fields from context
+        product_idea = run_context.get("product_idea")
+        target_audience = run_context.get("target_audience")
+
+        if not product_idea or not target_audience:
+            logger.warning("Cannot generate LP: missing product_idea or target_audience in pipeline context")
+            return None
+
+        # Extract optional assets
+        video_path = run_context.get("video_path")
+        hero_image_path = run_context.get("hero_image_path")
+        product_images = run_context.get("product_images", [])
+
+        # Build request
+        request = LandingPageRequest(
+            product_idea=product_idea,
+            target_audience=target_audience,
+            industry=run_context.get("industry"),
+            region=run_context.get("region", "US"),
+            color_preference="research",  # Default to research mode
+            video_path=video_path,
+            hero_image_path=hero_image_path,
+            product_images=product_images
+        )
+
+        logger.info(f"Generating landing page for: {product_idea}")
+
+        # Generate LP (use mock if configured in run context)
+        use_mock = run_context.get("use_mock", False)
+        result = generate_landing_page_sync(request, use_mock=use_mock)
+
+        logger.info(f"Landing page generated: {result.html_path}")
+        return result.html_path
+
+    except Exception as e:
+        # LP generation is optional - don't fail the whole pipeline
+        logger.error(f"Landing page generation failed (non-fatal): {e}", exc_info=True)
+        return None
