@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 import time
 from collections import defaultdict
 
@@ -49,10 +50,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS — restrict to known origins; override via ALLOWED_ORIGINS env var if needed
+# CORS — configurable origins; default "*" for dev, tighten via env var in production
+_cors_origins_raw = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # tighten for production
+    allow_origins=_cors_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
     allow_credentials=False,

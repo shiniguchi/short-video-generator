@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 from app.database import get_session
 from app.config import get_settings
+from app.schemas import WaitlistSubmit
 
 router = APIRouter()
 _security = HTTPBearer()
@@ -866,3 +867,35 @@ async def generate_ugc_ad(
         poll_url=f"/jobs/{job.id}",
         message=f"UGC ad generation started for '{product_name}'"
     )
+
+
+# --- Phase 16: Waitlist Collection ---
+
+@router.post("/waitlist")
+async def submit_waitlist(
+    request: WaitlistSubmit,
+    session: AsyncSession = Depends(get_session),
+):
+    """Public endpoint for LP waitlist form submissions. No API key required."""
+    from app.models import WaitlistEntry
+    from app.schemas import WaitlistResponse
+    from sqlalchemy.exc import IntegrityError
+
+    # Check duplicate first (friendly message)
+    existing = await session.execute(
+        select(WaitlistEntry).where(WaitlistEntry.email == request.email)
+    )
+    if existing.scalars().first():
+        raise HTTPException(status_code=409, detail="You're already on the waitlist!")
+
+    # Insert new entry
+    entry = WaitlistEntry(email=request.email, lp_source=request.lp_source)
+    session.add(entry)
+    try:
+        await session.commit()
+    except IntegrityError:
+        # Race condition safety net
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="You're already on the waitlist!")
+
+    return WaitlistResponse(message="Thanks! You're on the list.")
