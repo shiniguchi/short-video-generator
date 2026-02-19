@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 17 - Web UI (in progress) — Plan 01 complete
+**Current focus:** Phase 17 - Web UI (in progress) — Plan 02 complete
 
 ## Current Milestone
 
@@ -17,11 +17,11 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 ## Current Position
 
 Phase: 17 of 19 (Web UI) - IN PROGRESS
-Plan: 1 of 3 - COMPLETE (Plan 02 next)
-Status: Phase 17 Plan 01 complete — LandingPage model + web UI scaffold shipped
-Last activity: 2026-02-19 - Completed Plan 17-01 (LandingPage model + web UI scaffold)
+Plan: 2 of 3 - COMPLETE (Plan 03 next)
+Status: Phase 17 Plan 02 complete — LP generate form + SSE progress + background task runner shipped
+Last activity: 2026-02-19 - Completed Plan 17-02 (LP generate form with SSE progress)
 
-Progress: [█████████████████████░] 86% (38/44 plans total, v1.0 complete, v2.0 phase 17 plan 01 complete)
+Progress: [█████████████████████░] 88% (39/44 plans total, v1.0 complete, v2.0 phase 17 plan 02 complete)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [█████████████████████░] 8
 - Phase 16 Plan 01: 4 minutes, 2 tasks, 2 commits
 - Phase 16 Plan 02: 2 minutes, 2 tasks, 2 commits
 - Phase 17 Plan 01: 9 minutes, 2 tasks, 2 commits
+- Phase 17 Plan 02: 4 minutes, 1 task, 1 commit
 
 ## Accumulated Context
 
@@ -88,6 +89,12 @@ Progress: [█████████████████████░] 8
 - [Phase 17-01]: UI router + static mounts placed BEFORE API router in main.py — Starlette mount order determines route priority
 - [Phase 17-01]: backports.asyncio.runner pinned to 1.0.0 — 1.2.0 declares Requires-Python < 3.11, Docker uses Python 3.11-slim
 
+**Phase 17 Plan 02:**
+- [Phase 17-02]: GeminiLLMProvider lazy import in get_llm_provider() — google-genai not installed in Docker, module-level import crashes server
+- [Phase 17-02]: LP service lazy import in _run_generation background task — same reason, deferred until task actually runs
+- [Phase 17-02]: async_session_factory() directly in background task — get_session() is a FastAPI Depends generator, not for standalone use
+- [Phase 17-02]: Default color_preference=research not extract — extract requires image_path not available in form submission
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -106,10 +113,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 17-01-PLAN.md (LandingPage model + web UI scaffold) — Phase 17 Plan 1/3 done
+Stopped at: Completed 17-02-PLAN.md (LP generate form + SSE progress) — Phase 17 Plan 2/3 done
 Resume file: None
-Next step: Execute Phase 17 Plan 02 (generate form with SSE progress)
+Next step: Execute Phase 17 Plan 03 (LP list dashboard + deploy actions)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 17 Plan 01 complete (LandingPage model + web UI scaffold)*
+*Last updated: 2026-02-19 - Phase 17 Plan 02 complete (LP generate form + SSE progress + background task runner)*
