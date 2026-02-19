@@ -1,927 +1,1027 @@
-# Architecture Research
+# Architecture Research: LP Generation + Cloudflare Integration
 
-**Domain:** AI-Powered Video Generation Pipeline
-**Researched:** 2026-02-13
+**Domain:** Adding LP generation, Cloudflare deployment, Worker + D1 analytics, and web UI to existing ViralForge
+**Researched:** 2026-02-19
 **Confidence:** HIGH
 
-## Standard Architecture
+## Executive Summary
 
-### System Overview
+This architecture integrates four new capabilities into ViralForge's existing FastAPI + Celery stack:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CLIENT LAYER                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
-│  │ Google       │  │ Admin        │  │ External     │               │
-│  │ Sheets       │  │ Dashboard    │  │ Integrations │               │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘               │
-│         │                  │                  │                       │
-├─────────┴──────────────────┴──────────────────┴───────────────────────┤
-│                       ORCHESTRATION LAYER                             │
-│  ┌──────────────────────────────────────────────────────────────┐    │
-│  │                  Orchestrator Service                        │    │
-│  │  - Workflow management (Saga pattern)                        │    │
-│  │  - Job scheduling & state tracking                           │    │
-│  │  - Error handling & compensation                             │    │
-│  └───────────────────┬─────────────────────────────────────────┘    │
-│                      │                                                │
-├──────────────────────┴────────────────────────────────────────────────┤
-│                    PROCESSING SERVICES LAYER                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │  Trend   │  │ Pattern  │  │  Script  │  │  Video   │             │
-│  │ Scraper  │→ │ Analyzer │→ │Generator │→ │Generator │→            │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘             │
-│                                                                       │
-│  ┌──────────┐  ┌──────────┐                                          │
-│  │  Video   │  │Publisher │                                          │
-│→ │ Composer │→ │ Service  │                                          │
-│  └──────────┘  └──────────┘                                          │
-│                                                                       │
-├───────────────────────────────────────────────────────────────────────┤
-│                      MESSAGE & TASK LAYER                             │
-│  ┌────────────────────────────────────────────────────────────┐      │
-│  │  Redis                                                      │      │
-│  │  - Celery broker (task queue)                              │      │
-│  │  - Job state & progress tracking                           │      │
-│  │  - Service-to-service communication                        │      │
-│  │  - Caching (API responses, intermediate results)           │      │
-│  └────────────────────────────────────────────────────────────┘      │
-├───────────────────────────────────────────────────────────────────────┤
-│                         DATA LAYER                                    │
-│  ┌────────────────────────────────────────────────────────────┐      │
-│  │  PostgreSQL (Single Shared Database)                       │      │
-│  │  - Jobs table (pipeline state)                             │      │
-│  │  - Trends table (scraped data)                             │      │
-│  │  - Scripts table (generated content)                       │      │
-│  │  - Videos table (asset metadata)                           │      │
-│  │  - Audit logs & analytics                                  │      │
-│  └────────────────────────────────────────────────────────────┘      │
-└───────────────────────────────────────────────────────────────────────┘
-```
+1. **LP (Landing Page) Generation** — Single-file HTML pages created via Jinja2 templates
+2. **Cloudflare Pages Deployment** — Automated deployment of generated LPs via Python SDK
+3. **Cloudflare Worker + D1 Analytics** — Edge-based analytics stored in D1, accessed via HTTP proxy
+4. **Web UI** — Jinja2-based admin interface in the same FastAPI app
 
-### Component Responsibilities
+**Key Decision:** Keep everything Python-first. Cloudflare Workers exist as separate deployment units (TypeScript/JavaScript) but are accessed via HTTP from Python. No hybrid Python Worker architecture needed.
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| **Orchestrator Service** | Centralized workflow coordinator, job lifecycle management, error handling & compensation transactions, exposes REST API for external clients | FastAPI app with Celery tasks for async operations, implements Saga orchestration pattern |
-| **Trend Scraper** | Fetch trending data from TikTok/YouTube APIs, normalize & store trend data, trigger analysis pipeline | FastAPI service with scheduled Celery tasks, API client libraries |
-| **Pattern Analyzer** | Analyze trends for patterns, identify viral characteristics, generate insights for script generation | FastAPI service with ML/AI model integration (OpenAI API), receives trend data via Celery task |
-| **Script Generator** | Generate video scripts based on patterns, validate script quality, format for video production | FastAPI service with LLM integration (GPT-4), content validation logic |
-| **Video Generator** | Generate video assets from scripts, handle text-to-video AI generation, store video files | FastAPI service with AI video generation API integration, S3/GCS for asset storage |
-| **Video Composer** | Combine video, voiceover, subtitles, add watermarks & branding, export final video | FastAPI service with FFmpeg for video processing, MoviePy for composition |
-| **Publisher Service** | Upload videos to target platforms, schedule releases, handle platform-specific formatting | FastAPI service with platform API integrations (TikTok, YouTube), retry logic |
-| **PostgreSQL** | Single shared database for all services, stores job state, trend data, scripts, video metadata | PostgreSQL with connection pooling (pgBouncer recommended for production) |
-| **Redis** | Celery message broker, caching layer, job state tracking, inter-service communication | Redis with persistence enabled for durability |
+---
 
-## Recommended Project Structure
+## Current Architecture Overview
 
 ```
-/
-├── docker-compose.yml                    # Local development orchestration
-├── docker-compose.prod.yml              # Production overrides (Cloud Run references)
-├── .env.example                         # Environment template
-│
-├── services/
-│   ├── orchestrator/                    # Central workflow coordinator
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py                  # FastAPI app entry
-│   │   │   ├── api/                     # REST endpoints
-│   │   │   │   ├── jobs.py              # Job CRUD operations
-│   │   │   │   └── webhooks.py          # External event handlers
-│   │   │   ├── workflows/               # Saga orchestration logic
-│   │   │   │   ├── video_pipeline.py    # Main pipeline workflow
-│   │   │   │   └── compensation.py      # Rollback handlers
-│   │   │   ├── tasks/                   # Celery tasks
-│   │   │   │   └── orchestration.py     # Task coordination
-│   │   │   ├── models/                  # Database models (SQLAlchemy)
-│   │   │   └── schemas/                 # Pydantic request/response schemas
-│   │   └── requirements.txt
-│   │
-│   ├── trend-scraper/                   # Trend data collection
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py
-│   │   │   ├── api/                     # Health check endpoint
-│   │   │   ├── scrapers/                # Platform-specific scrapers
-│   │   │   │   ├── tiktok.py
-│   │   │   │   └── youtube.py
-│   │   │   ├── tasks/                   # Celery tasks
-│   │   │   │   ├── scrape.py            # Scheduled scraping
-│   │   │   │   └── normalize.py         # Data normalization
-│   │   │   └── models/                  # Database models
-│   │   └── requirements.txt
-│   │
-│   ├── analyzer/                        # Pattern analysis
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py
-│   │   │   ├── api/
-│   │   │   ├── analyzers/               # Analysis engines
-│   │   │   │   ├── engagement.py        # Engagement metrics
-│   │   │   │   ├── content.py           # Content analysis
-│   │   │   │   └── trends.py            # Trend identification
-│   │   │   ├── tasks/                   # Celery tasks
-│   │   │   │   └── analyze.py           # Analysis execution
-│   │   │   └── models/
-│   │   └── requirements.txt
-│   │
-│   ├── generator/                       # Script generation
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py
-│   │   │   ├── api/
-│   │   │   ├── generators/              # Content generation
-│   │   │   │   ├── script.py            # Script creation
-│   │   │   │   └── prompts.py           # LLM prompt templates
-│   │   │   ├── tasks/                   # Celery tasks
-│   │   │   │   └── generate.py          # Generation execution
-│   │   │   └── models/
-│   │   └── requirements.txt
-│   │
-│   ├── video-generator/                 # AI video generation
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py
-│   │   │   ├── api/
-│   │   │   ├── generators/              # Video generation clients
-│   │   │   │   ├── runwayml.py          # Runway ML integration
-│   │   │   │   ├── stable_diffusion.py  # SD Video integration
-│   │   │   │   └── voiceover.py         # TTS integration
-│   │   │   ├── tasks/                   # Celery tasks (long-running)
-│   │   │   │   └── generate_video.py
-│   │   │   └── models/
-│   │   └── requirements.txt
-│   │
-│   ├── composer/                        # Video composition & editing
-│   │   ├── Dockerfile
-│   │   ├── app/
-│   │   │   ├── main.py
-│   │   │   ├── api/
-│   │   │   ├── composers/               # Composition logic
-│   │   │   │   ├── editor.py            # FFmpeg wrapper
-│   │   │   │   ├── subtitles.py         # Subtitle generation
-│   │   │   │   └── watermark.py         # Branding overlay
-│   │   │   ├── tasks/                   # Celery tasks
-│   │   │   │   └── compose.py           # Video assembly
-│   │   │   └── models/
-│   │   └── requirements.txt
-│   │
-│   └── publisher/                       # Platform publishing
-│       ├── Dockerfile
-│       ├── app/
-│       │   ├── main.py
-│       │   ├── api/
-│       │   ├── publishers/              # Platform integrations
-│       │   │   ├── tiktok.py            # TikTok upload
-│       │   │   └── youtube.py           # YouTube upload
-│       │   ├── tasks/                   # Celery tasks
-│       │   │   └── publish.py           # Upload & scheduling
-│       │   └── models/
-│       └── requirements.txt
-│
-├── shared/                              # Shared utilities
-│   ├── __init__.py
-│   ├── database.py                      # SQLAlchemy session factory
-│   ├── celery_app.py                    # Celery app factory
-│   ├── config.py                        # Environment config
-│   ├── models/                          # Shared database models
-│   │   ├── job.py
-│   │   ├── trend.py
-│   │   ├── script.py
-│   │   └── video.py
-│   └── schemas/                         # Shared Pydantic schemas
-│
-├── migrations/                          # Alembic database migrations
-│   ├── alembic.ini
-│   ├── env.py
-│   └── versions/
-│
-└── tests/                               # Integration tests
-    ├── test_pipeline.py
-    └── test_services.py
+┌────────────────────────────────────────────────────────────────┐
+│                         Docker Compose                         │
+├────────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │ FastAPI  │  │  Celery   │  │PostgreSQL│  │    Redis     │  │
+│  │   Web    │  │  Worker   │  │    DB    │  │    Broker    │  │
+│  └────┬─────┘  └─────┬─────┘  └─────┬────┘  └──────┬───────┘  │
+│       │              │              │               │          │
+├───────┴──────────────┴──────────────┴───────────────┴──────────┤
+│                    Persistent Volumes                          │
+│       ┌───────────────┐    ┌────────────────────┐              │
+│       │ postgres_data │    │ output/ (file-based│              │
+│       └───────────────┘    │  video artifacts)  │              │
+│                            └────────────────────┘              │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### Structure Rationale
+**Current Component Responsibilities:**
 
-- **services/**: Each microservice is self-contained with its own Dockerfile, enabling independent deployment to Cloud Run
-- **shared/**: Common code shared via Python package or Docker volume mount to avoid duplication
-- **migrations/**: Centralized database migrations since we use a single shared database
-- **docker-compose.yml**: Mirrors production architecture locally, making 1:1 mapping to Cloud Run straightforward
-- **Celery tasks in each service**: Allows long-running operations to run asynchronously without blocking HTTP requests
+| Component | Responsibility | Implementation |
+|-----------|----------------|----------------|
+| FastAPI Web | REST API endpoints, request handling | Uvicorn ASGI server, SQLAlchemy async |
+| Celery Worker | Async task execution (trend collection, video gen) | Celery with thread pool, Redis broker |
+| PostgreSQL | Job/Video/Script/Trend storage | Async SQLAlchemy, Alembic migrations |
+| Redis | Task queue broker + result backend | Redis 7 Alpine |
+| Provider Abstraction | Swappable AI services (mock/real) | ABC base classes + factory functions |
 
-## Architectural Patterns
+**Existing Patterns:**
+- **Service Layer:** `app/services/` (video_generator, voiceover_generator, etc.)
+- **Provider Pattern:** `base.py` (ABC) + `mock.py` + real providers (HeyGen, Gemini, etc.)
+- **Factory Functions:** `get_video_generator()`, `get_voiceover_generator()` select provider from settings
+- **Async DB:** All database access via `async with get_session()` context manager
+- **File Output:** Generated videos → `output/review/`, approved → `output/approved/`
 
-### Pattern 1: Saga Orchestration (Recommended)
+---
 
-**What:** Centralized orchestrator manages the entire video generation pipeline as a distributed transaction with compensating actions for failures.
+## New Architecture: Integration Points
 
-**When to use:** Complex workflows with 6+ dependent stages where you need clear visibility into state, centralized error handling, and coordinated rollback.
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          Existing FastAPI App                            │
+├──────────────────────────────────────────────────────────────────────────┤
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                     NEW: Jinja2 Web UI Layer                       │  │
+│  │  /ui/dashboard  /ui/videos  /ui/jobs  /ui/landing-pages            │  │
+│  │  (Jinja2 templates + StaticFiles for CSS/JS)                       │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                   Existing REST API Layer                          │  │
+│  │  /api/generate  /api/videos  /api/jobs  /api/trends               │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                     NEW: LP + Deployment API                       │  │
+│  │  /api/landing-pages  /api/lp-generate  /api/lp-deploy             │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+    ┌────────────────────────────┐    ┌────────────────────────────┐
+    │   NEW: LP Generator Task   │    │  NEW: LP Deployment Task   │
+    │    (Celery, sync task)     │    │   (Celery, sync task)      │
+    │  - Load LandingPage record │    │  - Upload to CF Pages via  │
+    │  - Render Jinja2 template  │    │    cloudflare-python SDK   │
+    │  - Inline CSS, save HTML   │    │  - Update deployment_url   │
+    └────────────┬───────────────┘    └────────────┬───────────────┘
+                 │                                  │
+                 ▼                                  ▼
+      output/landing-pages/              Cloudflare Pages
+         (single-file HTML)              (https://{slug}.pages.dev)
+                                                   │
+                                                   ▼
+                                         ┌──────────────────────┐
+                                         │  Cloudflare Worker   │
+                                         │  (JavaScript/TS)     │
+                                         │  - Track page views  │
+                                         │  - Write to D1       │
+                                         └──────────────────────┘
+                                                   │
+                                                   ▼
+                                         ┌──────────────────────┐
+                                         │   D1 Database        │
+                                         │  (SQLite @ edge)     │
+                                         │  Table: page_views   │
+                                         └──────────────────────┘
+                                                   │
+                                                   ▼
+                                         ┌──────────────────────┐
+                                         │  Worker HTTP Proxy   │
+                                         │  (exposes /analytics)│
+                                         └──────────┬───────────┘
+                                                    │
+                            ┌───────────────────────┘
+                            ▼
+              ┌──────────────────────────────┐
+              │  FastAPI /api/analytics      │
+              │  - HTTP GET to Worker proxy  │
+              │  - Fetch D1 data from edge   │
+              └──────────────────────────────┘
+```
 
-**Trade-offs:**
-- **Pros:** Single source of truth for workflow state, easier debugging, centralized retry/timeout logic, clear transaction boundaries
-- **Cons:** Orchestrator becomes a critical dependency (single point of failure), requires high availability setup
+---
 
-**Example:**
+## Component Integration Design
+
+### 1. LP Generation Service
+
+**Integration Approach:** New service following existing provider pattern
+
+**Files:**
+- `app/services/landing_page_generator/generator.py` — Jinja2 template rendering
+- `app/services/landing_page_generator/base.py` — ABC for future template engines
+- `app/templates/landing_pages/base.html.jinja2` — Base template with inline CSS
+- `app/models.py` — Add `LandingPage` model
+
+**Why This Approach:**
+- Follows existing `app/services/` pattern
+- Jinja2 already used for FastAPI templates
+- Single-file HTML with inline CSS = portable, self-contained
+- Can swap template engines later (ABC pattern)
+
+**Database Schema:**
 ```python
-# services/orchestrator/app/workflows/video_pipeline.py
-from celery import chain, group
-from shared.celery_app import celery_app
+class LandingPage(Base):
+    __tablename__ = "landing_pages"
 
-class VideoPipelineSaga:
-    """Orchestrates the 8-stage video generation pipeline"""
-
-    def __init__(self, job_id: str):
-        self.job_id = job_id
-        self.state = {}
-
-    def execute(self):
-        """Execute saga with compensation on failure"""
-        try:
-            # Sequential pipeline execution
-            pipeline = chain(
-                scrape_trends.s(self.job_id),
-                analyze_patterns.s(self.job_id),
-                generate_script.s(self.job_id),
-                generate_video.s(self.job_id),
-                generate_voiceover.s(self.job_id),
-                compose_video.s(self.job_id),
-                review_video.s(self.job_id),  # Can be manual or automated
-                publish_video.s(self.job_id),
-            )
-
-            result = pipeline.apply_async()
-            return result
-
-        except Exception as e:
-            # Execute compensation transactions
-            self.compensate(e)
-
-    def compensate(self, error):
-        """Rollback completed stages on failure"""
-        if self.state.get('video_published'):
-            unpublish_video.apply_async((self.job_id,))
-        if self.state.get('video_composed'):
-            delete_composed_video.apply_async((self.job_id,))
-        # Continue rolling back in reverse order...
+    id = Column(Integer, primary_key=True)
+    video_id = Column(Integer, ForeignKey("videos.id"))
+    slug = Column(String(255), unique=True)  # URL slug
+    title = Column(String(500))
+    description = Column(Text)
+    html_path = Column(String(1000))  # output/landing-pages/{slug}.html
+    deployment_url = Column(String(1000))  # https://{slug}.pages.dev
+    status = Column(String(50), default="generated")  # generated, deployed, archived
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deployed_at = Column(DateTime(timezone=True))
+    extra_data = Column(JSON)  # Template variables, analytics summary
 ```
 
-**Why this is recommended for ViralForge:** Sequential 8-stage pipeline with dependencies requires orchestrator to track state, handle failures gracefully, and provide visibility into progress.
-
-### Pattern 2: Database-as-Communication (Hybrid Approach)
-
-**What:** Services share a single PostgreSQL database for state persistence and job coordination, while using Redis + Celery for async task execution.
-
-**When to use:** When starting with a greenfield project where services are tightly coupled in a sequential pipeline, and you want to avoid the complexity of event sourcing or database-per-service.
-
-**Trade-offs:**
-- **Pros:** Simpler to implement, strong consistency, easier transactions across stages, single source of truth
-- **Cons:** Services coupled via shared schema, harder to scale individual services independently, potential for schema migration conflicts
-
-**Example:**
+**Implementation:**
 ```python
-# shared/models/job.py
-from sqlalchemy import Column, String, Enum, TIMESTAMP, JSON
-from shared.database import Base
-import enum
+# app/services/landing_page_generator/generator.py
+from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
+from uuid import uuid4
 
-class JobStatus(enum.Enum):
-    PENDING = "pending"
-    SCRAPING = "scraping"
-    ANALYZING = "analyzing"
-    GENERATING_SCRIPT = "generating_script"
-    GENERATING_VIDEO = "generating_video"
-    COMPOSING = "composing"
-    REVIEWING = "reviewing"
-    PUBLISHING = "publishing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+class LandingPageGenerator:
+    def __init__(self, templates_dir: str = "app/templates/landing_pages"):
+        self.env = Environment(loader=FileSystemLoader(templates_dir))
 
-class Job(Base):
-    __tablename__ = "jobs"
+    def generate(
+        self,
+        video_path: str,
+        title: str,
+        description: str,
+        cta_text: str = "Watch Now",
+        output_dir: str = "output/landing-pages"
+    ) -> str:
+        """Generate single-file HTML landing page.
 
-    id = Column(String, primary_key=True)
-    status = Column(Enum(JobStatus), default=JobStatus.PENDING)
-    stage_data = Column(JSON)  # Intermediate results from each stage
-    created_at = Column(TIMESTAMP)
-    updated_at = Column(TIMESTAMP)
+        Returns:
+            Path to generated HTML file
+        """
+        template = self.env.get_template("base.html.jinja2")
 
-    # Each service updates this table as it progresses
-    # Orchestrator monitors state transitions
-```
-
-**Why this works:** ViralForge has sequential dependencies where each stage needs output from the previous stage. Shared database provides transactional guarantees and simplifies state management.
-
-### Pattern 3: Task Queue with Redis (FastAPI + Celery)
-
-**What:** HTTP requests to FastAPI trigger Celery tasks that execute long-running operations asynchronously, with Redis as the message broker.
-
-**When to use:** Operations that take more than a few seconds (AI generation, video processing, API calls) that would timeout HTTP connections.
-
-**Trade-offs:**
-- **Pros:** Fast API response times, horizontal scaling of workers, built-in retry/failure handling, monitoring via Flower
-- **Cons:** Eventual consistency, need to poll for results or implement webhooks, additional complexity of message queue
-
-**Example:**
-```python
-# services/generator/app/tasks/generate.py
-from shared.celery_app import celery_app
-from openai import OpenAI
-
-@celery_app.task(bind=True, max_retries=3)
-def generate_script(self, job_id: str, analysis_data: dict):
-    """Generate video script from pattern analysis"""
-    try:
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-        # Update job status
-        job = db.query(Job).filter(Job.id == job_id).first()
-        job.status = JobStatus.GENERATING_SCRIPT
-        db.commit()
-
-        # Call LLM
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a viral video scriptwriter."},
-                {"role": "user", "content": f"Create a script based on: {analysis_data}"}
-            ]
+        slug = str(uuid4())[:8]
+        html = template.render(
+            title=title,
+            description=description,
+            video_path=video_path,
+            cta_text=cta_text,
+            slug=slug
         )
 
-        # Store result
-        script = Script(job_id=job_id, content=response.choices[0].message.content)
-        db.add(script)
-        db.commit()
+        output_path = Path(output_dir) / f"{slug}.html"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(html)
 
-        return {"job_id": job_id, "script_id": script.id}
-
-    except Exception as e:
-        # Celery auto-retry with exponential backoff
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        return str(output_path)
 ```
 
-### Pattern 4: One Process Per Container (Cloud Run Ready)
-
-**What:** Each Docker service runs a single FastAPI/Uvicorn process, letting container orchestration handle replication and scaling.
-
-**When to use:** Deploying to Cloud Run, Kubernetes, or any container orchestration platform. Required for serverless platforms.
-
-**Trade-offs:**
-- **Pros:** Aligns with Cloud Run architecture, simplified resource management, independent service scaling, easier monitoring
-- **Cons:** More containers to manage (but orchestration handles this)
-
-**Example:**
-```dockerfile
-# services/orchestrator/Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY ./app /app/app
-COPY ../shared /app/shared
-
-# Single process per container
-CMD ["fastapi", "run", "app/main.py", "--port", "8080"]
+**Celery Task:**
+```python
+# app/tasks.py
+@celery_app.task(bind=True, name='app.tasks.generate_landing_page_task')
+def generate_landing_page_task(self, video_id: int):
+    """Generate landing page for approved video (SYNC task)."""
+    from app.services.landing_page_generator.generator import LandingPageGenerator
+    # ... load video, generate LP, save LandingPage record
 ```
 
-**Why this matters:** ViralForge explicitly targets Cloud Run deployment. Each Docker Compose service maps 1:1 to a Cloud Run service, so single-process containers are required.
+**Why Sync Not Async:**
+- LP generation is I/O-light (template rendering + file write)
+- No external API calls, no network latency
+- Celery task = already async from API perspective
+- Keep simple, avoid async complexity for file operations
 
-## Data Flow
+---
 
-### Sequential Pipeline Flow
+### 2. Cloudflare Pages Deployment
 
-```
-┌─────────────────┐
-│  Google Sheets  │ (Master data source)
-│  OR Dashboard   │
-└────────┬────────┘
-         │ POST /jobs (create new video request)
-         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    Orchestrator Service                     │
-│  1. Create Job record (status: PENDING)                     │
-│  2. Trigger saga execution via Celery                       │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ↓ Celery task chain
-┌───────────────────────────────────────────────────────────────┐
-│                   STAGE 1: Trend Collection                   │
-│  Trend Scraper Service                                        │
-│  - Celery task: scrape_trends(job_id)                        │
-│  - Fetch TikTok/YouTube trending data                        │
-│  - Store in PostgreSQL: trends table                         │
-│  - Update Job: status = SCRAPING                             │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass trend_ids to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                   STAGE 2: Pattern Analysis                   │
-│  Analyzer Service                                             │
-│  - Celery task: analyze_patterns(job_id, trend_ids)          │
-│  - Load trends from PostgreSQL                               │
-│  - Run ML/AI analysis (engagement, content patterns)         │
-│  - Store insights in PostgreSQL                              │
-│  - Update Job: status = ANALYZING                            │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass analysis_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                 STAGE 3: Script Generation                    │
-│  Generator Service                                            │
-│  - Celery task: generate_script(job_id, analysis_id)         │
-│  - Load analysis from PostgreSQL                             │
-│  - Call OpenAI GPT-4 for script creation                     │
-│  - Store script in PostgreSQL: scripts table                 │
-│  - Update Job: status = GENERATING_SCRIPT                    │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass script_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                 STAGE 4: Video Generation                     │
-│  Video Generator Service                                      │
-│  - Celery task: generate_video(job_id, script_id)            │
-│  - Load script from PostgreSQL                               │
-│  - Call AI video generation API (Runway ML, Stable Video)    │
-│  - Upload raw video to GCS/S3                                │
-│  - Store video metadata in PostgreSQL: videos table          │
-│  - Update Job: status = GENERATING_VIDEO                     │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass video_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                 STAGE 5: Voiceover Generation                 │
-│  Video Generator Service (same service, different task)      │
-│  - Celery task: generate_voiceover(job_id, script_id)        │
-│  - Call TTS API (ElevenLabs, Google TTS)                     │
-│  - Upload audio to GCS/S3                                    │
-│  - Store audio metadata in PostgreSQL                        │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass video_id + audio_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                   STAGE 6: Video Composition                  │
-│  Composer Service                                             │
-│  - Celery task: compose_video(job_id, video_id, audio_id)    │
-│  - Download raw video and audio from GCS/S3                  │
-│  - Use FFmpeg to:                                            │
-│    * Merge video + voiceover                                 │
-│    * Add subtitles (via subtitle.py)                         │
-│    * Add watermark/branding (via watermark.py)               │
-│  - Upload final video to GCS/S3                              │
-│  - Update PostgreSQL with final video URL                    │
-│  - Update Job: status = COMPOSING                            │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass final_video_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                      STAGE 7: Review                          │
-│  Orchestrator Service (approval gate)                        │
-│  - Update Job: status = REVIEWING                            │
-│  - Notification to admin for approval (webhook/email)        │
-│  - Wait for approval (manual or automated quality check)     │
-│  - If approved: proceed to publish                           │
-│  - If rejected: trigger compensation (saga rollback)         │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Pass final_video_id to next stage
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                     STAGE 8: Publishing                       │
-│  Publisher Service                                            │
-│  - Celery task: publish_video(job_id, final_video_id)        │
-│  - Download final video from GCS/S3                          │
-│  - Upload to TikTok/YouTube via platform APIs                │
-│  - Schedule release if specified                             │
-│  - Store publication status in PostgreSQL                    │
-│  - Update Job: status = COMPLETED                            │
-└───────┬───────────────────────────────────────────────────────┘
-        │ Completion notification
-        ↓
-┌───────────────────────────────────────────────────────────────┐
-│                        Orchestrator                           │
-│  - Update Job: status = COMPLETED                            │
-│  - Send webhook/notification to Google Sheets or Dashboard   │
-│  - Log analytics                                             │
-└───────────────────────────────────────────────────────────────┘
+**Integration Approach:** New Celery task using `cloudflare-python` SDK
+
+**Dependencies:**
+```txt
+# requirements.txt
+cloudflare>=5.0.0-beta.1  # Official Python SDK
 ```
 
-### Cross-Cutting Data Flows
+**Configuration:**
+```python
+# app/config.py
+class Settings(BaseSettings):
+    # ... existing settings
 
-#### Job State Tracking
-```
-PostgreSQL (jobs table)
-    ↑ (read current status)
-    ↓ (update status)
-All Services ← query job state before executing
-```
-
-#### Caching Layer
-```
-Service → Check Redis cache → Hit? Return cached data
-                            → Miss? Query PostgreSQL → Cache result → Return
+    # Cloudflare
+    cloudflare_api_token: str = ""
+    cloudflare_account_id: str = ""
+    cloudflare_pages_project: str = "viralforge-lps"
 ```
 
-#### Task Queue Flow
-```
-FastAPI Endpoint → Enqueue Celery task → Redis (broker)
-                                            ↓
-                                       Celery Worker (pulls task)
-                                            ↓
-                                       Execute task logic
-                                            ↓
-                                       Update PostgreSQL
+**Implementation:**
+```python
+# app/services/cloudflare_deployer.py
+from cloudflare import Cloudflare
+from pathlib import Path
+
+class CloudflareDeployer:
+    def __init__(self, api_token: str, account_id: str, project_name: str):
+        self.client = Cloudflare(api_token=api_token)
+        self.account_id = account_id
+        self.project_name = project_name
+
+    def deploy_landing_page(self, html_path: str, slug: str) -> str:
+        """Deploy single HTML file to Cloudflare Pages.
+
+        Returns:
+            Deployment URL (e.g., https://{slug}.pages.dev)
+        """
+        # Read HTML file
+        html_content = Path(html_path).read_text()
+
+        # Create deployment via Direct Upload
+        # Note: CF Pages API expects a tarball or zip, OR use Wrangler CLI
+        # For single HTML, easier to use wrangler publish via subprocess
+        # OR use Pages Direct Upload API with files dict
+
+        deployment = self.client.pages.projects.deployments.create(
+            project_name=self.project_name,
+            # ... deployment config
+        )
+
+        return deployment.url
 ```
 
-### Key Data Flow Principles
+**Alternative: Wrangler CLI via subprocess**
+```python
+# More reliable for file uploads
+import subprocess
 
-1. **Orchestrator as Controller**: Orchestrator doesn't process data directly; it coordinates task execution via Celery chains
-2. **Database as State Store**: PostgreSQL is single source of truth for job state, not Redis
-3. **Redis for Transient Data**: Task queues, temporary caching, not persistent storage
-4. **File Storage External**: Videos/audio stored in GCS/S3, only metadata in PostgreSQL
-5. **Async Communication**: Services don't call each other's HTTP APIs; they communicate via Celery tasks
+def deploy_via_wrangler(html_path: str, slug: str) -> str:
+    """Deploy using Wrangler CLI (must be installed in Docker image)."""
+    result = subprocess.run(
+        ["wrangler", "pages", "deploy", html_path, "--project-name", f"lp-{slug}"],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        raise Exception(f"Wrangler deploy failed: {result.stderr}")
+    # Parse deployment URL from stdout
+    return f"https://lp-{slug}.pages.dev"
+```
+
+**Celery Task:**
+```python
+# app/tasks.py
+@celery_app.task(bind=True, name='app.tasks.deploy_landing_page_task')
+def deploy_landing_page_task(self, landing_page_id: int):
+    """Deploy landing page to Cloudflare Pages (SYNC task)."""
+    from app.services.cloudflare_deployer import CloudflareDeployer
+    # ... load LandingPage, deploy, update deployment_url + deployed_at
+```
+
+**Why Separate Task:**
+- Deployment can fail (network, CF API rate limits)
+- Want retry + backoff logic
+- User can generate LP locally, deploy later
+- Decouples generation from hosting
+
+---
+
+### 3. Cloudflare Worker + D1 Analytics
+
+**Architecture Decision:** Workers are SEPARATE deployment units (JavaScript/TypeScript), NOT Python Workers
+
+**Why Not Python Workers:**
+- Python Workers are beta, limited ecosystem
+- D1 binding from Python Workers is experimental
+- JavaScript/TypeScript Workers are mature, battle-tested
+- FastAPI backend doesn't need to run at edge
+
+**Worker Structure:**
+```
+cloudflare-worker/           # NEW: Separate directory at project root
+├── wrangler.toml            # Worker configuration
+├── src/
+│   └── index.ts             # Worker entry point
+├── schema.sql               # D1 database schema
+└── package.json             # TypeScript dependencies
+```
+
+**Worker Implementation:**
+```typescript
+// cloudflare-worker/src/index.ts
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Track page view
+    if (url.pathname.startsWith('/track')) {
+      const slug = url.searchParams.get('slug');
+      if (!slug) return new Response('Missing slug', { status: 400 });
+
+      await env.DB.prepare(
+        'INSERT INTO page_views (slug, ip, user_agent, created_at) VALUES (?, ?, ?, ?)'
+      ).bind(slug, request.headers.get('CF-Connecting-IP'), request.headers.get('User-Agent'), Date.now()).run();
+
+      return new Response('OK', { status: 200 });
+    }
+
+    // Analytics proxy endpoint (for Python backend)
+    if (url.pathname === '/analytics') {
+      const slug = url.searchParams.get('slug');
+      const { results } = await env.DB.prepare(
+        'SELECT COUNT(*) as views FROM page_views WHERE slug = ?'
+      ).bind(slug).all();
+
+      return new Response(JSON.stringify(results), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response('Not Found', { status: 404 });
+  }
+};
+```
+
+**D1 Schema:**
+```sql
+-- cloudflare-worker/schema.sql
+CREATE TABLE page_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL,
+  ip TEXT,
+  user_agent TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_slug ON page_views(slug);
+```
+
+**Wrangler Configuration:**
+```toml
+# cloudflare-worker/wrangler.toml
+name = "viralforge-analytics"
+main = "src/index.ts"
+compatibility_date = "2026-02-19"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "viralforge_analytics"
+database_id = "<D1_DATABASE_ID>"
+
+[observability]
+enabled = true
+```
+
+**Deployment:**
+```bash
+# From project root
+cd cloudflare-worker
+npm install
+wrangler d1 create viralforge_analytics  # First time only
+wrangler d1 execute viralforge_analytics --file=schema.sql  # Create tables
+wrangler deploy  # Deploy Worker
+```
+
+**Python Backend Integration:**
+```python
+# app/services/analytics_fetcher.py
+import httpx
+from app.config import get_settings
+
+class AnalyticsFetcher:
+    def __init__(self):
+        self.worker_url = "https://viralforge-analytics.{your-subdomain}.workers.dev"
+
+    async def get_page_views(self, slug: str) -> int:
+        """Fetch page view count from Cloudflare Worker."""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.worker_url}/analytics",
+                params={"slug": slug}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data[0]["views"] if data else 0
+
+# app/api/routes.py
+@router.get("/landing-pages/{slug}/analytics")
+async def get_landing_page_analytics(slug: str, _: str = Depends(require_api_key)):
+    """Fetch analytics for landing page from Cloudflare D1 via Worker proxy."""
+    from app.services.analytics_fetcher import AnalyticsFetcher
+
+    fetcher = AnalyticsFetcher()
+    views = await fetcher.get_page_views(slug)
+
+    return {"slug": slug, "page_views": views}
+```
+
+**Why HTTP Proxy Pattern:**
+- D1 has no direct Python client (Workers-only binding)
+- Worker exposes `/analytics` HTTP endpoint
+- Python backend calls HTTP endpoint like any API
+- Simple, reliable, well-understood pattern
+- Worker handles authentication via API tokens if needed
+
+---
+
+### 4. Web UI Layer
+
+**Integration Approach:** Jinja2 templates in same FastAPI app, separate route prefix
+
+**Project Structure:**
+```
+app/
+├── api/
+│   └── routes.py          # Existing: /api/* (JSON responses)
+├── ui/                    # NEW: Web UI routes
+│   ├── __init__.py
+│   └── pages.py           # /ui/* (HTML responses via Jinja2)
+├── templates/             # NEW: Jinja2 templates
+│   ├── base.html.jinja2   # Base layout with nav
+│   ├── dashboard.html.jinja2
+│   ├── videos.html.jinja2
+│   ├── jobs.html.jinja2
+│   └── landing_pages.html.jinja2
+├── static/                # NEW: CSS, JS, images
+│   ├── css/
+│   │   └── main.css
+│   └── js/
+│       └── app.js
+└── main.py                # Mount UI routes + static files
+```
+
+**Implementation:**
+```python
+# app/ui/pages.py
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+
+from app.database import get_session
+from app.models import Video, Job, LandingPage
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request, session: AsyncSession = Depends(get_session)):
+    """Render dashboard with job/video stats."""
+    # Query stats
+    jobs_total = await session.scalar(select(func.count(Job.id)))
+    videos_total = await session.scalar(select(func.count(Video.id)))
+
+    return templates.TemplateResponse("dashboard.html.jinja2", {
+        "request": request,
+        "jobs_total": jobs_total,
+        "videos_total": videos_total
+    })
+
+@router.get("/videos", response_class=HTMLResponse)
+async def videos_list(request: Request, session: AsyncSession = Depends(get_session)):
+    """Render video gallery with approve/reject actions."""
+    query = select(Video).order_by(Video.created_at.desc()).limit(50)
+    result = await session.execute(query)
+    videos = result.scalars().all()
+
+    return templates.TemplateResponse("videos.html.jinja2", {
+        "request": request,
+        "videos": videos
+    })
+
+@router.get("/landing-pages", response_class=HTMLResponse)
+async def landing_pages_list(request: Request, session: AsyncSession = Depends(get_session)):
+    """Render landing page manager."""
+    query = select(LandingPage).order_by(LandingPage.created_at.desc())
+    result = await session.execute(query)
+    lps = result.scalars().all()
+
+    return templates.TemplateResponse("landing_pages.html.jinja2", {
+        "request": request,
+        "landing_pages": lps
+    })
+```
+
+```python
+# app/main.py
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from app.api.routes import router as api_router
+from app.ui.pages import router as ui_router
+
+app = FastAPI(title="ViralForge")
+
+# Mount API routes (existing)
+app.include_router(api_router, prefix="/api", tags=["API"])
+
+# Mount UI routes (new)
+app.include_router(ui_router, prefix="/ui", tags=["Web UI"])
+
+# Mount static files (new)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+```
+
+**Base Template:**
+```html
+<!-- app/templates/base.html.jinja2 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ViralForge{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="/ui/dashboard">Dashboard</a>
+        <a href="/ui/videos">Videos</a>
+        <a href="/ui/jobs">Jobs</a>
+        <a href="/ui/landing-pages">Landing Pages</a>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+```
+
+**Why This Approach:**
+- Follows FastAPI + Jinja2 standard pattern
+- No separate frontend build step
+- Server-side rendering = fast initial load
+- Can add HTMX for dynamic updates later
+- Keeps everything in one deployment unit
+
+**Alternative Considered: Separate React SPA**
+- Pros: Richer interactions, client-side state
+- Cons: Separate build pipeline, CORS config, more complexity
+- Verdict: Overkill for admin UI, save for future if needed
+
+---
+
+## Data Flow Diagrams
+
+### LP Generation + Deployment Flow
+
+```
+[User clicks "Create LP" in Web UI]
+    │
+    ▼
+[POST /api/lp-generate with video_id]
+    │
+    ▼
+[API creates LandingPage record, queues generate_landing_page_task]
+    │
+    ▼
+[Celery Worker: generate_landing_page_task]
+    │
+    ├─→ Load Video record
+    ├─→ Render Jinja2 template (title, description, video embed)
+    ├─→ Inline CSS for self-contained HTML
+    ├─→ Save to output/landing-pages/{slug}.html
+    └─→ Update LandingPage.html_path, status="generated"
+    │
+    ▼
+[User clicks "Deploy" in Web UI]
+    │
+    ▼
+[POST /api/lp-deploy with landing_page_id]
+    │
+    ▼
+[API queues deploy_landing_page_task]
+    │
+    ▼
+[Celery Worker: deploy_landing_page_task]
+    │
+    ├─→ Load LandingPage record
+    ├─→ Upload HTML to Cloudflare Pages (via SDK or Wrangler CLI)
+    ├─→ Receive deployment URL
+    └─→ Update LandingPage.deployment_url, deployed_at, status="deployed"
+    │
+    ▼
+[Landing Page live at https://{slug}.pages.dev]
+```
+
+### Analytics Tracking Flow
+
+```
+[User visits https://{slug}.pages.dev]
+    │
+    ▼
+[Cloudflare Pages serves static HTML]
+    │
+    ▼
+[HTML includes <script> that calls Worker /track endpoint]
+    │
+    ▼
+[Cloudflare Worker receives /track?slug={slug}]
+    │
+    ├─→ Extract IP, User-Agent from request headers
+    ├─→ INSERT INTO page_views (slug, ip, user_agent, created_at)
+    └─→ Return 200 OK
+    │
+    ▼
+[D1 Database stores page view]
+    │
+    │
+    ▼
+[Admin visits /ui/landing-pages in Web UI]
+    │
+    ▼
+[GET /api/landing-pages/{slug}/analytics]
+    │
+    ├─→ HTTP GET to Worker /analytics?slug={slug}
+    ├─→ Worker queries D1: SELECT COUNT(*) FROM page_views WHERE slug=?
+    ├─→ Worker returns JSON: {"views": 123}
+    └─→ API returns analytics to Web UI
+    │
+    ▼
+[Web UI displays page view count]
+```
+
+---
+
+## File Organization
+
+### New Files to Create
+
+```
+app/
+├── models.py                           # MODIFY: Add LandingPage model
+├── config.py                           # MODIFY: Add cloudflare_* settings
+├── tasks.py                            # MODIFY: Add LP generation/deployment tasks
+├── api/
+│   └── routes.py                       # MODIFY: Add /api/lp-*, /api/analytics
+├── ui/                                 # NEW: Web UI routes
+│   ├── __init__.py
+│   └── pages.py
+├── templates/                          # NEW: Jinja2 templates
+│   ├── base.html.jinja2
+│   ├── dashboard.html.jinja2
+│   ├── videos.html.jinja2
+│   ├── jobs.html.jinja2
+│   ├── landing_pages.html.jinja2
+│   └── landing_pages/                  # LP generation templates
+│       └── base.html.jinja2
+├── static/                             # NEW: Static assets
+│   ├── css/
+│   │   └── main.css
+│   └── js/
+│       └── app.js
+├── services/
+│   ├── landing_page_generator/         # NEW: LP generation service
+│   │   ├── __init__.py
+│   │   ├── base.py                     # ABC for template engines
+│   │   └── generator.py                # Jinja2 implementation
+│   ├── cloudflare_deployer.py          # NEW: CF Pages deployment
+│   └── analytics_fetcher.py            # NEW: Fetch D1 analytics via Worker
+
+cloudflare-worker/                      # NEW: Separate directory at root
+├── wrangler.toml
+├── src/
+│   └── index.ts
+├── schema.sql
+├── package.json
+└── tsconfig.json
+
+output/
+└── landing-pages/                      # NEW: Generated HTML files
+    └── {slug}.html
+```
+
+### Modified Files
+
+| File | Modification |
+|------|--------------|
+| `app/models.py` | Add `LandingPage` model |
+| `app/config.py` | Add `cloudflare_api_token`, `cloudflare_account_id`, `cloudflare_pages_project` |
+| `app/tasks.py` | Add `generate_landing_page_task`, `deploy_landing_page_task` |
+| `app/api/routes.py` | Add `/api/lp-generate`, `/api/lp-deploy`, `/api/landing-pages/{slug}/analytics` |
+| `app/main.py` | Mount UI router, mount static files |
+| `requirements.txt` | Add `cloudflare>=5.0.0-beta.1`, `jinja2` (already present) |
+| `Dockerfile` | Install Node.js + Wrangler CLI (for deployment task) |
+| `alembic/` | Migration to add `landing_pages` table |
+
+---
+
+## Build Order (Integration Sequence)
+
+### Phase 1: LP Generation (Standalone)
+**Goal:** Generate single-file HTML landing pages locally
+
+1. Add `LandingPage` model to `app/models.py`
+2. Create Alembic migration for `landing_pages` table
+3. Create `app/services/landing_page_generator/` (base + generator)
+4. Create `app/templates/landing_pages/base.html.jinja2`
+5. Add `generate_landing_page_task` to `app/tasks.py`
+6. Add `/api/lp-generate` endpoint to `app/api/routes.py`
+7. Test: Generate LP for existing video, verify HTML in `output/landing-pages/`
+
+**Why First:** No external dependencies, can be tested locally immediately
+
+### Phase 2: Web UI
+**Goal:** View/manage videos, jobs, LPs in browser
+
+1. Create `app/ui/pages.py` with routes
+2. Create `app/templates/` (base, dashboard, videos, jobs, landing_pages)
+3. Create `app/static/` (CSS, JS)
+4. Mount UI router in `app/main.py`
+5. Add StaticFiles mount for `/static`
+6. Test: Browse to `/ui/dashboard`, see job stats
+
+**Why Second:** Visual interface for testing LP generation, no Cloudflare account needed yet
+
+### Phase 3: Cloudflare Worker + D1 Analytics
+**Goal:** Track page views at edge
+
+1. Create `cloudflare-worker/` directory at root
+2. Write `src/index.ts` with `/track` and `/analytics` endpoints
+3. Write `schema.sql` for `page_views` table
+4. Configure `wrangler.toml` with D1 binding
+5. Deploy Worker + D1 database to Cloudflare
+6. Update LP template to include analytics `<script>` tag
+7. Add `app/services/analytics_fetcher.py`
+8. Add `/api/landing-pages/{slug}/analytics` endpoint
+9. Test: Open generated HTML locally, verify `/track` call (will fail until deployed)
+
+**Why Third:** Can develop Worker independently, test locally with `wrangler dev`
+
+### Phase 4: Cloudflare Pages Deployment
+**Goal:** Deploy LPs to public URLs
+
+1. Add `cloudflare_*` settings to `app/config.py`
+2. Create `app/services/cloudflare_deployer.py`
+3. Add `deploy_landing_page_task` to `app/tasks.py`
+4. Add `/api/lp-deploy` endpoint
+5. Update Dockerfile to install Node.js + Wrangler CLI
+6. Add "Deploy" button to `/ui/landing-pages` UI
+7. Test: Deploy LP, verify live at `https://{slug}.pages.dev`
+
+**Why Last:** Requires Cloudflare account + API token, most complex integration
+
+---
+
+## Local-to-Hosted Switchability
+
+### Configuration Strategy
+
+```python
+# app/config.py
+class Settings(BaseSettings):
+    # Deployment mode
+    deployment_mode: str = "local"  # local, docker, hosted
+
+    # Cloudflare (only needed for hosted mode)
+    cloudflare_api_token: str = ""
+    cloudflare_account_id: str = ""
+    cloudflare_pages_project: str = "viralforge-lps"
+    cloudflare_worker_url: str = ""
+
+    # Local fallbacks
+    local_lp_base_url: str = "http://localhost:8000/static/landing-pages"
+```
+
+### Conditional Logic
+
+```python
+# app/services/cloudflare_deployer.py
+class CloudflareDeployer:
+    def __init__(self):
+        self.settings = get_settings()
+
+    def deploy_landing_page(self, html_path: str, slug: str) -> str:
+        if self.settings.deployment_mode == "local":
+            # Local mode: Copy to static/ and return local URL
+            shutil.copy(html_path, f"app/static/landing-pages/{slug}.html")
+            return f"{self.settings.local_lp_base_url}/{slug}.html"
+
+        elif self.settings.deployment_mode in ("docker", "hosted"):
+            # Hosted mode: Deploy to Cloudflare Pages
+            return self._deploy_to_cloudflare(html_path, slug)
+```
+
+### Analytics Fetcher Fallback
+
+```python
+# app/services/analytics_fetcher.py
+class AnalyticsFetcher:
+    async def get_page_views(self, slug: str) -> int:
+        settings = get_settings()
+
+        if settings.deployment_mode == "local":
+            # No analytics in local mode
+            return 0
+
+        else:
+            # Fetch from Cloudflare Worker
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{settings.cloudflare_worker_url}/analytics",
+                    params={"slug": slug}
+                )
+                data = response.json()
+                return data[0]["views"] if data else 0
+```
+
+### Environment Variables
+
+**Local development (`.env`):**
+```bash
+DEPLOYMENT_MODE=local
+LOCAL_LP_BASE_URL=http://localhost:8000/static/landing-pages
+```
+
+**Docker Compose (production-like):**
+```yaml
+# docker-compose.yml
+environment:
+  - DEPLOYMENT_MODE=docker
+  - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+  - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
+  - CLOUDFLARE_WORKER_URL=https://viralforge-analytics.your-subdomain.workers.dev
+```
+
+**Hosted (Cloud Run, Fly.io, etc.):**
+```bash
+DEPLOYMENT_MODE=hosted
+CLOUDFLARE_API_TOKEN=<secret>
+CLOUDFLARE_ACCOUNT_ID=<secret>
+CLOUDFLARE_WORKER_URL=https://viralforge-analytics.your-subdomain.workers.dev
+```
+
+---
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| **0-100 jobs/day** | Single Docker Compose deployment on one VM, 1 worker per service, shared PostgreSQL and Redis instances |
-| **100-1K jobs/day** | Migrate to Cloud Run, scale video-generator and composer services to 2-3 instances, use Cloud SQL for PostgreSQL with connection pooling (pgBouncer), use Memorystore for Redis |
-| **1K-10K jobs/day** | Scale Celery workers independently (10+ for video-generator/composer), implement Redis Cluster for high availability, add CDN for video delivery (Cloud CDN), consider database read replicas |
-| **10K+ jobs/day** | Split video-generator into separate services per AI provider, implement CQRS pattern (separate read/write databases), consider database-per-service for independence, add Kafka for event streaming |
+| 0-1k LPs/month | Current design is fine. Single FastAPI instance, Celery worker handles LP gen/deploy sequentially. D1 free tier = 5M reads/day. |
+| 1k-10k LPs/month | Add Celery worker concurrency (multiple containers). Use CF Pages batch upload API if available. D1 still within free tier. |
+| 10k+ LPs/month | Move LP generation to dedicated worker queue. Consider CF Pages API rate limits (may need backoff/retry). Upgrade D1 to paid tier if >5M reads/day. |
 
-### Scaling Priorities
+### First Bottleneck: Cloudflare Pages API Rate Limits
 
-1. **First bottleneck: Video Generation & Composition** - These are CPU/GPU intensive and slow (minutes per video). Scale by:
-   - Running multiple Celery workers for video-generator and composer services
-   - Using Cloud Run's auto-scaling (up to max instances)
-   - Implementing job prioritization queue
+**Problem:** CF Pages API has rate limits (exact limits not publicly documented, likely ~10-100 deploys/min)
 
-2. **Second bottleneck: Database Connections** - All services share one PostgreSQL. Scale by:
-   - Adding pgBouncer connection pooling
-   - Implementing database query caching in Redis
-   - Moving read-heavy queries to read replicas
-   - Eventually splitting to database-per-service if coupling becomes problematic
+**Solution:**
+1. Add retry logic with exponential backoff to `deploy_landing_page_task`
+2. Use Celery rate limiting: `@task(rate_limit='10/m')` to cap deploys
+3. Batch deploy if CF Pages supports it (upload multiple files in one deployment)
 
-3. **Third bottleneck: External API Rate Limits** - TikTok, YouTube, OpenAI APIs have rate limits. Scale by:
-   - Implementing rate limiter in orchestrator
-   - Queueing publish jobs with backoff
-   - Using multiple API keys/accounts if allowed
+### Second Bottleneck: D1 Read Performance
+
+**Problem:** D1 free tier = 5M reads/day. At 10k LPs with 100 views each = 1M views/day. Admin checking analytics = 1 read per LP per check.
+
+**Solution:**
+1. Cache analytics in PostgreSQL (sync from D1 hourly via Celery Beat task)
+2. Use D1 query result caching (built-in, configurable in Worker)
+3. Aggregate analytics daily instead of real-time queries
+
+---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Direct Service-to-Service HTTP Calls
+### Anti-Pattern 1: Deploying Each LP to Separate CF Pages Project
 
-**What people do:** Configure services to call each other's HTTP endpoints directly (e.g., Orchestrator calls `http://analyzer:8000/analyze`)
-
-**Why it's wrong:**
-- Tight coupling makes deployment order critical
-- Synchronous calls cause cascading failures and timeouts
-- Difficult to implement retries and compensation
-- Doesn't work well with Cloud Run's autoscaling (cold starts)
-
-**Do this instead:** Use Celery task chains for service orchestration. Orchestrator enqueues tasks, workers process asynchronously.
-
-```python
-# BAD: Direct HTTP calls
-response = requests.post("http://analyzer:8000/analyze", json=data)
-result = response.json()
-
-# GOOD: Celery task chain
-from tasks.analyze import analyze_patterns
-result = analyze_patterns.apply_async((job_id, data))
-```
-
-### Anti-Pattern 2: Storing Large Files in PostgreSQL
-
-**What people do:** Store video files, audio files, or images as BYTEA or large text columns in PostgreSQL
+**What people might do:** Create new Cloudflare Pages project for each landing page
 
 **Why it's wrong:**
-- Bloats database, slowing down all queries
-- PostgreSQL has ~1GB limit for TOAST storage
-- Makes backups extremely large and slow
-- Wastes database connections for file uploads
+- CF Pages has project limits (100 projects per account on free tier)
+- Each project needs separate DNS, SSL, config
+- Deployment complexity scales linearly with LP count
 
-**Do this instead:** Store files in object storage (GCS/S3), save only metadata and URLs in PostgreSQL
+**Do this instead:**
+- Use **one CF Pages project** for all LPs
+- Deploy LPs to different paths: `/{slug}/index.html`
+- Or use custom domains with wildcard routing
 
-```python
-# BAD: Storing in database
-video.file_data = video_bytes  # Don't do this!
+### Anti-Pattern 2: Storing LP Analytics in PostgreSQL
 
-# GOOD: Store in object storage
-from google.cloud import storage
-client = storage.Client()
-bucket = client.bucket('viralforge-videos')
-blob = bucket.blob(f'videos/{job_id}/final.mp4')
-blob.upload_from_string(video_bytes)
-
-video.storage_url = blob.public_url  # Store URL in database
-```
-
-### Anti-Pattern 3: Running Multiple Workers in One Container
-
-**What people do:** Use `CMD ["fastapi", "run", "app/main.py", "--workers", "4"]` in Dockerfile for Cloud Run
+**What people might do:** Skip Cloudflare Workers, track analytics in PostgreSQL
 
 **Why it's wrong:**
-- Cloud Run already handles horizontal scaling (multiple containers)
-- Multiple workers share container CPU quota inefficiently
-- Breaks Cloud Run's autoscaling assumptions
-- Makes resource allocation unpredictable
+- PostgreSQL is not at edge, high latency for global users
+- Tracking pixel needs fast response (<100ms), PostgreSQL adds 200-500ms
+- Wastes database connections for lightweight analytics
 
-**Do this instead:** Single process per container, let Cloud Run scale container count
+**Do this instead:**
+- Use Cloudflare D1 for edge analytics (50ms response globally)
+- Sync aggregated data to PostgreSQL hourly for reports
+- Best of both worlds: fast tracking + rich querying
 
-```dockerfile
-# BAD: Multiple workers
-CMD ["fastapi", "run", "app/main.py", "--workers", "4"]
+### Anti-Pattern 3: Generating LPs Synchronously in API Endpoint
 
-# GOOD: Single worker, scale via Cloud Run
-CMD ["fastapi", "run", "app/main.py", "--port", "8080"]
-```
-
-### Anti-Pattern 4: Polling for Job Status
-
-**What people do:** Client polls `GET /jobs/{job_id}` every few seconds to check if video is ready
+**What people might do:** Render LP in `/api/lp-generate` endpoint, block until done
 
 **Why it's wrong:**
-- Wastes API quota and database connections
-- High latency (up to polling interval)
-- Creates unnecessary load during long-running jobs
+- Template rendering + file I/O can take 500ms-2s
+- Blocks API thread, reduces throughput
+- No retry logic if generation fails
 
-**Do this instead:** Implement webhooks or use WebSockets for status updates
+**Do this instead:**
+- Queue `generate_landing_page_task` via Celery
+- Return immediately with `task_id`
+- Poll `/api/jobs/{task_id}` for completion
+- Pattern already established in existing pipeline
 
-```python
-# BAD: Client-side polling
-while True:
-    response = requests.get(f"/jobs/{job_id}")
-    if response.json()["status"] == "completed":
-        break
-    time.sleep(5)
+### Anti-Pattern 4: Embedding Cloudflare Worker Code in Python
 
-# GOOD: Webhook callback
-@app.post("/webhooks/job-complete")
-async def job_complete(webhook_data: JobCompleteWebhook):
-    # Orchestrator calls this when job completes
-    notify_client(webhook_data.job_id, webhook_data.video_url)
-```
-
-### Anti-Pattern 5: Shared Database Without Schema Versioning
-
-**What people do:** Multiple services directly modify shared database schema without migration coordination
+**What people might do:** Try to write Cloudflare Worker in Python using Python Workers beta
 
 **Why it's wrong:**
-- Schema changes break other services unexpectedly
-- Difficult to rollback deployments
-- No audit trail of schema changes
-- Testing becomes unreliable
+- Python Workers are beta, limited library support
+- D1 binding from Python Workers is experimental
+- JavaScript/TypeScript Workers are mature, well-documented
+- Mixing Python + Python Workers = confusing codebase
 
-**Do this instead:** Centralized migrations with Alembic, versioned and tested before deployment
-
-```bash
-# Centralized migrations directory
-/migrations/
-  alembic.ini
-  env.py
-  versions/
-    001_initial.py
-    002_add_trends_table.py
-    003_add_job_stage_data.py
-
-# Run migrations before deploying services
-docker-compose run migrations alembic upgrade head
-```
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| **Google Sheets API** | REST API via gspread library | Read master data, write back video URLs. Use service account auth. Cache reads in Redis (15min TTL). |
-| **TikTok API** | OAuth + REST API | Rate limit: 100 uploads/day per account. Implement queue with backoff. Requires developer account approval. |
-| **YouTube Data API** | OAuth + REST API | Rate limit: 10,000 quota units/day. Uploads cost 1,600 units. Monitor quota usage. |
-| **OpenAI API** | REST API with API key | Use GPT-4 for script generation. Implement timeout (60s) and retries (3x). Track token usage for cost control. |
-| **Runway ML / Stable Video** | REST API with API key | Video generation takes 2-5 minutes. Use webhooks for completion notification to avoid polling. |
-| **ElevenLabs / Google TTS** | REST API | Voice generation. Cache common phrases. Monitor character usage for billing. |
-| **GCS / S3** | SDK (google-cloud-storage / boto3) | Store video/audio files. Use signed URLs for temporary access. Implement lifecycle policies (delete after 30 days). |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| **Orchestrator ↔ All Services** | Celery tasks (via Redis) | Orchestrator enqueues tasks, services execute. No direct HTTP calls. |
-| **All Services ↔ PostgreSQL** | SQLAlchemy ORM | Shared models in `/shared/models/`. Use connection pooling. Read-heavy queries should cache in Redis. |
-| **All Services ↔ Redis** | Direct Redis client | Used for Celery broker, caching, and temporary state. Not for persistent data. |
-| **Services ↔ Cloud Storage** | SDK with credentials | Each service has read/write access to video storage bucket. Use service account keys. |
-| **Orchestrator ↔ External Clients** | REST API (FastAPI) | Only orchestrator exposes public API. Other services are internal. |
-
-### Docker Compose to Cloud Run Migration Path
-
-The architecture is designed for 1:1 mapping:
-
-```yaml
-# docker-compose.yml (local)
-services:
-  orchestrator:
-    build: ./services/orchestrator
-    ports: ["8000:8080"]
-
-  trend-scraper:
-    build: ./services/trend-scraper
-
-  # ... other services
-
-# Maps to:
-# Cloud Run:
-#   - viralforge-orchestrator (public, with load balancer)
-#   - viralforge-trend-scraper (internal)
-#   - viralforge-analyzer (internal)
-#   - viralforge-generator (internal)
-#   - viralforge-video-generator (internal)
-#   - viralforge-composer (internal)
-#   - viralforge-publisher (internal)
-#
-# Cloud SQL: PostgreSQL instance
-# Memorystore: Redis instance
-# GCS: viralforge-videos bucket
-```
-
-**Key migration considerations:**
-- Local: Use `docker-compose.yml` for development
-- Production: Deploy each service to Cloud Run via `gcloud run deploy`
-- Service discovery: Cloud Run uses internal DNS for service-to-service (but we avoid this via Celery)
-- Secrets: Local uses `.env`, Cloud Run uses Secret Manager
-- Networking: Local uses Docker network, Cloud Run uses VPC connector for Cloud SQL/Memorystore access
-
-## Build Order and Dependencies
-
-### Suggested Build Order
-
-For greenfield implementation, build in this order to minimize rework:
-
-#### Phase 1: Foundation (Week 1-2)
-1. **Shared library** (`/shared/`)
-   - Database models
-   - Celery app factory
-   - Configuration management
-   - Pydantic schemas
-
-2. **Docker Compose setup**
-   - PostgreSQL service
-   - Redis service
-   - Basic networking
-
-3. **Database migrations** (`/migrations/`)
-   - Alembic setup
-   - Initial schema (jobs, trends, scripts, videos)
-
-#### Phase 2: Core Services (Week 3-4)
-4. **Orchestrator service**
-   - FastAPI app with REST API
-   - Job CRUD operations
-   - Basic Celery task for testing
-   - Health check endpoints
-
-5. **Trend Scraper service**
-   - Platform API integrations (TikTok, YouTube)
-   - Celery task for scheduled scraping
-   - Data normalization and storage
-
-#### Phase 3: Processing Pipeline (Week 5-7)
-6. **Analyzer service**
-   - Pattern analysis algorithms
-   - OpenAI integration for insights
-   - Celery task for async analysis
-
-7. **Generator service**
-   - Script generation with GPT-4
-   - Template management
-   - Content validation
-
-8. **Video Generator service**
-   - AI video generation API integration
-   - Voiceover generation (TTS)
-   - File upload to GCS/S3
-
-#### Phase 4: Post-Processing (Week 8-9)
-9. **Composer service**
-   - FFmpeg video processing
-   - Subtitle generation
-   - Watermark overlay
-   - Video assembly
-
-#### Phase 5: Publishing & Workflow (Week 10-11)
-10. **Publisher service**
-    - Platform upload integrations
-    - Scheduling logic
-    - Error handling and retries
-
-11. **Saga orchestration** (in Orchestrator)
-    - Pipeline coordination
-    - Compensation transactions
-    - Error recovery
-
-#### Phase 6: Production Readiness (Week 12+)
-12. **Monitoring & Observability**
-    - Flower for Celery monitoring
-    - Logging (structured JSON)
-    - Metrics (Prometheus/Cloud Monitoring)
-
-13. **Cloud Run deployment**
-    - Migrate from Docker Compose
-    - Configure Cloud SQL and Memorystore
-    - Set up CI/CD pipeline
-
-### Dependency Graph
-
-```
-                          ┌─────────────┐
-                          │   Shared    │
-                          │   Library   │
-                          └──────┬──────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              │                  │                  │
-              ↓                  ↓                  ↓
-      ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-      │    Docker    │   │   Database   │   │  Orchestrator│
-      │   Compose    │   │  Migrations  │   │    Service   │
-      └──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-             │                  │                   │
-             └──────────┬───────┴───────────────────┘
-                        │
-         ┌──────────────┼──────────────┐
-         │              │              │
-         ↓              ↓              ↓
-   ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │  Trend   │  │ Analyzer │  │Generator │
-   │ Scraper  │  │          │  │          │
-   └────┬─────┘  └────┬─────┘  └────┬─────┘
-        │             │             │
-        └─────────────┼─────────────┘
-                      │
-         ┌────────────┼────────────┐
-         │            │            │
-         ↓            ↓            ↓
-   ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │  Video   │  │ Composer │  │Publisher │
-   │Generator │  │          │  │          │
-   └──────────┘  └──────────┘  └──────────┘
-```
-
-**Critical path:** Shared → Database → Orchestrator → Processing Services → Saga Workflow
-
-**Parallelizable:** Once Orchestrator is built, processing services (Scraper, Analyzer, Generator, Video Generator, Composer, Publisher) can be built in parallel by different developers, as long as they follow the shared models and task interface contracts.
-
-## Confidence and Sources
-
-**Confidence Level: HIGH**
-
-This architecture is based on:
-- Official FastAPI documentation (Docker deployment patterns)
-- Official Celery documentation (application architecture)
-- Multiple verified 2026 sources on microservices patterns
-- AWS, Azure, and Google Cloud reference architectures
-- Production examples from Netflix and other tech companies
-
-**Key Sources:**
-
-### Microservices & AI Pipelines
-- [Microservices Are the Only Way to Scale AI Agents](https://www.startuphub.ai/ai-news/ai-video/2026/microservices-are-the-only-way-to-scale-ai-agents/) - StarupHub (2026)
-- [Microservices Architecture for AI Applications: Scalable Patterns and 2025 Trends](https://medium.com/@meeran03/microservices-architecture-for-ai-applications-scalable-patterns-and-2025-trends-5ac273eac232) - Medium (2025)
-- [AI Architectures in 2026: Components, Patterns, and Practical Code](https://medium.com/@angelosorte1/ai-architectures-in-2026-components-patterns-and-practical-code-1df838dab854) - Medium (2026)
-- [From AI Pilots to Production Reality: Architecture Lessons from 2025 and What 2026 Demands](https://www.dataa.dev/2026/01/01/from-ai-pilots-to-production-reality-architecture-lessons-from-2025-and-what-2026-demands/) - C4 Blog (2026)
-
-### FastAPI + Celery Patterns
-- [FastAPI Best Practices for Production: Complete 2026 Guide](https://fastlaunchapi.dev/blog/fastapi-best-practices-production-2026) - FastLaunchAPI (2026)
-- [The Complete Guide to Background Processing with FastAPI × Celery/Redis](https://blog.greeden.me/en/2026/01/27/the-complete-guide-to-background-processing-with-fastapi-x-celery-redishow-to-separate-heavy-work-from-your-api-to-keep-services-stable/) - IT & Life Hacks Blog (2026)
-- [Modern FastAPI Architecture Patterns for Scalable Production Systems](https://medium.com/algomart/modern-fastapi-architecture-patterns-for-scalable-production-systems-41a87b165a8b) - Medium
-- [Async Architecture with FastAPI, Celery, and RabbitMQ](https://medium.com/cuddle-ai/async-architecture-with-fastapi-celery-and-rabbitmq-c7d029030377) - Medium
-
-### Video Processing Pipelines
-- [Rebuilding Netflix Video Processing Pipeline with Microservices](https://netflixtechblog.com/rebuilding-netflix-video-processing-pipeline-with-microservices-4e5e6310e359) - Netflix TechBlog
-- [Automated Video Processing with FFmpeg and Docker](https://img.ly/blog/building-a-production-ready-batch-video-processing-server-with-ffmpeg/) - IMG.LY Blog
-- [Pipeline video generation: How to generate video content and subtitles](https://fastercapital.com/content/Pipeline-video-generation--How-to-generate-video-content-and-subtitles-using-your-pipeline.html) - FasterCapital
-- [Implementing a Dynamic Live Video Watermarking Pipeline](https://medium.com/trackit/implementing-a-dynamic-live-video-watermarking-pipeline-953bd9693087) - TrackIt
-
-### Orchestration Patterns
-- [How to Create Orchestration Pattern in Microservices](https://oneuptime.com/blog/post/2026-01-30-microservices-orchestration-pattern/view) - OneUptime (2026)
-- [Saga Pattern Demystified: Orchestration vs Choreography](https://blog.bytebytego.com/p/saga-pattern-demystified-orchestration) - ByteByteGo
-- [Event-driven Solution - Saga Orchestration](https://ibm-cloud-architecture.github.io/eda-saga-orchestration/) - IBM Cloud Architecture
-
-### Database Patterns
-- [Database Per Service Pattern for Microservices](https://www.geeksforgeeks.org/database-per-service-pattern-for-microservices/) - GeeksForGeeks
-- [PostgreSQL in the Microservices Architecture](https://reintech.io/blog/postgresql-microservices-architecture) - Reintech
-- [Redis in Microservices Architecture: Patterns and Anti-Patterns](https://reintech.io/blog/redis-microservices-patterns-antipatterns) - Reintech
-- [How Redis Simplifies Microservices Design Patterns](https://thenewstack.io/how-redis-simplifies-microservices-design-patterns/) - The New Stack
-
-### Cloud Run & Docker
-- [Deploy services using Compose | Cloud Run](https://docs.cloud.google.com/run/docs/deploy-run-compose) - Google Cloud Docs
-- [Cloud Run and Docker collaboration](https://cloud.google.com/blog/products/serverless/cloud-run-and-docker-collaboration) - Google Cloud Blog
-- [FastAPI Docker Deployment](https://fastapi.tiangolo.com/deployment/docker/) - FastAPI Official Docs
+**Do this instead:**
+- Keep Worker as separate TypeScript project
+- Python backend calls Worker via HTTP
+- Clear separation of concerns
+- Use each tool for what it's good at
 
 ---
-*Architecture research for: ViralForge - AI-Powered Short Video Generation Pipeline*
-*Researched: 2026-02-13*
+
+## Integration Points Summary
+
+### Existing → New Connections
+
+| Existing Component | New Component | Connection Type | Purpose |
+|-------------------|---------------|-----------------|---------|
+| Video model | LandingPage model | Foreign Key | Link LP to source video |
+| FastAPI `/api/*` | FastAPI `/ui/*` | Same app, different router | Web UI for admin |
+| Celery tasks | `generate_landing_page_task` | Same Celery app | Async LP generation |
+| Celery tasks | `deploy_landing_page_task` | Same Celery app | Async CF deployment |
+| FastAPI | Cloudflare Worker | HTTP (fetch) | Retrieve analytics from D1 |
+| Cloudflare Pages | Cloudflare Worker | JavaScript `<script>` tag | Track page views |
+
+### External Dependencies
+
+| Service | Purpose | Python Integration | Configuration |
+|---------|---------|-------------------|---------------|
+| Cloudflare Pages | Host LPs | `cloudflare-python` SDK | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| Cloudflare Workers | Edge analytics | HTTP API calls | `CLOUDFLARE_WORKER_URL` |
+| Cloudflare D1 | Analytics storage | Via Worker proxy | Managed by Worker |
+
+---
+
+## Sources
+
+### Landing Pages
+- [40 best landing page examples of 2026](https://unbounce.com/landing-page-examples/best-landing-page-examples/)
+- [Landing Page Best Practices for Creators (2026 Edition)](https://www.newzenler.com/blog/landing-page-best-practices-creators-2026)
+
+### Cloudflare Integration
+- [Query D1 from Python Workers](https://developers.cloudflare.com/d1/examples/query-d1-from-python-workers/)
+- [Cloudflare Python SDK](https://github.com/cloudflare/cloudflare-python)
+- [Build an API to access D1 using a proxy Worker](https://developers.cloudflare.com/d1/tutorials/build-an-api-to-access-d1/)
+- [D1py - Python wrapper for D1 REST API](https://github.com/Suleman-Elahi/D1py)
+- [Cloudflare Pages Deployment API](https://developers.cloudflare.com/api/python/resources/pages/subresources/projects/subresources/deployments/)
+- [Fetch · Cloudflare Workers docs](https://developers.cloudflare.com/workers/runtime-apis/fetch/)
+
+### FastAPI + Jinja2
+- [FastAPI Templates](https://fastapi.tiangolo.com/advanced/templates/)
+- [How to Serve a Website With FastAPI Using HTML and Jinja2 – Real Python](https://realpython.com/fastapi-jinja2-template/)
+- [The Ultimate FastAPI Tutorial Part 6 - Serving HTML with Jinja Templates](https://christophergs.com/tutorials/ultimate-fastapi-tutorial-pt-6-jinja-templates/)
+
+### Architecture Patterns
+- [Developing a Single Page App with FastAPI and React](https://testdriven.io/blog/fastapi-react/)
+- [FastAPI Static Files](https://fastapi.tiangolo.com/tutorial/static-files/)
+- [Serving a React Frontend Application with FastAPI](https://davidmuraya.com/blog/serving-a-react-frontend-application-with-fastapi/)
+
+---
+
+*Architecture research for: ViralForge LP + Cloudflare Integration*
+*Researched: 2026-02-19*
