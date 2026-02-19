@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 14 of 19 (Landing Page Generation) - COMPLETE
-Plan: 3 of 3 - COMPLETE
-Status: Phase 14 Complete, Ready for Phase 15
-Last activity: 2026-02-19 - Completed Plan 14-03 (Final Assembly & CLI)
+Phase: 15 of 19 (AI Section Editing) - IN PROGRESS
+Plan: 1 of 2 - COMPLETE
+Status: Phase 15 Plan 01 complete, ready for Plan 02 (CLI)
+Last activity: 2026-02-19 - Completed Plan 15-01 (Section Editor Core)
 
-Progress: [████████████████████] 75% (33/44 plans total, v1.0 complete, v2.0 phase 14 done)
+Progress: [████████████████████] 77% (34/44 plans total, v1.0 complete, v2.0 phase 15 in progress)
 
 ## Performance Metrics
 
@@ -34,10 +34,11 @@ Progress: [████████████████████] 75% (33
 
 **v2.0 (in progress):**
 - Total plans: 14 (across 6 phases)
-- Plans completed: 3
+- Plans completed: 4
 - Phase 14 Plan 01: 6.2 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 02: 3.8 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 03: 32 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
+- Phase 15 Plan 01: 1 minute, 1 task, 1 commit
 
 ## Accumulated Context
 
@@ -58,6 +59,12 @@ Progress: [████████████████████] 75% (33
 - [Phase 14-03]: generate_lp_from_pipeline() wraps LP in try/except — pipeline never fails due to LP errors
 - [Phase 14-03]: Auto-open browser after generation for immediate preview; --no-open flag for CI/batch mode
 
+**Phase 15 Plan 01:**
+- [Phase 15-01]: Section-scoped schemas (8 small schemas) instead of full LandingPageCopy — smaller prompts, accurate targeted edits
+- [Phase 15-01]: HTML file as source of truth — extract context via regex, no JSON sidecar state
+- [Phase 15-01]: gallery excluded from EDITABLE_SECTIONS — image paths not copy, clear error returned
+- [Phase 15-01]: Always call optimize_html() after replacement — prevents CSS duplication on repeated edits
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -76,10 +83,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 14-03-PLAN.md (Final Assembly & CLI) — Phase 14 complete
+Stopped at: Completed 15-01-PLAN.md (Section Editor Core) — Phase 15 Plan 01 complete
 Resume file: None
-Next step: Begin Phase 15 (Landing Page Hosting)
+Next step: Execute Phase 15 Plan 02 (CLI for section editing)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 14 complete (all 3 plans done)*
+*Last updated: 2026-02-19 - Phase 15 Plan 01 complete (section editor core)*
