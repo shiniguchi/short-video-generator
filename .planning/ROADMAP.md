@@ -82,10 +82,11 @@ Plans:
   3. AI regenerates only the targeted section while preserving other content
   4. Updated LP maintains structural integrity (no broken HTML/CSS)
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md -- Section editor module with section-scoped schemas and AI copy regeneration
+- [ ] 15-02-PLAN.md -- CLI command, sidecar metadata, and module exports
 
 ### Phase 16: Waitlist Collection
 **Goal**: Visitors can submit emails via LP waitlist form with server-side validation, duplicate prevention, and database storage.
@@ -187,7 +188,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 12. Google AI Provider Suite | v1.0 | 4/4 | Complete | 2026-02-15 |
 | 13. UGC Product Ad Pipeline | v1.0 | 3/3 | Complete | 2026-02-15 |
 | 14. Landing Page Generation | v2.0 | 0/3 | Planning complete | - |
-| 15. AI Section Editing | v2.0 | 0/TBD | Not started | - |
+| 15. AI Section Editing | v2.0 | 0/2 | Planning complete | - |
 | 16. Waitlist Collection | v2.0 | 0/TBD | Not started | - |
 | 17. Web UI | v2.0 | 0/TBD | Not started | - |
 | 18. Cloudflare Analytics | v2.0 | 0/TBD | Not started | - |
