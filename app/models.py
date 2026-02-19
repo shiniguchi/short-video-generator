@@ -107,3 +107,17 @@ class Video(Base):
     published_at = Column(DateTime(timezone=True))
     published_url = Column(String(1000))
     extra_data = Column("metadata", JSON)
+
+
+class WaitlistEntry(Base):
+    """Visitor waitlist signups from landing pages."""
+    __tablename__ = "waitlist_entries"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False)
+    lp_source = Column(String(50), nullable=True)  # run_id of source LP
+    signed_up_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('email', name='uq_waitlist_email'),
+    )

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from typing import List, Optional
 from datetime import datetime
 
@@ -375,3 +375,16 @@ class WaitlistEditCopy(BaseModel):
 class FooterEditCopy(BaseModel):
     """Copy fields for footer section editing."""
     footer_text: str
+
+
+# Waitlist Collection Schemas (Phase 16)
+
+class WaitlistSubmit(BaseModel):
+    """Waitlist form submission from LP visitor."""
+    email: EmailStr
+    lp_source: Optional[str] = None
+
+
+class WaitlistResponse(BaseModel):
+    """Response for waitlist submission."""
+    message: str
