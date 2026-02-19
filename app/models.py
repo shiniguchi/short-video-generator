@@ -121,3 +121,24 @@ class WaitlistEntry(Base):
     __table_args__ = (
         UniqueConstraint('email', name='uq_waitlist_email'),
     )
+
+
+class LandingPage(Base):
+    """Generated landing pages — tracks status and deployment info."""
+    __tablename__ = "landing_pages"
+
+    id = Column(Integer, primary_key=True)
+    run_id = Column(String(50), nullable=False, unique=True)  # pipeline run ID
+    product_idea = Column(String(500), nullable=False)
+    target_audience = Column(String(500), nullable=True)
+    html_path = Column(String(1000), nullable=True)  # local file path
+    status = Column(String(50), default="generated")  # generated, deployed, archived
+    color_scheme_source = Column(String(50), nullable=True)  # extract/research/preset
+    sections = Column(JSON, nullable=True)  # section config snapshot
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deployed_at = Column(DateTime(timezone=True), nullable=True)
+    deployed_url = Column(String(1000), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('run_id', name='uq_lp_run_id'),
+    )
