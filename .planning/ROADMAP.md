@@ -62,10 +62,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Generated LP includes embedded product video in hero section
   6. Generated LP includes waitlist email capture form with honeypot spam prevention
 
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md -- Foundation, schemas, color extractor, and LP research module
+- [ ] 14-02-PLAN.md -- AI copy generator and Jinja2 template system
+- [ ] 14-03-PLAN.md -- Optimizer, CLI command, pipeline integration, and visual verification
 
 ### Phase 15: AI Section Editing
 **Goal**: User can refine generated landing pages by editing individual sections using AI prompts without touching HTML.
@@ -184,7 +186,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 11. Real AI Providers | v1.0 | 3/3 | Complete | 2026-02-14 |
 | 12. Google AI Provider Suite | v1.0 | 4/4 | Complete | 2026-02-15 |
 | 13. UGC Product Ad Pipeline | v1.0 | 3/3 | Complete | 2026-02-15 |
-| 14. Landing Page Generation | v2.0 | 0/TBD | Not started | - |
+| 14. Landing Page Generation | v2.0 | 0/3 | Planning complete | - |
 | 15. AI Section Editing | v2.0 | 0/TBD | Not started | - |
 | 16. Waitlist Collection | v2.0 | 0/TBD | Not started | - |
 | 17. Web UI | v2.0 | 0/TBD | Not started | - |
@@ -193,4 +195,4 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-19 - v2.0 roadmap created*
+*Last updated: 2026-02-19 - Phase 14 planning complete (3 plans)*
