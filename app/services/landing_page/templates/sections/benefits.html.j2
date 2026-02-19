@@ -1,0 +1,78 @@
+<section class="benefits" id="benefits" data-section="benefits">
+    <div class="benefits__container">
+        <div class="benefits__grid">
+            {% for benefit in benefits %}
+            <div class="benefits__card">
+                <div class="benefits__icon">{{ benefit.icon_emoji }}</div>
+                <h3 class="benefits__title">{{ benefit.title }}</h3>
+                <p class="benefits__description">{{ benefit.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.benefits {
+    padding: 3rem 1rem;
+    background-color: var(--color-bg);
+}
+
+.benefits__container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.benefits__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.benefits__card {
+    padding: 2rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.benefits__card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.benefits__icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.benefits__title {
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+}
+
+.benefits__description {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) {
+    .benefits__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 1024px) {
+    .benefits {
+        padding: 4rem 2rem;
+    }
+
+    .benefits__grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+</style>

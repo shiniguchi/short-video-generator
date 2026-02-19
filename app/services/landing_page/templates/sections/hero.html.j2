@@ -1,0 +1,116 @@
+<section class="hero" id="hero" data-section="hero">
+    <div class="hero__container">
+        <div class="hero__content">
+            <h1 class="hero__headline">{{ headline }}</h1>
+            <p class="hero__subheadline">{{ subheadline }}</p>
+            <a href="#waitlist" class="hero__cta">{{ cta_text }}</a>
+        </div>
+        <div class="hero__media">
+            {% if video_url %}
+            <video class="hero__video" autoplay muted loop playsinline poster="{{ hero_image }}">
+                <source src="{{ video_url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            {% elif hero_image %}
+            <img src="{{ hero_image }}" alt="{{ headline }}" class="hero__image" loading="eager">
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<style>
+.hero {
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: white;
+}
+
+.hero__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.hero__content {
+    text-align: center;
+}
+
+.hero__headline {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.hero__subheadline {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+}
+
+.hero__cta {
+    display: inline-block;
+    min-height: 48px;
+    min-width: 48px;
+    padding: 14px 28px;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hero__cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero__cta:active {
+    transform: translateY(0);
+}
+
+.hero__media {
+    width: 100%;
+    max-width: 720px;
+}
+
+.hero__video,
+.hero__image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .hero {
+        padding: 4rem 2rem;
+    }
+
+    .hero__headline {
+        font-size: 3rem;
+    }
+
+    .hero__subheadline {
+        font-size: 1.5rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    .hero {
+        padding: 6rem 2rem;
+    }
+
+    .hero__headline {
+        font-size: 3.5rem;
+    }
+}
+</style>

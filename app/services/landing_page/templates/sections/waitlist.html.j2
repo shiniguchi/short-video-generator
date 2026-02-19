@@ -1,0 +1,193 @@
+<section class="waitlist" id="waitlist" data-section="waitlist">
+    <div class="waitlist__container">
+        <h2 class="waitlist__heading">{{ cta_text }}</h2>
+        <form id="waitlist-form" class="waitlist__form">
+            <div class="waitlist__input-group">
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="waitlist__input"
+                    placeholder="Enter your email"
+                    required
+                >
+                <button type="submit" class="waitlist__submit">Join Now</button>
+            </div>
+
+            <!-- Honeypot field (hidden from humans, visible to bots) -->
+            <label for="hp_field" class="hp-label">Website URL</label>
+            <input
+                type="text"
+                name="website_url"
+                id="hp_field"
+                class="hp-field"
+                tabindex="-1"
+                autocomplete="off"
+            >
+
+            <!-- Hidden timestamp -->
+            <input type="hidden" name="form_ts" id="form_ts">
+        </form>
+
+        <div id="form-success" class="waitlist__success" style="display: none;">
+            <p>Thanks! You're on the list. 🎉</p>
+        </div>
+
+        <p class="waitlist__social-proof">{{ social_proof_text }}</p>
+    </div>
+</section>
+
+<style>
+.waitlist {
+    padding: 3rem 1rem;
+    background-color: #f9fafb;
+}
+
+.waitlist__container {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.waitlist__heading {
+    color: var(--color-primary);
+    margin-bottom: 2rem;
+}
+
+.waitlist__form {
+    margin-bottom: 1.5rem;
+}
+
+.waitlist__input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.waitlist__input {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.waitlist__input:focus {
+    border-color: var(--color-primary);
+}
+
+.waitlist__submit {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 14px 28px;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.waitlist__submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.waitlist__submit:active {
+    transform: translateY(0);
+}
+
+.waitlist__success {
+    padding: 1rem;
+    background-color: #d1fae5;
+    color: #065f46;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.waitlist__social-proof {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+/* Honeypot field - hidden off-screen (NOT display:none, which bots detect) */
+.hp-field,
+.hp-label {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Tablet and up: horizontal layout */
+@media (min-width: 768px) {
+    .waitlist {
+        padding: 4rem 2rem;
+    }
+
+    .waitlist__input-group {
+        flex-direction: row;
+    }
+
+    .waitlist__input {
+        flex: 1;
+    }
+
+    .waitlist__submit {
+        flex-shrink: 0;
+    }
+}
+</style>
+
+<script>
+(function() {
+    // Set timestamp on page load
+    const formTimestamp = document.getElementById('form_ts');
+    if (formTimestamp) {
+        formTimestamp.value = Date.now();
+    }
+
+    // Handle form submission
+    const form = document.getElementById('waitlist-form');
+    const successMessage = document.getElementById('form-success');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Spam prevention checks
+            const honeypot = document.getElementById('hp_field').value;
+            const timestamp = parseInt(document.getElementById('form_ts').value);
+            const now = Date.now();
+            const timeDiff = (now - timestamp) / 1000; // seconds
+
+            // Reject if honeypot filled (bot)
+            if (honeypot) {
+                console.log('Spam detected: honeypot filled');
+                return false;
+            }
+
+            // Reject if submitted too quickly (< 2 seconds, likely bot)
+            if (timeDiff < 2) {
+                console.log('Spam detected: too fast');
+                return false;
+            }
+
+            // Valid submission - show success message
+            // Note: Phase 16 will add backend processing
+            form.style.display = 'none';
+            successMessage.style.display = 'block';
+
+            console.log('Form submitted successfully');
+            return false;
+        });
+    }
+})();
+</script>
