@@ -40,7 +40,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 14: Landing Page Generation** - AI-generated single-file HTML LPs with video embed — completed 2026-02-19
 - [x] **Phase 15: AI Section Editing** - Edit LP sections via AI prompts after generation — completed 2026-02-19
-- [ ] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention
+- [x] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention — completed 2026-02-19
 - [ ] **Phase 17: Web UI** - Browser-based product idea input and generation trigger
 - [ ] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1
 - [ ] **Phase 19: Admin Dashboard & Deployment** - Dashboard + Cloudflare Pages auto-deploy
@@ -105,8 +105,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md -- Backend: WaitlistEntry model, migration, schemas, endpoint, CORS
-- [ ] 16-02-PLAN.md -- Frontend wiring: lp_source threading, waitlist form fetch() to backend
+- [x] 16-01-PLAN.md -- Backend: WaitlistEntry model, migration, schemas, endpoint, CORS
+- [x] 16-02-PLAN.md -- Frontend wiring: lp_source threading, waitlist form fetch() to backend
 
 ### Phase 17: Web UI
 **Goal**: Users can interact with ViralForge via browser instead of CLI, triggering LP generation and viewing results.
@@ -190,11 +190,11 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 13. UGC Product Ad Pipeline | v1.0 | 3/3 | Complete | 2026-02-15 |
 | 14. Landing Page Generation | v2.0 | 3/3 | Complete | 2026-02-19 |
 | 15. AI Section Editing | v2.0 | 2/2 | Complete | 2026-02-19 |
-| 16. Waitlist Collection | v2.0 | 0/TBD | Not started | - |
+| 16. Waitlist Collection | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 17. Web UI | v2.0 | 0/TBD | Not started | - |
 | 18. Cloudflare Analytics | v2.0 | 0/TBD | Not started | - |
 | 19. Admin Dashboard & Deployment | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 15 complete (2/2 plans)*
+*Last updated: 2026-02-19 - Phase 16 complete (2/2 plans)*
