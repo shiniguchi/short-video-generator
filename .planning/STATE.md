@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 16 - Waitlist Collection (COMPLETE) — next: Phase 17
+**Current focus:** Phase 17 - Web UI (in progress) — Plan 01 complete
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 16 of 19 (Waitlist Collection) - COMPLETE
-Plan: 2 of 2 - COMPLETE
-Status: Phase 16 complete — waitlist backend + LP form wiring shipped
-Last activity: 2026-02-19 - Completed Plan 16-02 (waitlist form wiring)
+Phase: 17 of 19 (Web UI) - IN PROGRESS
+Plan: 1 of 3 - COMPLETE (Plan 02 next)
+Status: Phase 17 Plan 01 complete — LandingPage model + web UI scaffold shipped
+Last activity: 2026-02-19 - Completed Plan 17-01 (LandingPage model + web UI scaffold)
 
-Progress: [█████████████████████] 84% (37/44 plans total, v1.0 complete, v2.0 phase 16 complete)
+Progress: [█████████████████████░] 86% (38/44 plans total, v1.0 complete, v2.0 phase 17 plan 01 complete)
 
 ## Performance Metrics
 
@@ -34,7 +34,7 @@ Progress: [█████████████████████] 84% 
 
 **v2.0 (in progress):**
 - Total plans: 14 (across 6 phases)
-- Plans completed: 4
+- Plans completed: 5
 - Phase 14 Plan 01: 6.2 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 02: 3.8 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 03: 32 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
@@ -42,6 +42,7 @@ Progress: [█████████████████████] 84% 
 - Phase 15 Plan 02: 3 minutes, 1 task, 1 commit
 - Phase 16 Plan 01: 4 minutes, 2 tasks, 2 commits
 - Phase 16 Plan 02: 2 minutes, 2 tasks, 2 commits
+- Phase 17 Plan 01: 9 minutes, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -82,6 +83,11 @@ Progress: [█████████████████████] 84% 
 - [Phase 16-02]: Graceful degradation on network error — show success locally rather than error, better UX when LP can't reach API server
 - [Phase 16-02]: api-base meta tag pattern — optional override for base URL, empty = same origin, handles both local dev and deployed LP
 
+**Phase 17 Plan 01:**
+- [Phase 17-01]: str(Path(__file__).parent / ...) for all directory paths — Docker working directory varies, this resolves correctly everywhere
+- [Phase 17-01]: UI router + static mounts placed BEFORE API router in main.py — Starlette mount order determines route priority
+- [Phase 17-01]: backports.asyncio.runner pinned to 1.0.0 — 1.2.0 declares Requires-Python < 3.11, Docker uses Python 3.11-slim
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -100,10 +106,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 16-02-PLAN.md (waitlist form wiring) — Phase 16 complete (2/2 plans)
+Stopped at: Completed 17-01-PLAN.md (LandingPage model + web UI scaffold) — Phase 17 Plan 1/3 done
 Resume file: None
-Next step: Execute Phase 17 (Web UI)
+Next step: Execute Phase 17 Plan 02 (generate form with SSE progress)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 16 Plan 02 complete (waitlist form wiring) — Phase 16 done*
+*Last updated: 2026-02-19 - Phase 17 Plan 01 complete (LandingPage model + web UI scaffold)*
