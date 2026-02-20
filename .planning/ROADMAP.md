@@ -144,10 +144,11 @@ Plans:
   5. Traffic source (referrer) is captured with each pageview
   6. Generated LPs include analytics beacon script before deployment
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 18-01: TBD
+- [ ] 18-01-PLAN.md -- Cloudflare Worker + D1 schema (track + analytics routes)
+- [ ] 18-02-PLAN.md -- Beacon injection, Python analytics client, FastAPI route
 
 ### Phase 19: Admin Dashboard & Deployment
 **Goal**: User can view conversion metrics per LP, export signups, and deploy LPs to Cloudflare Pages with one click.
@@ -194,7 +195,7 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 15. AI Section Editing | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 16. Waitlist Collection | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 17. Web UI | v2.0 | 3/3 | Complete | 2026-02-20 |
-| 18. Cloudflare Analytics | v2.0 | 0/TBD | Not started | - |
+| 18. Cloudflare Analytics | v2.0 | 0/2 | Not started | - |
 | 19. Admin Dashboard & Deployment | v2.0 | 0/TBD | Not started | - |
 
 ---
