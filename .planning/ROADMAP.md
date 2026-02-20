@@ -73,10 +73,10 @@ Full details: `.planning/phases/` (14-01 through 19-02)
   3. Job status field has valid state machine values (pending/running/stage_N_review/approved/failed)
   4. Alembic migration applies cleanly on fresh DB and existing DB
 
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 20-01: UGCJob SQLAlchemy model, Alembic migration, state machine values
+- [ ] 20-01-PLAN.md — UGCJob model + migration + state machine guard layer
 
 ### Phase 21: Per-Stage Celery Tasks
 **Goal**: Users can submit a generation job and each pipeline stage executes sequentially, pausing at each checkpoint for approval.
