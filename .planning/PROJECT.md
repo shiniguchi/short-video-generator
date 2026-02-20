@@ -8,18 +8,18 @@ ViralForge is a product smoke test platform that generates short-form video ads 
 
 Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-## Current Milestone: v2.0 Smoke Test Platform
+## Current Milestone: v3.0 Review Workflow UI
 
-**Goal:** Extend ViralForge from a video generator into a full smoke test tool with LP generation, free static hosting deployment, analytics collection, and an admin dashboard.
+**Goal:** Wire the v1.0 video pipeline and LP generation into the web UI with a linear review workflow — users review and approve each stage (script, images, video clips, combined video, LP) before the next begins.
 
 **Target features:**
-- Landing page generation (AI writes copy, fills HTML template, single-file output)
-- Auto-deploy LPs to Cloudflare Pages via Wrangler CLI
-- Analytics collection via Cloudflare Worker + D1 (free tier: pageviews, clicks, form submissions)
-- Waitlist CTA on LP (email collection stored in D1)
-- Admin dashboard in-app (per-LP traffic, CVR, signup counts)
-- Web UI for colleagues (browser-based product idea input + generation trigger)
-- Switchable hosting design (local Docker now → cheap public server later)
+- Linear review pipeline in web UI: Idea → Script → Images → Videos → Combined → LP
+- Per-frame review at every stage (approve/reject each scene individually)
+- AI regeneration on reject + manual prompt tweaking for specific changes
+- Video and LP as independent generation paths (user picks which to generate)
+- LP images sourced from video frames by default, with option to regenerate LP-specific images
+- Mock mode by default, toggle to real AI providers when ready
+- SSE progress streaming for each generation stage
 
 ## Requirements
 
@@ -38,16 +38,26 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 - ✓ HeyGen avatar integration for talking-head presenter videos — v1.0
 - ✓ Google AI unification (Gemini LLM + Imagen images + Veo video) under single API key — v1.0
 - ✓ UGC product ad pipeline: product input → hero image → script → A-Roll/B-Roll → composite — v1.0
+- ✓ AI-generated landing pages from product idea input — v2.0
+- ✓ Auto-deployment of LPs to Cloudflare Pages — v2.0
+- ✓ Analytics collection (pageviews, clicks, form submissions) via Cloudflare Worker + D1 — v2.0
+- ✓ Waitlist email collection on LP — v2.0
+- ✓ Admin dashboard with per-LP traffic, CVR, and signup counts — v2.0
+- ✓ Browser-based web UI for product idea input and generation — v2.0
 
 ### Active
 
-- [ ] AI-generated landing pages from product idea input
-- [ ] Auto-deployment of LPs to Cloudflare Pages
-- [ ] Analytics collection (pageviews, clicks, form submissions) via Cloudflare Worker + D1
-- [ ] Waitlist email collection on LP
-- [ ] Admin dashboard with per-LP traffic, CVR, and signup counts
-- [ ] Browser-based web UI for product idea input and generation
-- [ ] Switchable architecture (local Docker ↔ hosted server)
+- [ ] Linear review pipeline: Idea → Script → Images → Videos → Combined → LP in web UI
+- [ ] Per-frame script review with approve/reject per scene
+- [ ] Per-frame image review with approve/reject per frame
+- [ ] Per-frame video clip review with approve/reject per clip
+- [ ] Combined video preview with final approval
+- [ ] LP module review with approve/reject per section
+- [ ] AI regeneration on rejected frames with prompt feedback
+- [ ] Manual prompt tweaking and re-generation option
+- [ ] Video and LP as independent generation paths
+- [ ] LP images from video frames by default, option to regenerate
+- [ ] Mock/real AI toggle in web UI
 
 ### Out of Scope
 
@@ -99,4 +109,4 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 | Web UI as FastAPI templates (Jinja2) | No separate frontend build, stays in Python ecosystem | — Pending |
 
 ---
-*Last updated: 2026-02-19 after v2.0 milestone start*
+*Last updated: 2026-02-20 after v3.0 milestone start*

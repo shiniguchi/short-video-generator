@@ -6,22 +6,22 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 19 Plan 02 COMPLETE — one-click Cloudflare Pages deployment from preview page
+**Current focus:** Defining v3.0 requirements — Review Workflow UI
 
 ## Current Milestone
 
-**v2.0 Smoke Test Platform** (Phases 14-19)
-- Extends ViralForge from video generator to full smoke test tool
-- Adds: LP generation, Cloudflare deployment, analytics, admin dashboard, web UI
+**v3.0 Review Workflow UI** (Phases 20+)
+- Wires video pipeline + LP generation into web UI with linear review workflow
+- Per-frame approve/reject at each stage, AI regeneration, mock/real toggle
 
 ## Current Position
 
-Phase: 19 of 19 (Admin Dashboard & Deployment) - COMPLETE
-Plan: 2 of 2 - COMPLETE
-Status: ALL PHASES COMPLETE — full smoke test platform shipped
-Last activity: 2026-02-20 - Phase 19 Plan 02 executed (2 tasks, 2 commits)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-20 — Milestone v3.0 started
 
-Progress: [████████████████████████] 100% (44/44 plans total, v1.0 complete, v2.0 complete)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -147,10 +147,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 19-02-PLAN.md (CF Pages deployment) — ALL PHASES COMPLETE
+Stopped at: Defining v3.0 milestone requirements
 Resume file: None
-Next step: None — v2.0 smoke test platform fully shipped
+Next step: Define requirements, create roadmap
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 19-02 complete (deployer service, real deploy route, preview UI with deployed URL)*
+*Last updated: 2026-02-20 - v3.0 milestone started (Review Workflow UI)*
