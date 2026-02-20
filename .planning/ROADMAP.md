@@ -166,10 +166,11 @@ Plans:
   6. Deployed LP is publicly accessible at Cloudflare Pages URL
   7. LP deployment status is tracked in database (generated, deployed, archived)
 
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 19-01: TBD
+- [ ] 19-01-PLAN.md -- Admin dashboard (per-LP analytics, waitlist table, CSV export, date filtering)
+- [ ] 19-02-PLAN.md -- Cloudflare Pages deployment (deployer service, replace stub, preview UI update)
 
 ## Progress
 
