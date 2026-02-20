@@ -269,3 +269,21 @@ input:focus, textarea:focus, select:focus {
 .cvr-cell {
   font-weight: 600;
 }
+
+/* Deployed URL info bar */
+.deployed-info {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.deployed-info a {
+  color: #15803d;
+  font-weight: 600;
+}
+.deployed-label {
+  font-weight: 600;
+  margin-right: 4px;
+}

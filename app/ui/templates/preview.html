@@ -16,9 +16,19 @@
 </div>
 
 <div class="action-row">
-  <button id="deploy-btn" class="btn btn-primary" onclick="deployLP('{{ run_id }}')">Deploy to Cloudflare</button>
+  <button id="deploy-btn" class="btn btn-primary" onclick="deployLP('{{ run_id }}')">
+    {% if lp.deployed_url %}Re-deploy to Cloudflare{% else %}Deploy to Cloudflare{% endif %}
+  </button>
   <a href="/ui/" class="btn btn-secondary">Back to Dashboard</a>
 </div>
+
+{% if lp.deployed_url %}
+<div id="deployed-url" class="deployed-info">
+  <span class="deployed-label">Live at:</span> <a href="{{ lp.deployed_url }}" target="_blank">{{ lp.deployed_url }}</a>
+</div>
+{% else %}
+<div id="deployed-url" class="deployed-info" style="display:none;"></div>
+{% endif %}
 
 <div id="deploy-result" class="deploy-result" style="display:none;"></div>
 {% endblock %}

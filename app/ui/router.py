@@ -97,9 +97,30 @@ async def preview_lp(request: Request, run_id: str, session: AsyncSession = Depe
 
 
 @router.post("/deploy/{run_id}")
-async def deploy_lp(run_id: str):
-    """Stub — actual Cloudflare deployment in Phase 19."""
-    return {"status": "not_implemented", "message": "Cloudflare deployment coming in Phase 19"}
+async def deploy_lp(run_id: str, session: AsyncSession = Depends(get_session)):
+    """Deploy LP to Cloudflare Pages. Updates status to 'deployed' on success."""
+    from app.services.landing_page.deployer import deploy_to_cloudflare_pages
+    from app.config import get_settings
+
+    result = await session.execute(select(LandingPage).where(LandingPage.run_id == run_id))
+    lp = result.scalar_one_or_none()
+    if not lp:
+        raise HTTPException(status_code=404, detail=f"LP {run_id} not found")
+
+    settings = get_settings()
+
+    try:
+        url = await deploy_to_cloudflare_pages(lp.html_path, lp.run_id, settings)
+    except RuntimeError as e:
+        return {"status": "error", "message": str(e)}
+
+    # Update DB — allow re-deploy (update URL and timestamp)
+    lp.status = "deployed"
+    lp.deployed_at = datetime.now(timezone.utc)
+    lp.deployed_url = url
+    await session.commit()
+
+    return {"status": "deployed", "url": url}
 
 
 def _parse_date_range(start_str: Optional[str], end_str: Optional[str]) -> Tuple[Optional[datetime], Optional[datetime]]:

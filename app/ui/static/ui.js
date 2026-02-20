@@ -30,7 +30,7 @@ function connectSSE(jobId) {
     };
 }
 
-/* Deploy stub — sends POST to /ui/deploy/{run_id}, shows Phase 19 message */
+/* Deploy LP — sends POST to /ui/deploy/{run_id}, shows deployed URL or error */
 async function deployLP(runId) {
     const btn = document.getElementById("deploy-btn");
     const result = document.getElementById("deploy-result");
@@ -40,16 +40,36 @@ async function deployLP(runId) {
     try {
         const resp = await fetch("/ui/deploy/" + runId, { method: "POST" });
         const data = await resp.json();
-        if (result) {
-            result.textContent = data.message;
-            result.style.display = "block";
+        if (data.status === "deployed") {
+            // Show deployed URL as clickable link
+            if (result) {
+                result.innerHTML = 'Deployed! <a href="' + data.url + '" target="_blank">' + data.url + '</a>';
+                result.style.display = "block";
+                result.style.color = "";
+            }
+            // Update #deployed-url element if present
+            const deployedUrl = document.getElementById("deployed-url");
+            if (deployedUrl && data.url) {
+                deployedUrl.innerHTML = '<span class="deployed-label">Live at:</span> <a href="' + data.url + '" target="_blank">' + data.url + '</a>';
+                deployedUrl.style.display = "block";
+            }
+            btn.textContent = "Re-deploy";
+        } else {
+            // Show error message in red
+            if (result) {
+                result.textContent = data.message || "Deploy failed";
+                result.style.display = "block";
+                result.style.color = "#c0392b";
+            }
+            btn.textContent = "Deploy to Cloudflare";
         }
     } catch (err) {
         if (result) {
             result.textContent = "Error: " + err.message;
             result.style.display = "block";
+            result.style.color = "#c0392b";
         }
+        btn.textContent = "Deploy to Cloudflare";
     }
     btn.disabled = false;
-    btn.textContent = "Deploy to Cloudflare";
 }
