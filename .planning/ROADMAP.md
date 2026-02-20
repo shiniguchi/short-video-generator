@@ -111,11 +111,11 @@ Plans:
   3. SSE stream notifies client when stage completes and review is ready
   4. SSE connection cleans up on tab close (no leaked generator)
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 22-01: Job list and detail routes, SSE stream with disconnect handling
-- [ ] 22-02: Advance, regenerate, and edit endpoints with stage gate validation
+- [ ] 22-01-PLAN.md — Job list endpoint + SSE progress stream with disconnect handling
+- [ ] 22-02-PLAN.md — Regenerate and edit endpoints with stage gate validation
 
 ### Phase 23: Review UI Templates
 **Goal**: Users can navigate the full review pipeline in the browser — see their position, review items as a grid, and approve or reject each one.
@@ -204,11 +204,11 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 19. Admin Dashboard & Deployment | v2.0 | 2/2 | Complete | 2026-02-20 |
 | 20. UGCJob Data Model | v3.0 | 1/1 | Complete | 2026-02-20 |
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
-| 22. Review API Routes + SSE | v3.0 | 0/TBD | Not started | - |
+| 22. Review API Routes + SSE | v3.0 | 0/2 | Not started | - |
 | 23. Review UI Templates | v3.0 | 0/TBD | Not started | - |
 | 24. Media Preview | v3.0 | 0/TBD | Not started | - |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 21 complete (Per-Stage Celery Tasks)*
+*Last updated: 2026-02-20 - Phase 22 planned (Review API Routes + SSE)*
