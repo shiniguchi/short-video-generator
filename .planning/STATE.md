@@ -17,11 +17,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 20 of 25 (UGCJob Data Model)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-20 — v3.0 roadmap created (Phases 20-25)
+Plan: 1 of 1 in current phase (complete)
+Status: Phase 20 complete — ready for Phase 21
+Last activity: 2026-02-20 — Phase 20 Plan 01 executed
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░░░░] 0% (v3.0)
+Progress: [█░░░░░░░░░░░░░░░░░░░░░░░] 4% (v3.0, 1/25 plans)
 
 ## Performance Metrics
 
@@ -29,7 +29,11 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 
 **v2.0 (SHIPPED):** 14 plans, 6 phases, avg ~7 min/plan (includes human-verify checkpoints)
 
-**v3.0:** Not started
+**v3.0 (in progress):**
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 20-01 | UGCJob data model | ~3 min | 2 | 5 |
 
 ## Accumulated Context
 
@@ -38,9 +42,10 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 - **UGCJob not in-memory**: All UGC job state goes to PostgreSQL. Existing `_jobs` dict stays for LP generation only — do not extend it.
 - **Regeneration produces candidates**: Never mutate approved content in place. Store candidate separately, overwrite only on explicit acceptance.
 - **HTMX 2.0.8 + SSE Extension 2.2.4**: CDN-loaded, no build step. Approve/reject via `hx-post` + `hx-swap="outerHTML"` on partial templates.
-- **python-statemachine 2.6.0**: Guard layer for state transitions only. DB column is source of truth, not statemachine.
+- **python-statemachine 2.6.0**: Guard layer for state transitions only. DB column is source of truth, not statemachine. Instantiate with `start_value=job.status` for existing rows.
 - **HTTP 206 for video**: `StreamingResponse` with manual range parsing for `.mp4`. `FileResponse` alone does not handle Range headers — browser seek breaks.
 - **Mock flag as argument**: Pass `use_mock: bool` explicitly through task chain. Do not mutate `get_settings()` singleton per request.
+- **use_mock per UGCJob row**: Stored in UGCJob.use_mock column, not read from settings singleton — allows per-job mock toggle.
 
 ### Research Flags for Planning
 
@@ -58,10 +63,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: v3.0 roadmap created, ready to plan Phase 20
+Stopped at: Completed 20-01-PLAN.md (UGCJob data model, migration 006, state machine)
 Resume file: None
-Next step: `/gsd:plan-phase 20`
+Next step: `/gsd:plan-phase 21` (UGC pipeline service layer)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-20 - v3.0 roadmap created (Phases 20-25, 15 requirements mapped)*
+*Last updated: 2026-02-20 - Phase 20 Plan 01 complete (UGCJob model, migration 006, state machine)*
