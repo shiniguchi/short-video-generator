@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-13 (shipped 2026-02-15)
-- 🚧 **v2.0 Smoke Test Platform** - Phases 14-19 (in progress)
+- ✅ **v2.0 Smoke Test Platform** - Phases 14-19 (shipped 2026-02-20)
 
 ## Phases
 
@@ -43,7 +43,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention — completed 2026-02-19
 - [x] **Phase 17: Web UI** - Browser-based product idea input and generation trigger — completed 2026-02-20
 - [x] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1 — completed 2026-02-20
-- [ ] **Phase 19: Admin Dashboard & Deployment** - Dashboard + Cloudflare Pages auto-deploy
+- [x] **Phase 19: Admin Dashboard & Deployment** - Dashboard + Cloudflare Pages auto-deploy — completed 2026-02-20
 
 ## Phase Details
 
@@ -169,8 +169,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 19-01-PLAN.md -- Admin dashboard (per-LP analytics, waitlist table, CSV export, date filtering)
-- [ ] 19-02-PLAN.md -- Cloudflare Pages deployment (deployer service, replace stub, preview UI update)
+- [x] 19-01-PLAN.md -- Admin dashboard (per-LP analytics, waitlist table, CSV export, date filtering)
+- [x] 19-02-PLAN.md -- Cloudflare Pages deployment (deployer service, replace stub, preview UI update)
 
 ## Progress
 
@@ -197,8 +197,8 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 16. Waitlist Collection | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 17. Web UI | v2.0 | 3/3 | Complete | 2026-02-20 |
 | 18. Cloudflare Analytics | v2.0 | 2/2 | Complete | 2026-02-20 |
-| 19. Admin Dashboard & Deployment | v2.0 | 0/TBD | Not started | - |
+| 19. Admin Dashboard & Deployment | v2.0 | 2/2 | Complete | 2026-02-20 |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 18 complete (2/2 plans)*
+*Last updated: 2026-02-20 - Phase 19 complete (2/2 plans) — v2.0 milestone shipped*
