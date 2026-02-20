@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 17 - Web UI COMPLETE — all 3 plans done, all 5 UI requirements verified
+**Current focus:** Phase 18 - Cloudflare Analytics — Plan 01 complete (Worker + D1 backend)
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 17 of 19 (Web UI) - COMPLETE
-Plan: 3 of 3 - COMPLETE
-Status: Phase 17 complete — full Web UI shipped: dashboard, generate form, SSE progress, preview, deploy stub
-Last activity: 2026-02-20 - Completed Plan 17-03 (LP list dashboard + preview + deploy stub)
+Phase: 18 of 19 (Cloudflare Analytics) - IN PROGRESS
+Plan: 1 of 3 - COMPLETE
+Status: Plan 18-01 complete — Cloudflare Worker with /track + /analytics routes and D1 schema
+Last activity: 2026-02-20 - Completed Plan 18-01 (Worker project scaffolding + handler)
 
-Progress: [█████████████████████░] 91% (40/44 plans total, v1.0 complete, v2.0 phase 17 complete)
+Progress: [█████████████████████░] 93% (41/44 plans total, v1.0 complete, v2.0 phase 18 in progress)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [█████████████████████░] 9
 - Phase 17 Plan 01: 9 minutes, 2 tasks, 2 commits
 - Phase 17 Plan 02: 4 minutes, 1 task, 1 commit
 - Phase 17 Plan 03: ~30 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
+- Phase 18 Plan 01: 1 minute, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -101,6 +102,13 @@ Progress: [█████████████████████░] 9
 - [Phase 17-03]: Deploy stub as POST endpoint — REST convention for side-effect actions, stub shape matches Phase 19 real implementation
 - [Phase 17-03]: Status badge via .status-{status} CSS class — dynamic from DB value, zero JS needed
 
+**Phase 18 Plan 01:**
+- [Phase 18-01]: No framework (no Hono) — 2 routes under threshold; native URL routing adds no complexity
+- [Phase 18-01]: request.text()+JSON.parse() in handleTrack — sendBeacon sends Content-Type: text/plain, request.json() throws
+- [Phase 18-01]: ctx.waitUntil() for D1 writes in /track — beacon returns 204 immediately, write continues in background
+- [Phase 18-01]: database_id left as PLACEHOLDER — user must run wrangler d1 create and fill in UUID before deploy
+- [Phase 18-01]: Wildcard CORS on /track only — /analytics/:lp_id is server-to-server with Bearer auth gate
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -119,10 +127,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 17-03-PLAN.md (LP list dashboard + preview + deploy stub) — Phase 17 COMPLETE
+Stopped at: Completed 18-01-PLAN.md (Worker project scaffolding + handler)
 Resume file: None
-Next step: Execute Phase 18 (Cloudflare deployment)
+Next step: Execute Phase 18 Plan 02 (beacon script injection into LP HTML)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 17 complete (LP list dashboard + preview + deploy stub; all 5 UI requirements verified)*
+*Last updated: 2026-02-20 - Phase 18 Plan 01 complete (Cloudflare Worker analytics backend with D1 schema)*
