@@ -41,7 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 14: Landing Page Generation** - AI-generated single-file HTML LPs with video embed — completed 2026-02-19
 - [x] **Phase 15: AI Section Editing** - Edit LP sections via AI prompts after generation — completed 2026-02-19
 - [x] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention — completed 2026-02-19
-- [ ] **Phase 17: Web UI** - Browser-based product idea input and generation trigger
+- [x] **Phase 17: Web UI** - Browser-based product idea input and generation trigger — completed 2026-02-20
 - [ ] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1
 - [ ] **Phase 19: Admin Dashboard & Deployment** - Dashboard + Cloudflare Pages auto-deploy
 
@@ -125,9 +125,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 17-01-PLAN.md -- LandingPage model, migration 005, UI scaffold (router + templates + static)
-- [ ] 17-02-PLAN.md -- Generate form, background task runner, SSE progress streaming
-- [ ] 17-03-PLAN.md -- LP list dashboard, inline preview, deploy stub, human verification
+- [x] 17-01-PLAN.md -- LandingPage model, migration 005, UI scaffold (router + templates + static)
+- [x] 17-02-PLAN.md -- Generate form, background task runner, SSE progress streaming
+- [x] 17-03-PLAN.md -- LP list dashboard, inline preview, deploy stub, human verification
 
 ### Phase 18: Cloudflare Analytics
 **Goal**: Every deployed LP automatically tracks pageviews, form submissions, and traffic sources via Cloudflare Worker + D1, queryable from Python backend.
@@ -193,10 +193,10 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 14. Landing Page Generation | v2.0 | 3/3 | Complete | 2026-02-19 |
 | 15. AI Section Editing | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 16. Waitlist Collection | v2.0 | 2/2 | Complete | 2026-02-19 |
-| 17. Web UI | v2.0 | 0/TBD | Not started | - |
+| 17. Web UI | v2.0 | 3/3 | Complete | 2026-02-20 |
 | 18. Cloudflare Analytics | v2.0 | 0/TBD | Not started | - |
 | 19. Admin Dashboard & Deployment | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 16 complete (2/2 plans)*
+*Last updated: 2026-02-20 - Phase 17 complete (3/3 plans)*
