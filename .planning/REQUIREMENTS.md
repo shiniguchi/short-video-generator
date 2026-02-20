@@ -141,27 +141,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANLYT-01 through ANLYT-05 | Phase 18 | Complete |
 | DASH-01 through DASH-05 | Phase 19 | Complete |
 | UI-01 through UI-05 | Phase 17 | Complete |
-| PIPE-01 | Phase TBD | Pending |
-| PIPE-02 | Phase TBD | Pending |
-| PIPE-03 | Phase TBD | Pending |
-| PIPE-04 | Phase TBD | Pending |
-| REVIEW-01 | Phase TBD | Pending |
-| REVIEW-02 | Phase TBD | Pending |
-| REVIEW-03 | Phase TBD | Pending |
-| REVIEW-04 | Phase TBD | Pending |
-| REVIEW-05 | Phase TBD | Pending |
-| MEDIA-01 | Phase TBD | Pending |
-| MEDIA-02 | Phase TBD | Pending |
-| MEDIA-03 | Phase TBD | Pending |
-| LP-08 | Phase TBD | Pending |
-| LP-09 | Phase TBD | Pending |
-| LP-10 | Phase TBD | Pending |
+| PIPE-04 | Phase 20 | Pending |
+| PIPE-01 | Phase 21 | Pending |
+| PIPE-02 | Phase 21 | Pending |
+| PIPE-03 | Phase 21 | Pending |
+| REVIEW-04 | Phase 22 | Pending |
+| REVIEW-05 | Phase 22 | Pending |
+| REVIEW-01 | Phase 23 | Pending |
+| REVIEW-02 | Phase 23 | Pending |
+| REVIEW-03 | Phase 23 | Pending |
+| MEDIA-01 | Phase 24 | Pending |
+| MEDIA-02 | Phase 24 | Pending |
+| MEDIA-03 | Phase 24 | Pending |
+| LP-08 | Phase 25 | Pending |
+| LP-09 | Phase 25 | Pending |
+| LP-10 | Phase 25 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 15 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-20 after v3.0 requirements definition*
+*Last updated: 2026-02-20 after v3.0 roadmap creation (all 15 requirements mapped to Phases 20-25)*
