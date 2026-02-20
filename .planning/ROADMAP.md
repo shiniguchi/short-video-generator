@@ -92,12 +92,11 @@ Plans:
   4. Stage N+1 task only starts after user explicitly advances past stage N
   5. Mock/real AI flag is passed as explicit argument through the task chain (no global mutation)
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 21-01: ugc_stage_1_analyze and ugc_stage_2_hero_image tasks + state transitions
-- [ ] 21-02: ugc_stage_3_script, ugc_stage_45_assets, ugc_stage_6_compose tasks
-- [ ] 21-03: Job submission endpoint, advance endpoint, mock flag plumbing
+- [ ] 21-01-PLAN.md — use_mock threading through service functions + five per-stage Celery tasks
+- [ ] 21-02-PLAN.md — submit/advance/status endpoints + worker registration + main.py wiring
 
 ### Phase 22: Review API Routes + SSE
 **Goal**: Every review action (view job, advance stage, regenerate item, stream progress) is wired to an HTTP endpoint.
