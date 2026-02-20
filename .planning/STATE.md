@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 18 - Cloudflare Analytics COMPLETE — all 6 success criteria verified
+**Current focus:** Phase 19 Plan 01 COMPLETE — admin dashboard with per-LP analytics, waitlist table, CSV export
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 18 of 19 (Cloudflare Analytics) - COMPLETE
-Plan: 2 of 2 - COMPLETE
-Status: Phase 18 complete — Worker + D1 analytics backend, beacon injection, Python analytics client, FastAPI route
-Last activity: 2026-02-20 - Phase 18 verified (8/8 must-haves passed)
+Phase: 19 of 19 (Admin Dashboard & Deployment) - IN PROGRESS
+Plan: 1 of 2 - COMPLETE
+Status: Phase 19 Plan 01 complete — dashboard, waitlist, CSV export routes + templates
+Last activity: 2026-02-20 - Phase 19 Plan 01 executed (2 tasks, 2 commits)
 
-Progress: [██████████████████████░] 95% (42/44 plans total, v1.0 complete, v2.0 phase 18 complete)
+Progress: [███████████████████████░] 97% (43/44 plans total, v1.0 complete, v2.0 phase 18+19-01 complete)
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [██████████████████████░
 - Phase 17 Plan 03: ~30 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
 - Phase 18 Plan 01: 1 minute, 2 tasks, 2 commits
 - Phase 18 Plan 02: 2 minutes, 2 tasks, 2 commits
+- Phase 19 Plan 01: 3 minutes, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -122,6 +123,12 @@ Full decision log: .planning/PROJECT.md Key Decisions table
 - [Phase 18-02]: Graceful fallback returns zeros dict with error key — analytics endpoint always 200, never 500
 - [Phase 18-02]: Lazy import CloudflareAnalyticsClient in route body — avoids import failure if httpx missing
 
+**Phase 19 Plan 01:**
+- [Phase 19-01]: asyncio.gather for concurrent analytics — fetches all LP analytics in parallel, not sequentially
+- [Phase 19-01]: StreamingResponse with generator for CSV — avoids loading all rows into memory
+- [Phase 19-01]: _parse_date_range() extracted as helper — date parsing reused by all 3 routes without duplication
+- [Phase 19-01]: End date + timedelta(days=1) makes inclusive — user-entered end date includes that full day
+
 ### Pending Todos
 
 None yet.
@@ -133,10 +140,10 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Phase 18 complete — all plans executed and verified
+Stopped at: Completed 19-01-PLAN.md (admin dashboard + waitlist + CSV export)
 Resume file: None
-Next step: Plan Phase 19 (Admin Dashboard & Deployment)
+Next step: Execute Phase 19 Plan 02 (Cloudflare deployment implementation)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 18 complete (Worker + D1 backend, beacon injection, analytics client, verification passed)*
+*Last updated: 2026-02-20 - Phase 19-01 complete (dashboard + waitlist routes, Jinja2 templates, CSV export, date filtering)*
