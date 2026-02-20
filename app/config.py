@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     cf_worker_url: str = ""        # e.g. https://lp-analytics.yourname.workers.dev
     cf_worker_api_key: str = ""    # Bearer token for Worker /analytics endpoint
 
+    # Cloudflare Pages Deployment (Phase 19)
+    cf_api_token: str = ""             # CLOUDFLARE_API_TOKEN for wrangler auth
+    cf_account_id: str = ""            # Cloudflare Account ID
+    cf_pages_project_name: str = ""    # Pages project name (must pre-exist in CF dashboard)
+
 
 @lru_cache()
 def get_settings():
