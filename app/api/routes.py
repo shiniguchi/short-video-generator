@@ -899,3 +899,17 @@ async def submit_waitlist(
         raise HTTPException(status_code=409, detail="You're already on the waitlist!")
 
     return WaitlistResponse(message="Thanks! You're on the list.")
+
+
+# --- Phase 18: Cloudflare Analytics ---
+
+@router.get("/analytics/{lp_id}")
+async def get_analytics(
+    lp_id: str,
+    _key: str = Depends(require_api_key),
+):
+    """Get analytics for a landing page from Cloudflare Worker."""
+    from app.services.analytics.client import CloudflareAnalyticsClient
+    client = CloudflareAnalyticsClient()
+    result = await client.get_lp_analytics(lp_id)
+    return result
