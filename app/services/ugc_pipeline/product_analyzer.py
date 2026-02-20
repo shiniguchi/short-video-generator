@@ -3,7 +3,6 @@ import logging
 from typing import Optional
 
 from app.schemas import ProductAnalysis
-from app.services.llm_provider import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +12,8 @@ def analyze_product(
     description: str,
     image_count: int,
     style_preference: Optional[str] = None,
-    product_url: Optional[str] = None
+    product_url: Optional[str] = None,
+    use_mock: bool = False
 ) -> ProductAnalysis:
     """Analyze product for UGC ad creation using LLMProvider.
 
@@ -26,11 +26,20 @@ def analyze_product(
         image_count: Number of images/videos to generate (affects visual keyword count)
         style_preference: Optional style preference (selfie-review, unboxing, tutorial, lifestyle)
         product_url: Optional product URL for additional brand/product context
+        use_mock: Use mock LLM provider instead of real API
 
     Returns:
         ProductAnalysis with category, features, audience, style, tone, and visual keywords
     """
-    llm = get_llm_provider()
+    # Instantiate provider directly based on use_mock flag
+    if use_mock:
+        from app.services.llm_provider.mock import MockLLMProvider
+        llm = MockLLMProvider()
+    else:
+        from app.services.llm_provider.gemini import GeminiLLMProvider
+        from app.config import get_settings
+        settings = get_settings()
+        llm = GeminiLLMProvider(api_key=settings.google_api_key)
 
     # Build prompt
     prompt_parts = [

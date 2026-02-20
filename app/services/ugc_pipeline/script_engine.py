@@ -3,7 +3,6 @@ import logging
 from typing import Optional, List
 
 from app.schemas import ProductAnalysis, AdBreakdown
-from app.services.llm_provider import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +11,8 @@ def generate_ugc_script(
     product_name: str,
     description: str,
     analysis: ProductAnalysis,
-    target_duration: int = 30
+    target_duration: int = 30,
+    use_mock: bool = False
 ) -> AdBreakdown:
     """Generate UGC ad script and A-Roll/B-Roll breakdown using two-call pattern.
 
@@ -24,11 +24,20 @@ def generate_ugc_script(
         description: Product description
         analysis: ProductAnalysis from analyze_product()
         target_duration: Target duration in seconds (25-30s typical)
+        use_mock: Use mock LLM provider instead of real API
 
     Returns:
         AdBreakdown with master_script, aroll_scenes, broll_shots, and total_duration
     """
-    llm = get_llm_provider()
+    # Instantiate provider directly based on use_mock flag
+    if use_mock:
+        from app.services.llm_provider.mock import MockLLMProvider
+        llm = MockLLMProvider()
+    else:
+        from app.services.llm_provider.gemini import GeminiLLMProvider
+        from app.config import get_settings
+        settings = get_settings()
+        llm = GeminiLLMProvider(api_key=settings.google_api_key)
 
     # Call 1: Generate master script text
     master_script_prompt = f"""Product: {product_name}

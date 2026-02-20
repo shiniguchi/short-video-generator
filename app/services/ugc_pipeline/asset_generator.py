@@ -8,26 +8,28 @@ import os
 from typing import List, Optional, Dict, Any
 
 from app.config import get_settings
-from app.services.image_provider import get_image_provider
 from app.services.video_generator.google_veo import GoogleVeoProvider
 from app.services.video_generator.mock import MockVideoProvider
 
 logger = logging.getLogger(__name__)
 
 
-def _get_veo_or_mock() -> GoogleVeoProvider:
-    """Get Veo provider or mock fallback based on settings.
+def _get_veo_or_mock(use_mock: bool = False) -> GoogleVeoProvider:
+    """Get Veo provider or mock fallback based on use_mock flag.
+
+    Args:
+        use_mock: Use mock provider instead of real Veo API
 
     Returns:
-        GoogleVeoProvider instance (which may internally fallback to mock)
+        GoogleVeoProvider or MockVideoProvider instance
     """
     settings = get_settings()
     google_api_key = getattr(settings, "google_api_key", "")
     output_dir = getattr(settings, "output_dir", "output")
 
-    # Check if we should use mock
-    if settings.use_mock_data or not google_api_key:
-        logger.info("Using MockVideoProvider for Veo operations (USE_MOCK_DATA=True or no API key)")
+    # Use mock when explicitly requested or no API key available
+    if use_mock or not google_api_key:
+        logger.info("Using MockVideoProvider for Veo operations (use_mock=True or no API key)")
         return MockVideoProvider(output_dir=output_dir)
 
     # Return actual Veo provider (which has its own mock fallback)
@@ -38,7 +40,8 @@ def generate_hero_image(
     product_image_path: str,
     ugc_style: str,
     emotional_tone: str,
-    visual_keywords: List[str]
+    visual_keywords: List[str],
+    use_mock: bool = False
 ) -> str:
     """Generate hero image combining UGC character and product.
 
@@ -50,11 +53,14 @@ def generate_hero_image(
         ugc_style: UGC character description (e.g., "young woman in casual outfit")
         emotional_tone: Emotional tone for the scene (e.g., "excited", "enthusiastic")
         visual_keywords: Style guidance keywords (e.g., ["natural lighting", "authentic"])
+        use_mock: Use mock image provider instead of real API
 
     Returns:
         Path to generated hero image (720x1280 vertical)
     """
     settings = get_settings()
+    output_dir = getattr(settings, "output_dir", "output")
+    os.makedirs(output_dir, exist_ok=True)
 
     # Build prompt combining UGC character + product integration
     visual_style = ", ".join(visual_keywords) if visual_keywords else "natural, authentic"
@@ -73,8 +79,14 @@ def generate_hero_image(
     logger.info(f"Generating hero image with UGC style: {ugc_style}, tone: {emotional_tone}")
     logger.debug(f"Hero image prompt: {prompt}")
 
-    # Get image provider
-    image_provider = get_image_provider()
+    # Instantiate image provider directly based on use_mock flag
+    if use_mock:
+        from app.services.image_provider.mock import MockImageProvider
+        image_provider = MockImageProvider(output_dir=output_dir)
+    else:
+        from app.services.image_provider.google_imagen import GoogleImagenProvider
+        google_api_key = getattr(settings, "google_api_key", "")
+        image_provider = GoogleImagenProvider(api_key=google_api_key, output_dir=output_dir)
 
     # Generate hero image (9:16 vertical format)
     image_paths = image_provider.generate_image(
@@ -93,7 +105,8 @@ def generate_hero_image(
 
 def generate_aroll_assets(
     aroll_scenes: List[Dict[str, Any]],
-    hero_image_path: str
+    hero_image_path: str,
+    use_mock: bool = False
 ) -> List[str]:
     """Generate A-Roll video clips from hero image using Veo image-to-video.
 
@@ -106,6 +119,7 @@ def generate_aroll_assets(
             - voice_direction: Voice/audio direction
             - script_text: Script text (for reference)
         hero_image_path: Path to hero image for image-to-video generation
+        use_mock: Use mock provider instead of real Veo API
 
     Returns:
         List of paths to A-Roll video clips in scene order
@@ -113,7 +127,7 @@ def generate_aroll_assets(
     logger.info(f"Generating {len(aroll_scenes)} A-Roll clips from hero image")
 
     # Get Veo provider (or mock fallback)
-    veo = _get_veo_or_mock()
+    veo = _get_veo_or_mock(use_mock=use_mock)
 
     clip_paths = []
     for idx, scene in enumerate(aroll_scenes, 1):
@@ -152,7 +166,8 @@ def generate_aroll_assets(
 
 def generate_broll_assets(
     broll_shots: List[Dict[str, Any]],
-    product_images: List[str]
+    product_images: List[str],
+    use_mock: bool = False
 ) -> List[str]:
     """Generate B-Roll product shots via Imagen + Veo pipeline.
 
@@ -170,6 +185,7 @@ def generate_broll_assets(
             - duration_seconds: Clip duration
             - reference_image_index: Index into product_images list
         product_images: List of paths to uploaded product photos
+        use_mock: Use mock providers instead of real APIs
 
     Returns:
         List of paths to B-Roll video clips in shot order
@@ -177,9 +193,20 @@ def generate_broll_assets(
     logger.info(f"Generating {len(broll_shots)} B-Roll clips via Imagen → Veo pipeline "
                 f"(using {len(product_images)} reference images)")
 
-    # Get providers
-    image_provider = get_image_provider()
-    veo = _get_veo_or_mock()
+    settings = get_settings()
+    output_dir = getattr(settings, "output_dir", "output")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Instantiate image provider directly based on use_mock flag
+    if use_mock:
+        from app.services.image_provider.mock import MockImageProvider
+        image_provider = MockImageProvider(output_dir=output_dir)
+    else:
+        from app.services.image_provider.google_imagen import GoogleImagenProvider
+        google_api_key = getattr(settings, "google_api_key", "")
+        image_provider = GoogleImagenProvider(api_key=google_api_key, output_dir=output_dir)
+
+    veo = _get_veo_or_mock(use_mock=use_mock)
 
     clip_paths = []
     for idx, shot in enumerate(broll_shots, 1):
