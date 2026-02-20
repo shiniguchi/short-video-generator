@@ -1,1027 +1,583 @@
-# Architecture Research: LP Generation + Cloudflare Integration
+# Architecture Patterns: UGC Review Workflow UI Integration
 
-**Domain:** Adding LP generation, Cloudflare deployment, Worker + D1 analytics, and web UI to existing ViralForge
-**Researched:** 2026-02-19
-**Confidence:** HIGH
-
-## Executive Summary
-
-This architecture integrates four new capabilities into ViralForge's existing FastAPI + Celery stack:
-
-1. **LP (Landing Page) Generation** — Single-file HTML pages created via Jinja2 templates
-2. **Cloudflare Pages Deployment** — Automated deployment of generated LPs via Python SDK
-3. **Cloudflare Worker + D1 Analytics** — Edge-based analytics stored in D1, accessed via HTTP proxy
-4. **Web UI** — Jinja2-based admin interface in the same FastAPI app
-
-**Key Decision:** Keep everything Python-first. Cloudflare Workers exist as separate deployment units (TypeScript/JavaScript) but are accessed via HTTP from Python. No hybrid Python Worker architecture needed.
+**Domain:** Adding per-stage review UI to existing ViralForge UGC pipeline
+**Researched:** 2026-02-20
+**Confidence:** HIGH — all patterns derived from existing codebase, no speculative components
 
 ---
 
-## Current Architecture Overview
+## Existing Architecture (What We're Integrating Into)
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                         Docker Compose                         │
-├────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
-│  │ FastAPI  │  │  Celery   │  │PostgreSQL│  │    Redis     │  │
-│  │   Web    │  │  Worker   │  │    DB    │  │    Broker    │  │
-│  └────┬─────┘  └─────┬─────┘  └─────┬────┘  └──────┬───────┘  │
-│       │              │              │               │          │
-├───────┴──────────────┴──────────────┴───────────────┴──────────┤
-│                    Persistent Volumes                          │
-│       ┌───────────────┐    ┌────────────────────┐              │
-│       │ postgres_data │    │ output/ (file-based│              │
-│       └───────────────┘    │  video artifacts)  │              │
-│                            └────────────────────┘              │
-└────────────────────────────────────────────────────────────────┘
-```
-
-**Current Component Responsibilities:**
-
-| Component | Responsibility | Implementation |
-|-----------|----------------|----------------|
-| FastAPI Web | REST API endpoints, request handling | Uvicorn ASGI server, SQLAlchemy async |
-| Celery Worker | Async task execution (trend collection, video gen) | Celery with thread pool, Redis broker |
-| PostgreSQL | Job/Video/Script/Trend storage | Async SQLAlchemy, Alembic migrations |
-| Redis | Task queue broker + result backend | Redis 7 Alpine |
-| Provider Abstraction | Swappable AI services (mock/real) | ABC base classes + factory functions |
-
-**Existing Patterns:**
-- **Service Layer:** `app/services/` (video_generator, voiceover_generator, etc.)
-- **Provider Pattern:** `base.py` (ABC) + `mock.py` + real providers (HeyGen, Gemini, etc.)
-- **Factory Functions:** `get_video_generator()`, `get_voiceover_generator()` select provider from settings
-- **Async DB:** All database access via `async with get_session()` context manager
-- **File Output:** Generated videos → `output/review/`, approved → `output/approved/`
-
----
-
-## New Architecture: Integration Points
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                          Existing FastAPI App                            │
-├──────────────────────────────────────────────────────────────────────────┤
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │                     NEW: Jinja2 Web UI Layer                       │  │
-│  │  /ui/dashboard  /ui/videos  /ui/jobs  /ui/landing-pages            │  │
-│  │  (Jinja2 templates + StaticFiles for CSS/JS)                       │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │                   Existing REST API Layer                          │  │
-│  │  /api/generate  /api/videos  /api/jobs  /api/trends               │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │                     NEW: LP + Deployment API                       │  │
-│  │  /api/landing-pages  /api/lp-generate  /api/lp-deploy             │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                    ┌───────────────┴───────────────┐
-                    ▼                               ▼
-    ┌────────────────────────────┐    ┌────────────────────────────┐
-    │   NEW: LP Generator Task   │    │  NEW: LP Deployment Task   │
-    │    (Celery, sync task)     │    │   (Celery, sync task)      │
-    │  - Load LandingPage record │    │  - Upload to CF Pages via  │
-    │  - Render Jinja2 template  │    │    cloudflare-python SDK   │
-    │  - Inline CSS, save HTML   │    │  - Update deployment_url   │
-    └────────────┬───────────────┘    └────────────┬───────────────┘
-                 │                                  │
-                 ▼                                  ▼
-      output/landing-pages/              Cloudflare Pages
-         (single-file HTML)              (https://{slug}.pages.dev)
-                                                   │
-                                                   ▼
-                                         ┌──────────────────────┐
-                                         │  Cloudflare Worker   │
-                                         │  (JavaScript/TS)     │
-                                         │  - Track page views  │
-                                         │  - Write to D1       │
-                                         └──────────────────────┘
-                                                   │
-                                                   ▼
-                                         ┌──────────────────────┐
-                                         │   D1 Database        │
-                                         │  (SQLite @ edge)     │
-                                         │  Table: page_views   │
-                                         └──────────────────────┘
-                                                   │
-                                                   ▼
-                                         ┌──────────────────────┐
-                                         │  Worker HTTP Proxy   │
-                                         │  (exposes /analytics)│
-                                         └──────────┬───────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                          FastAPI App                                   │
+│                                                                        │
+│  ┌──────────────────────┐    ┌──────────────────────────────────────┐  │
+│  │   app/ui/router.py   │    │        app/api/routes.py             │  │
+│  │  /ui/* — HTML pages  │    │  /api/* — JSON REST (Bearer auth)    │  │
+│  │  Jinja2Templates     │    │  POST /ugc-ad-generate               │  │
+│  │  SSE /events stream  │    │  GET  /videos/{id}                   │  │
+│  │  In-memory _jobs{}   │    │  POST /videos/{id}/approve           │  │
+│  └──────────────────────┘    └──────────────────────────────────────┘  │
+│                                                                        │
+│  /ui/static → StaticFiles (ui.css, ui.js)                             │
+│  /output    → StaticFiles (generated video/image files)               │
+└────────────────────────────────────────────────────────────────────────┘
+              │                                │
+              ▼ asyncio.create_task            ▼ celery_app.task.delay
+┌─────────────────────────┐        ┌───────────────────────────────────┐
+│  In-process asyncio     │        │  Celery Worker (app/tasks.py)     │
+│  background tasks       │        │                                   │
+│  (LP generation only)   │        │  generate_ugc_ad_task:            │
+│  _jobs{} dict tracks    │        │    1. analyze_product()           │
+│  SSE progress state     │        │    2. generate_hero_image()       │
+└─────────────────────────┘        │    3. generate_ugc_script()       │
+                                   │    4. generate_aroll_assets()     │
+                                   │    5. generate_broll_assets()     │
+                                   │    6. compose_ugc_ad()            │
+                                   │    7. Save Video record to DB     │
+                                   │    8. _mark_job_complete()        │
+                                   └───────────────────────────────────┘
                                                     │
-                            ┌───────────────────────┘
-                            ▼
-              ┌──────────────────────────────┐
-              │  FastAPI /api/analytics      │
-              │  - HTTP GET to Worker proxy  │
-              │  - Fetch D1 data from edge   │
-              └──────────────────────────────┘
+                                    ┌───────────────┘
+                                    ▼
+                         ┌──────────────────────┐
+                         │  PostgreSQL (via      │
+                         │  SQLAlchemy async)   │
+                         │                      │
+                         │  Job: status, stage  │
+                         │  Video: status, path │
+                         │  Script: scenes, etc │
+                         └──────────────────────┘
+```
+
+### Key Existing Patterns
+
+| Pattern | Where Used | How It Works |
+|---------|-----------|--------------|
+| Celery tasks | `app/tasks.py` | Long-running generation runs in worker; DB-backed status |
+| Job status tracking | `Job.status`, `Job.stage`, `Job.extra_data["completed_stages"]` | Polled from UI via API |
+| SSE progress | `GET /ui/generate/{job_id}/events` | Streams in-memory `_jobs[job_id]` dict every 1s |
+| In-memory job store | `_jobs: Dict[str, dict]` in `router.py` | Fast for LP generation; not persistent across restarts |
+| Video status machine | `Video.status`: generated → approved/rejected | Updated via `POST /videos/{id}/approve` |
+| Static file serving | `/output` mounted at app startup | Generated files served directly by FastAPI |
+| Jinja2 templates | `app/ui/templates/` | Extends `base.html` pattern |
+
+---
+
+## UGC Pipeline: Current Stages
+
+The existing `generate_ugc_ad_task` runs all 6 stages as a single atomic Celery task:
+
+```
+Stage 1: Product Analysis    → analyze_product() → ProductAnalysis
+Stage 2: Hero Image          → generate_hero_image() → hero_image_path (PNG)
+Stage 3: Script Generation   → generate_ugc_script() → AdBreakdown
+Stage 4: A-Roll Generation   → generate_aroll_assets() → [mp4, mp4, ...]
+Stage 5: B-Roll Generation   → generate_broll_assets() → [mp4, mp4, ...]
+Stage 6: Composition         → compose_ugc_ad() → final_video.mp4
+```
+
+**Current problem:** All stages run in sequence with no review points. If the script is bad, the user cannot fix it before 5 minutes of video generation runs. The review workflow breaks each stage into a checkpoint where the user can approve, edit, or regenerate before continuing.
+
+---
+
+## Recommended Architecture: Stage-Gated Pipeline
+
+### Core Concept
+
+Replace the single monolithic `generate_ugc_ad_task` with a **stage machine** where each stage:
+1. Runs and saves output to DB
+2. Waits for user approval via UI
+3. Only proceeds on explicit user action
+
+```
+[User submits product form]
+        │
+        ▼
+[Stage 1 runs: Product Analysis]
+        │
+        ▼
+[UI shows analysis results → User approves or edits]
+        │ (user clicks "Approve" or "Regenerate")
+        ▼
+[Stage 2 runs: Hero Image]
+        │
+        ▼
+[UI shows hero image → User approves or regenerates]
+        │
+        ▼
+[Stage 3 runs: Script]
+        │
+        ▼
+[UI shows script text → User edits or approves]
+        │
+        ▼
+[Stage 4+5 run: A-Roll + B-Roll assets]
+        │
+        ▼
+[UI shows video clips → User approves]
+        │
+        ▼
+[Stage 6 runs: Composition → Final video ready]
 ```
 
 ---
 
-## Component Integration Design
+## New Components
 
-### 1. LP Generation Service
+### 1. UGCJob Model (NEW — replaces `Job.extra_data` JSON bag)
 
-**Integration Approach:** New service following existing provider pattern
+**Rationale:** The existing `Job` model uses `extra_data` JSON for flexible storage. For the review workflow, we need typed columns for each stage's output so the UI can reliably read and display them without JSON key fishing.
 
-**Files:**
-- `app/services/landing_page_generator/generator.py` — Jinja2 template rendering
-- `app/services/landing_page_generator/base.py` — ABC for future template engines
-- `app/templates/landing_pages/base.html.jinja2` — Base template with inline CSS
-- `app/models.py` — Add `LandingPage` model
-
-**Why This Approach:**
-- Follows existing `app/services/` pattern
-- Jinja2 already used for FastAPI templates
-- Single-file HTML with inline CSS = portable, self-contained
-- Can swap template engines later (ABC pattern)
-
-**Database Schema:**
 ```python
-class LandingPage(Base):
-    __tablename__ = "landing_pages"
+# app/models.py — ADD new table
+class UGCJob(Base):
+    """Tracks UGC ad generation with per-stage review checkpoints."""
+    __tablename__ = "ugc_jobs"
 
     id = Column(Integer, primary_key=True)
-    video_id = Column(Integer, ForeignKey("videos.id"))
-    slug = Column(String(255), unique=True)  # URL slug
-    title = Column(String(500))
-    description = Column(Text)
-    html_path = Column(String(1000))  # output/landing-pages/{slug}.html
-    deployment_url = Column(String(1000))  # https://{slug}.pages.dev
-    status = Column(String(50), default="generated")  # generated, deployed, archived
+    # Status machine: pending → stage_N_running → stage_N_review → ... → completed | failed
+    status = Column(String(50), nullable=False, default="pending")
+    current_stage = Column(Integer, default=0)  # 1-6 int, 0 = not started
+
+    # Input
+    product_name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    product_url = Column(String(1000), nullable=True)
+    target_duration = Column(Integer, default=30)
+    style_preference = Column(String(50), nullable=True)
+    product_image_paths = Column(JSON)  # List[str] of uploaded image paths
+
+    # Stage 1 output: Product Analysis
+    analysis = Column(JSON, nullable=True)  # ProductAnalysis dict
+
+    # Stage 2 output: Hero Image
+    hero_image_path = Column(String(1000), nullable=True)
+
+    # Stage 3 output: Script / AdBreakdown
+    script_breakdown = Column(JSON, nullable=True)  # AdBreakdown dict
+
+    # Stage 4 output: A-Roll clips
+    aroll_paths = Column(JSON, nullable=True)  # List[str]
+
+    # Stage 5 output: B-Roll clips
+    broll_paths = Column(JSON, nullable=True)  # List[str]
+
+    # Stage 6 output: Final video
+    final_video_path = Column(String(1000), nullable=True)
+    video_id = Column(Integer, ForeignKey("videos.id"), nullable=True)
+
+    # Error tracking
+    error_message = Column(Text, nullable=True)
+    failed_stage = Column(Integer, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    deployed_at = Column(DateTime(timezone=True))
-    extra_data = Column(JSON)  # Template variables, analytics summary
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 ```
 
-**Implementation:**
+**Status values:**
+```
+pending
+stage_1_running → stage_1_review
+stage_2_running → stage_2_review
+stage_3_running → stage_3_review
+stage_4_running → stage_45_review   (A-Roll + B-Roll combined)
+stage_6_running → completed
+failed
+```
+
+### 2. Per-Stage Celery Tasks (NEW — replaces monolithic task)
+
+Each stage becomes its own Celery task. Stages pause (write to DB, update status) after completion and wait for the UI to call the "advance" endpoint.
+
 ```python
-# app/services/landing_page_generator/generator.py
-from jinja2 import Environment, FileSystemLoader
-from pathlib import Path
-from uuid import uuid4
+# app/tasks.py — ADD per-stage tasks
 
-class LandingPageGenerator:
-    def __init__(self, templates_dir: str = "app/templates/landing_pages"):
-        self.env = Environment(loader=FileSystemLoader(templates_dir))
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_1_analyze')
+def ugc_stage_1_analyze(self, ugc_job_id: int):
+    """Stage 1: Product analysis. Saves ProductAnalysis to UGCJob.analysis."""
+    ...
+    # Read UGCJob, run analyze_product(), save to ugc_job.analysis
+    # Set status = "stage_1_review", current_stage = 1
 
-    def generate(
-        self,
-        video_path: str,
-        title: str,
-        description: str,
-        cta_text: str = "Watch Now",
-        output_dir: str = "output/landing-pages"
-    ) -> str:
-        """Generate single-file HTML landing page.
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_2_hero_image')
+def ugc_stage_2_hero_image(self, ugc_job_id: int):
+    """Stage 2: Hero image. Saves path to UGCJob.hero_image_path."""
+    ...
+    # Use ugc_job.analysis to get ugc_style, emotional_tone, visual_keywords
+    # Run generate_hero_image(), save path
+    # Set status = "stage_2_review", current_stage = 2
 
-        Returns:
-            Path to generated HTML file
-        """
-        template = self.env.get_template("base.html.jinja2")
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_3_script')
+def ugc_stage_3_script(self, ugc_job_id: int):
+    """Stage 3: Script generation. Saves AdBreakdown to UGCJob.script_breakdown."""
+    ...
 
-        slug = str(uuid4())[:8]
-        html = template.render(
-            title=title,
-            description=description,
-            video_path=video_path,
-            cta_text=cta_text,
-            slug=slug
-        )
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_45_assets')
+def ugc_stage_45_assets(self, ugc_job_id: int):
+    """Stage 4+5: Generate A-Roll + B-Roll. Saves paths to UGCJob."""
+    ...
+    # A-Roll and B-Roll together (both are fast together vs user waiting twice)
+    # Set status = "stage_45_review", current_stage = 5
 
-        output_path = Path(output_dir) / f"{slug}.html"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(html)
-
-        return str(output_path)
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_6_compose')
+def ugc_stage_6_compose(self, ugc_job_id: int):
+    """Stage 6: Final composition. Saves final_video_path to UGCJob."""
+    ...
+    # Run compose_ugc_ad(), create Video record, set status = "completed"
 ```
 
-**Celery Task:**
+**Why combine A-Roll + B-Roll in one task (4+5):** Both take similar time, both need review of video clips together (A-Roll and B-Roll are reviewed in context), and separating them adds a review step that provides little user value.
+
+### 3. Review API Endpoints (NEW — in `app/ui/router.py`)
+
 ```python
-# app/tasks.py
-@celery_app.task(bind=True, name='app.tasks.generate_landing_page_task')
-def generate_landing_page_task(self, video_id: int):
-    """Generate landing page for approved video (SYNC task)."""
-    from app.services.landing_page_generator.generator import LandingPageGenerator
-    # ... load video, generate LP, save LandingPage record
+# Review workflow routes — add to app/ui/router.py
+
+GET  /ui/ugc/new                    # Form: start new UGC ad
+POST /ui/ugc/new                    # Submit form → create UGCJob, start stage 1
+GET  /ui/ugc/{job_id}               # Review page: shows current stage output
+GET  /ui/ugc/{job_id}/events        # SSE: streams status until stage reaches review
+POST /ui/ugc/{job_id}/advance       # Advance to next stage (approve current)
+POST /ui/ugc/{job_id}/regenerate    # Re-run current stage (reject, try again)
+POST /ui/ugc/{job_id}/edit          # Save user edits to stage output (stage 3: script text)
+GET  /ui/ugc/                       # List all UGC jobs
 ```
 
-**Why Sync Not Async:**
-- LP generation is I/O-light (template rendering + file write)
-- No external API calls, no network latency
-- Celery task = already async from API perspective
-- Keep simple, avoid async complexity for file operations
+**Rationale for SSE on review page:** The same SSE pattern from LP generation (`/ui/generate/{job_id}/events`) works here. The client connects, the server streams `status` until it hits a `_review` state, then the client stops polling and shows the review UI. This reuses the existing `connectSSE()` JS function.
+
+### 4. Review UI Templates (NEW — in `app/ui/templates/`)
+
+```
+app/ui/templates/
+├── ugc_new.html          # New: Product submission form
+├── ugc_list.html         # New: List all UGC jobs
+└── ugc_review.html       # New: Per-stage review page (single template, stage-conditional)
+```
+
+**Single review template pattern:** One `ugc_review.html` template handles all stages with `{% if ugc_job.status == "stage_1_review" %}` blocks. This keeps the template system simple — the server always renders the same URL `/ui/ugc/{job_id}` and the template shows the right stage UI.
 
 ---
 
-### 2. Cloudflare Pages Deployment
+## Data Flow
 
-**Integration Approach:** New Celery task using `cloudflare-python` SDK
+### New UGC Job Submission
 
-**Dependencies:**
-```txt
-# requirements.txt
-cloudflare>=5.0.0-beta.1  # Official Python SDK
+```
+[POST /ui/ugc/new — form data]
+        │
+        ▼
+1. Validate inputs (product_name, description, uploaded images)
+2. Save uploaded images to output/uploads/ (same as existing /ugc-ad-generate)
+3. Create UGCJob record (status="pending", product_image_paths=[...])
+4. Queue ugc_stage_1_analyze.delay(ugc_job.id)
+5. Redirect to /ui/ugc/{job_id}
 ```
 
-**Configuration:**
-```python
-# app/config.py
-class Settings(BaseSettings):
-    # ... existing settings
+### Review Page Load + SSE
 
-    # Cloudflare
-    cloudflare_api_token: str = ""
-    cloudflare_account_id: str = ""
-    cloudflare_pages_project: str = "viralforge-lps"
+```
+[GET /ui/ugc/{job_id}]
+        │
+        ▼
+1. Load UGCJob from DB
+2. If status == "stage_N_review": render review UI for stage N
+3. If status == "stage_N_running": render "Generating..." + SSE script
+4. If status == "completed": render final video
+5. SSE stream (GET /ui/ugc/{job_id}/events):
+   - Poll UGCJob.status every 1s
+   - Send status JSON until status contains "_review" or "completed" or "failed"
+   - Client JS: on "_review" received, reload page (window.location.reload())
 ```
 
-**Implementation:**
+### Stage Advance (User Approves)
+
+```
+[POST /ui/ugc/{job_id}/advance — with optional edited data]
+        │
+        ▼
+1. Load UGCJob, verify status == "stage_N_review"
+2. If edited data provided: update relevant UGCJob column (e.g., script_breakdown)
+3. Queue next stage task (ugc_stage_{N+1}_...)
+4. Set UGCJob.status = "stage_{N+1}_running"
+5. Return redirect to /ui/ugc/{job_id}
+```
+
+### Stage Regenerate (User Rejects)
+
+```
+[POST /ui/ugc/{job_id}/regenerate]
+        │
+        ▼
+1. Load UGCJob, verify status == "stage_N_review"
+2. Clear current stage output (e.g., set ugc_job.hero_image_path = None)
+3. Queue SAME stage task again
+4. Set UGCJob.status = "stage_N_running"
+5. Return redirect to /ui/ugc/{job_id}
+```
+
+---
+
+## Component Boundaries
+
+| Component | Responsibility | New or Existing | Communicates With |
+|-----------|---------------|-----------------|-------------------|
+| `app/models.py: UGCJob` | Store per-stage outputs + status | NEW | PostgreSQL |
+| `app/ui/router.py` | Review UI routes, form handling | MODIFIED (add routes) | UGCJob model, Celery tasks |
+| `app/ui/templates/ugc_*.html` | Review UI HTML | NEW | Jinja2 context from router |
+| `app/tasks.py: ugc_stage_*` | Execute each pipeline stage | NEW (replaces monolithic task) | UGC pipeline services, UGCJob model |
+| `app/services/ugc_pipeline/` | Generation logic | UNCHANGED | Called by new stage tasks |
+| SSE stream (`/ui/ugc/{id}/events`) | Stage completion notification | NEW | UGCJob.status in DB |
+| Video preview (`/output/...`) | Serve generated media for review | UNCHANGED (already mounted) | StaticFiles mount in main.py |
+
+---
+
+## Integration Points: Existing vs New
+
+### What We Reuse Unchanged
+
+| Existing Component | How the Review Workflow Reuses It |
+|-------------------|----------------------------------|
+| `app/services/ugc_pipeline/product_analyzer.py: analyze_product()` | Called from `ugc_stage_1_analyze` task |
+| `app/services/ugc_pipeline/asset_generator.py: generate_hero_image()` | Called from `ugc_stage_2_hero_image` task |
+| `app/services/ugc_pipeline/script_engine.py: generate_ugc_script()` | Called from `ugc_stage_3_script` task |
+| `app/services/ugc_pipeline/asset_generator.py: generate_aroll_assets()` | Called from `ugc_stage_45_assets` task |
+| `app/services/ugc_pipeline/asset_generator.py: generate_broll_assets()` | Called from `ugc_stage_45_assets` task |
+| `app/services/ugc_pipeline/ugc_compositor.py: compose_ugc_ad()` | Called from `ugc_stage_6_compose` task |
+| `app/worker.py: celery_app` | Same Celery app, same Redis broker |
+| `/output` StaticFiles mount | Serves hero images + video clips for in-browser preview |
+| SSE `StreamingResponse` pattern | Identical to existing `/ui/generate/{job_id}/events` |
+| `app/database.py: get_session, get_task_session_factory` | Same session factories in stage tasks |
+| `app/ui/templates/base.html` | Review templates extend it |
+| `app/ui/static/ui.css` | Review UI uses existing styles |
+
+### What We Modify
+
+| Existing Component | Modification | Why |
+|-------------------|-------------|-----|
+| `app/models.py` | Add `UGCJob` model | Per-stage typed storage |
+| `app/ui/router.py` | Add `/ui/ugc/*` routes | Review UI endpoints |
+| `app/tasks.py` | Add `ugc_stage_*` tasks | Per-stage async execution |
+| Alembic migrations | Add migration for `ugc_jobs` table | Schema change |
+| `app/ui/templates/base.html` nav | Add "UGC Ads" nav link | Navigation |
+
+### What We Deprecate
+
+| Component | Action | Note |
+|-----------|--------|------|
+| `app/tasks.py: generate_ugc_ad_task` | Keep for CLI use, mark as legacy | Old API (`POST /ugc-ad-generate`) still works; new UI uses stage tasks |
+
+---
+
+## Patterns to Follow
+
+### Pattern 1: Stage Task with DB-Backed Status
+
+Every stage task follows this exact structure:
+
 ```python
-# app/services/cloudflare_deployer.py
-from cloudflare import Cloudflare
-from pathlib import Path
+@celery_app.task(bind=True, name='app.tasks.ugc_stage_2_hero_image', max_retries=2)
+def ugc_stage_2_hero_image(self, ugc_job_id: int):
+    """Stage 2: Generate hero image from product analysis output."""
 
-class CloudflareDeployer:
-    def __init__(self, api_token: str, account_id: str, project_name: str):
-        self.client = Cloudflare(api_token=api_token)
-        self.account_id = account_id
-        self.project_name = project_name
+    async def _run():
+        from app.database import get_task_session_factory
+        from app.models import UGCJob
 
-    def deploy_landing_page(self, html_path: str, slug: str) -> str:
-        """Deploy single HTML file to Cloudflare Pages.
+        async with get_task_session_factory()() as session:
+            # 1. Load UGCJob
+            ugc_job = await session.get(UGCJob, ugc_job_id)
+            if not ugc_job:
+                raise ValueError(f"UGCJob {ugc_job_id} not found")
 
-        Returns:
-            Deployment URL (e.g., https://{slug}.pages.dev)
-        """
-        # Read HTML file
-        html_content = Path(html_path).read_text()
+            # 2. Mark running
+            ugc_job.status = "stage_2_running"
+            ugc_job.current_stage = 2
+            await session.commit()
 
-        # Create deployment via Direct Upload
-        # Note: CF Pages API expects a tarball or zip, OR use Wrangler CLI
-        # For single HTML, easier to use wrangler publish via subprocess
-        # OR use Pages Direct Upload API with files dict
-
-        deployment = self.client.pages.projects.deployments.create(
-            project_name=self.project_name,
-            # ... deployment config
+        # 3. Run generation (outside session to avoid long-held connection)
+        from app.services.ugc_pipeline.asset_generator import generate_hero_image
+        analysis = ugc_job.analysis  # Already JSON dict from Stage 1
+        hero_path = generate_hero_image(
+            product_image_path=ugc_job.product_image_paths[0],
+            ugc_style=analysis["ugc_style"],
+            emotional_tone=analysis["emotional_tone"],
+            visual_keywords=analysis["visual_keywords"]
         )
 
-        return deployment.url
+        # 4. Save output + mark review
+        async with get_task_session_factory()() as session:
+            ugc_job = await session.get(UGCJob, ugc_job_id)
+            ugc_job.hero_image_path = hero_path
+            ugc_job.status = "stage_2_review"
+            await session.commit()
+
+    try:
+        asyncio.run(_run())
+    except Exception as exc:
+        asyncio.run(_mark_ugc_job_failed(ugc_job_id, stage=2, error=str(exc)))
+        raise
 ```
 
-**Alternative: Wrangler CLI via subprocess**
-```python
-# More reliable for file uploads
-import subprocess
+### Pattern 2: SSE Stage Completion Notification
 
-def deploy_via_wrangler(html_path: str, slug: str) -> str:
-    """Deploy using Wrangler CLI (must be installed in Docker image)."""
-    result = subprocess.run(
-        ["wrangler", "pages", "deploy", html_path, "--project-name", f"lp-{slug}"],
-        capture_output=True,
-        text=True
+Reuses the exact SSE pattern from LP generation:
+
+```python
+@router.get("/ugc/{job_id}/events")
+async def ugc_stage_events(job_id: int, session: AsyncSession = Depends(get_session)):
+    """SSE: stream UGCJob status until stage reaches review/completed/failed."""
+
+    async def event_stream():
+        for _ in range(300):  # max 5 min (300 x 1s)
+            ugc_job = await session.get(UGCJob, job_id)
+            data = {
+                "status": ugc_job.status if ugc_job else "not_found",
+                "current_stage": ugc_job.current_stage if ugc_job else 0
+            }
+            yield f"data: {json.dumps(data)}\n\n"
+            # Stop streaming when stage is in review or terminal state
+            if not ugc_job or ugc_job.status in ("completed", "failed", "not_found"):
+                break
+            if "_review" in ugc_job.status:
+                break
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-    if result.returncode != 0:
-        raise Exception(f"Wrangler deploy failed: {result.stderr}")
-    # Parse deployment URL from stdout
-    return f"https://lp-{slug}.pages.dev"
 ```
 
-**Celery Task:**
-```python
-# app/tasks.py
-@celery_app.task(bind=True, name='app.tasks.deploy_landing_page_task')
-def deploy_landing_page_task(self, landing_page_id: int):
-    """Deploy landing page to Cloudflare Pages (SYNC task)."""
-    from app.services.cloudflare_deployer import CloudflareDeployer
-    # ... load LandingPage, deploy, update deployment_url + deployed_at
-```
+### Pattern 3: In-Browser Media Preview
 
-**Why Separate Task:**
-- Deployment can fail (network, CF API rate limits)
-- Want retry + backoff logic
-- User can generate LP locally, deploy later
-- Decouples generation from hosting
-
----
-
-### 3. Cloudflare Worker + D1 Analytics
-
-**Architecture Decision:** Workers are SEPARATE deployment units (JavaScript/TypeScript), NOT Python Workers
-
-**Why Not Python Workers:**
-- Python Workers are beta, limited ecosystem
-- D1 binding from Python Workers is experimental
-- JavaScript/TypeScript Workers are mature, battle-tested
-- FastAPI backend doesn't need to run at edge
-
-**Worker Structure:**
-```
-cloudflare-worker/           # NEW: Separate directory at project root
-├── wrangler.toml            # Worker configuration
-├── src/
-│   └── index.ts             # Worker entry point
-├── schema.sql               # D1 database schema
-└── package.json             # TypeScript dependencies
-```
-
-**Worker Implementation:**
-```typescript
-// cloudflare-worker/src/index.ts
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    // Track page view
-    if (url.pathname.startsWith('/track')) {
-      const slug = url.searchParams.get('slug');
-      if (!slug) return new Response('Missing slug', { status: 400 });
-
-      await env.DB.prepare(
-        'INSERT INTO page_views (slug, ip, user_agent, created_at) VALUES (?, ?, ?, ?)'
-      ).bind(slug, request.headers.get('CF-Connecting-IP'), request.headers.get('User-Agent'), Date.now()).run();
-
-      return new Response('OK', { status: 200 });
-    }
-
-    // Analytics proxy endpoint (for Python backend)
-    if (url.pathname === '/analytics') {
-      const slug = url.searchParams.get('slug');
-      const { results } = await env.DB.prepare(
-        'SELECT COUNT(*) as views FROM page_views WHERE slug = ?'
-      ).bind(slug).all();
-
-      return new Response(JSON.stringify(results), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    return new Response('Not Found', { status: 404 });
-  }
-};
-```
-
-**D1 Schema:**
-```sql
--- cloudflare-worker/schema.sql
-CREATE TABLE page_views (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  slug TEXT NOT NULL,
-  ip TEXT,
-  user_agent TEXT,
-  created_at INTEGER NOT NULL
-);
-
-CREATE INDEX idx_slug ON page_views(slug);
-```
-
-**Wrangler Configuration:**
-```toml
-# cloudflare-worker/wrangler.toml
-name = "viralforge-analytics"
-main = "src/index.ts"
-compatibility_date = "2026-02-19"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "viralforge_analytics"
-database_id = "<D1_DATABASE_ID>"
-
-[observability]
-enabled = true
-```
-
-**Deployment:**
-```bash
-# From project root
-cd cloudflare-worker
-npm install
-wrangler d1 create viralforge_analytics  # First time only
-wrangler d1 execute viralforge_analytics --file=schema.sql  # Create tables
-wrangler deploy  # Deploy Worker
-```
-
-**Python Backend Integration:**
-```python
-# app/services/analytics_fetcher.py
-import httpx
-from app.config import get_settings
-
-class AnalyticsFetcher:
-    def __init__(self):
-        self.worker_url = "https://viralforge-analytics.{your-subdomain}.workers.dev"
-
-    async def get_page_views(self, slug: str) -> int:
-        """Fetch page view count from Cloudflare Worker."""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.worker_url}/analytics",
-                params={"slug": slug}
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data[0]["views"] if data else 0
-
-# app/api/routes.py
-@router.get("/landing-pages/{slug}/analytics")
-async def get_landing_page_analytics(slug: str, _: str = Depends(require_api_key)):
-    """Fetch analytics for landing page from Cloudflare D1 via Worker proxy."""
-    from app.services.analytics_fetcher import AnalyticsFetcher
-
-    fetcher = AnalyticsFetcher()
-    views = await fetcher.get_page_views(slug)
-
-    return {"slug": slug, "page_views": views}
-```
-
-**Why HTTP Proxy Pattern:**
-- D1 has no direct Python client (Workers-only binding)
-- Worker exposes `/analytics` HTTP endpoint
-- Python backend calls HTTP endpoint like any API
-- Simple, reliable, well-understood pattern
-- Worker handles authentication via API tokens if needed
-
----
-
-### 4. Web UI Layer
-
-**Integration Approach:** Jinja2 templates in same FastAPI app, separate route prefix
-
-**Project Structure:**
-```
-app/
-├── api/
-│   └── routes.py          # Existing: /api/* (JSON responses)
-├── ui/                    # NEW: Web UI routes
-│   ├── __init__.py
-│   └── pages.py           # /ui/* (HTML responses via Jinja2)
-├── templates/             # NEW: Jinja2 templates
-│   ├── base.html.jinja2   # Base layout with nav
-│   ├── dashboard.html.jinja2
-│   ├── videos.html.jinja2
-│   ├── jobs.html.jinja2
-│   └── landing_pages.html.jinja2
-├── static/                # NEW: CSS, JS, images
-│   ├── css/
-│   │   └── main.css
-│   └── js/
-│       └── app.js
-└── main.py                # Mount UI routes + static files
-```
-
-**Implementation:**
-```python
-# app/ui/pages.py
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-
-from app.database import get_session
-from app.models import Video, Job, LandingPage
-
-router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
-
-@router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, session: AsyncSession = Depends(get_session)):
-    """Render dashboard with job/video stats."""
-    # Query stats
-    jobs_total = await session.scalar(select(func.count(Job.id)))
-    videos_total = await session.scalar(select(func.count(Video.id)))
-
-    return templates.TemplateResponse("dashboard.html.jinja2", {
-        "request": request,
-        "jobs_total": jobs_total,
-        "videos_total": videos_total
-    })
-
-@router.get("/videos", response_class=HTMLResponse)
-async def videos_list(request: Request, session: AsyncSession = Depends(get_session)):
-    """Render video gallery with approve/reject actions."""
-    query = select(Video).order_by(Video.created_at.desc()).limit(50)
-    result = await session.execute(query)
-    videos = result.scalars().all()
-
-    return templates.TemplateResponse("videos.html.jinja2", {
-        "request": request,
-        "videos": videos
-    })
-
-@router.get("/landing-pages", response_class=HTMLResponse)
-async def landing_pages_list(request: Request, session: AsyncSession = Depends(get_session)):
-    """Render landing page manager."""
-    query = select(LandingPage).order_by(LandingPage.created_at.desc())
-    result = await session.execute(query)
-    lps = result.scalars().all()
-
-    return templates.TemplateResponse("landing_pages.html.jinja2", {
-        "request": request,
-        "landing_pages": lps
-    })
-```
+Generated files are served via the existing `/output` StaticFiles mount:
 
 ```python
-# app/main.py
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from app.api.routes import router as api_router
-from app.ui.pages import router as ui_router
+# main.py already has:
+app.mount("/output", StaticFiles(directory=str(_output_dir)), name="lp-output")
 
-app = FastAPI(title="ViralForge")
-
-# Mount API routes (existing)
-app.include_router(api_router, prefix="/api", tags=["API"])
-
-# Mount UI routes (new)
-app.include_router(ui_router, prefix="/ui", tags=["Web UI"])
-
-# Mount static files (new)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Templates use this directly:
+# <img src="/output/{{ relative_path_from_output_dir }}">
+# <video src="/output/{{ relative_path }}"></video>
 ```
 
-**Base Template:**
-```html
-<!-- app/templates/base.html.jinja2 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ViralForge{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/main.css">
-    {% block extra_head %}{% endblock %}
-</head>
-<body>
-    <nav>
-        <a href="/ui/dashboard">Dashboard</a>
-        <a href="/ui/videos">Videos</a>
-        <a href="/ui/jobs">Jobs</a>
-        <a href="/ui/landing-pages">Landing Pages</a>
-    </nav>
+Hero images, A-Roll clips, and B-Roll clips are all written to subdirectories of `output/`. No additional mounts needed.
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+### Pattern 4: Script Edit (Stage 3 User Editing)
 
-    <script src="/static/js/app.js"></script>
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
-```
+Stage 3 (script) needs user editing. Use a `<textarea>` form that posts back the edited `master_script.full_script`:
 
-**Why This Approach:**
-- Follows FastAPI + Jinja2 standard pattern
-- No separate frontend build step
-- Server-side rendering = fast initial load
-- Can add HTMX for dynamic updates later
-- Keeps everything in one deployment unit
+```python
+@router.post("/ugc/{job_id}/edit")
+async def ugc_edit_stage(
+    job_id: int,
+    field: str = Form(...),       # "script_text"
+    value: str = Form(...),        # edited text
+    session: AsyncSession = Depends(get_session)
+):
+    """Save user edits to stage output without regenerating."""
+    ugc_job = await session.get(UGCJob, job_id)
+    if ugc_job.status != "stage_3_review":
+        raise HTTPException(400, "Can only edit during stage 3 review")
 
-**Alternative Considered: Separate React SPA**
-- Pros: Richer interactions, client-side state
-- Cons: Separate build pipeline, CORS config, more complexity
-- Verdict: Overkill for admin UI, save for future if needed
+    if field == "script_text":
+        breakdown = ugc_job.script_breakdown
+        breakdown["master_script"]["full_script"] = value
+        ugc_job.script_breakdown = breakdown
 
----
-
-## Data Flow Diagrams
-
-### LP Generation + Deployment Flow
-
-```
-[User clicks "Create LP" in Web UI]
-    │
-    ▼
-[POST /api/lp-generate with video_id]
-    │
-    ▼
-[API creates LandingPage record, queues generate_landing_page_task]
-    │
-    ▼
-[Celery Worker: generate_landing_page_task]
-    │
-    ├─→ Load Video record
-    ├─→ Render Jinja2 template (title, description, video embed)
-    ├─→ Inline CSS for self-contained HTML
-    ├─→ Save to output/landing-pages/{slug}.html
-    └─→ Update LandingPage.html_path, status="generated"
-    │
-    ▼
-[User clicks "Deploy" in Web UI]
-    │
-    ▼
-[POST /api/lp-deploy with landing_page_id]
-    │
-    ▼
-[API queues deploy_landing_page_task]
-    │
-    ▼
-[Celery Worker: deploy_landing_page_task]
-    │
-    ├─→ Load LandingPage record
-    ├─→ Upload HTML to Cloudflare Pages (via SDK or Wrangler CLI)
-    ├─→ Receive deployment URL
-    └─→ Update LandingPage.deployment_url, deployed_at, status="deployed"
-    │
-    ▼
-[Landing Page live at https://{slug}.pages.dev]
-```
-
-### Analytics Tracking Flow
-
-```
-[User visits https://{slug}.pages.dev]
-    │
-    ▼
-[Cloudflare Pages serves static HTML]
-    │
-    ▼
-[HTML includes <script> that calls Worker /track endpoint]
-    │
-    ▼
-[Cloudflare Worker receives /track?slug={slug}]
-    │
-    ├─→ Extract IP, User-Agent from request headers
-    ├─→ INSERT INTO page_views (slug, ip, user_agent, created_at)
-    └─→ Return 200 OK
-    │
-    ▼
-[D1 Database stores page view]
-    │
-    │
-    ▼
-[Admin visits /ui/landing-pages in Web UI]
-    │
-    ▼
-[GET /api/landing-pages/{slug}/analytics]
-    │
-    ├─→ HTTP GET to Worker /analytics?slug={slug}
-    ├─→ Worker queries D1: SELECT COUNT(*) FROM page_views WHERE slug=?
-    ├─→ Worker returns JSON: {"views": 123}
-    └─→ API returns analytics to Web UI
-    │
-    ▼
-[Web UI displays page view count]
+    await session.commit()
+    return RedirectResponse(url=f"/ui/ugc/{job_id}", status_code=303)
 ```
 
 ---
 
-## File Organization
+## Anti-Patterns to Avoid
 
-### New Files to Create
+### Anti-Pattern 1: Passing Stage Results via Celery Task Arguments
 
-```
-app/
-├── models.py                           # MODIFY: Add LandingPage model
-├── config.py                           # MODIFY: Add cloudflare_* settings
-├── tasks.py                            # MODIFY: Add LP generation/deployment tasks
-├── api/
-│   └── routes.py                       # MODIFY: Add /api/lp-*, /api/analytics
-├── ui/                                 # NEW: Web UI routes
-│   ├── __init__.py
-│   └── pages.py
-├── templates/                          # NEW: Jinja2 templates
-│   ├── base.html.jinja2
-│   ├── dashboard.html.jinja2
-│   ├── videos.html.jinja2
-│   ├── jobs.html.jinja2
-│   ├── landing_pages.html.jinja2
-│   └── landing_pages/                  # LP generation templates
-│       └── base.html.jinja2
-├── static/                             # NEW: Static assets
-│   ├── css/
-│   │   └── main.css
-│   └── js/
-│       └── app.js
-├── services/
-│   ├── landing_page_generator/         # NEW: LP generation service
-│   │   ├── __init__.py
-│   │   ├── base.py                     # ABC for template engines
-│   │   └── generator.py                # Jinja2 implementation
-│   ├── cloudflare_deployer.py          # NEW: CF Pages deployment
-│   └── analytics_fetcher.py            # NEW: Fetch D1 analytics via Worker
+**What goes wrong:** Chaining stages as `stage_1.apply_async() | stage_2.apply_async()` — Celery passes `ProductAnalysis` dict as task arg. Works, but the UI cannot inspect the result without also calling `AsyncResult`.
 
-cloudflare-worker/                      # NEW: Separate directory at root
-├── wrangler.toml
-├── src/
-│   └── index.ts
-├── schema.sql
-├── package.json
-└── tsconfig.json
+**Why bad:** No DB record of what each stage produced. UI can't display analysis results from DB. Recovery after restart loses intermediate outputs.
 
-output/
-└── landing-pages/                      # NEW: Generated HTML files
-    └── {slug}.html
-```
+**Instead:** Write stage outputs to `UGCJob` columns. Each task reads inputs from DB and writes outputs to DB. Tasks are stateless — only job ID is passed.
 
-### Modified Files
+### Anti-Pattern 2: Long-Polling the Celery Task ID
 
-| File | Modification |
-|------|--------------|
-| `app/models.py` | Add `LandingPage` model |
-| `app/config.py` | Add `cloudflare_api_token`, `cloudflare_account_id`, `cloudflare_pages_project` |
-| `app/tasks.py` | Add `generate_landing_page_task`, `deploy_landing_page_task` |
-| `app/api/routes.py` | Add `/api/lp-generate`, `/api/lp-deploy`, `/api/landing-pages/{slug}/analytics` |
-| `app/main.py` | Mount UI router, mount static files |
-| `requirements.txt` | Add `cloudflare>=5.0.0-beta.1`, `jinja2` (already present) |
-| `Dockerfile` | Install Node.js + Wrangler CLI (for deployment task) |
-| `alembic/` | Migration to add `landing_pages` table |
+**What goes wrong:** Frontend polls `GET /api/tasks/{celery_task_id}` for completion. Requires Celery result backend to be queryable per-task.
+
+**Why bad:** Celery result expiry (default 24h), result backend adds complexity, task IDs must be tracked separately. SSE against DB is simpler and already used.
+
+**Instead:** Store task status in `UGCJob.status`. SSE stream polls DB every 1s. Stage tasks update DB status. No Celery task ID needed in the frontend.
+
+### Anti-Pattern 3: One Large Monolithic Review Template
+
+**What goes wrong:** Building a single template with all 6 stage review UIs visible at once (tabbed or accordion), loading all media upfront.
+
+**Why bad:** A-Roll + B-Roll clips can be 6-10 large mp4 files. Loading all at page load is slow. Template becomes complex and hard to test.
+
+**Instead:** Render only the current stage's review UI. `ugc_review.html` uses `{% if ugc_job.status == "stage_2_review" %}` guards. Earlier stage outputs are collapsed/hidden by default but accessible on scroll.
+
+### Anti-Pattern 4: Blocking the FastAPI Event Loop in Advance/Regenerate Handlers
+
+**What goes wrong:** `POST /ui/ugc/{job_id}/advance` calls `celery_task.get()` to wait for completion.
+
+**Why bad:** FastAPI runs in a single async event loop. `task.get()` blocks the thread for minutes, freezing all requests.
+
+**Instead:** `advance` handler just queues the next Celery task, updates DB status to `stage_N_running`, and redirects. The SSE stream does the waiting.
 
 ---
 
 ## Build Order (Integration Sequence)
 
-### Phase 1: LP Generation (Standalone)
-**Goal:** Generate single-file HTML landing pages locally
+Build order respects dependencies: DB schema before tasks, tasks before routes, routes before templates.
 
-1. Add `LandingPage` model to `app/models.py`
-2. Create Alembic migration for `landing_pages` table
-3. Create `app/services/landing_page_generator/` (base + generator)
-4. Create `app/templates/landing_pages/base.html.jinja2`
-5. Add `generate_landing_page_task` to `app/tasks.py`
-6. Add `/api/lp-generate` endpoint to `app/api/routes.py`
-7. Test: Generate LP for existing video, verify HTML in `output/landing-pages/`
+### Step 1: Data Model
+**Files:** `app/models.py` (add `UGCJob`), new Alembic migration
+**Why first:** All other components read/write `UGCJob`. Nothing else can be tested without it.
 
-**Why First:** No external dependencies, can be tested locally immediately
+### Step 2: Per-Stage Celery Tasks
+**Files:** `app/tasks.py` (add `ugc_stage_1` through `ugc_stage_6`)
+**Why second:** Tasks are pure Python, testable without UI. Run via `task.delay(job_id)` from Django shell or pytest. Confirms pipeline logic works with DB intermediates before UI is built.
 
-### Phase 2: Web UI
-**Goal:** View/manage videos, jobs, LPs in browser
+### Step 3: Review API Routes
+**Files:** `app/ui/router.py` (add `/ui/ugc/*` routes)
+**Why third:** Routes depend on models and tasks. The advance/regenerate handlers can be tested with curl before templates exist (return JSON temporarily).
 
-1. Create `app/ui/pages.py` with routes
-2. Create `app/templates/` (base, dashboard, videos, jobs, landing_pages)
-3. Create `app/static/` (CSS, JS)
-4. Mount UI router in `app/main.py`
-5. Add StaticFiles mount for `/static`
-6. Test: Browse to `/ui/dashboard`, see job stats
+### Step 4: Review UI Templates
+**Files:** `app/ui/templates/ugc_new.html`, `ugc_list.html`, `ugc_review.html`
+**Why fourth:** Templates are purely presentation. All logic is already in routes and tasks. Build incrementally: new form → list → per-stage review sections.
 
-**Why Second:** Visual interface for testing LP generation, no Cloudflare account needed yet
-
-### Phase 3: Cloudflare Worker + D1 Analytics
-**Goal:** Track page views at edge
-
-1. Create `cloudflare-worker/` directory at root
-2. Write `src/index.ts` with `/track` and `/analytics` endpoints
-3. Write `schema.sql` for `page_views` table
-4. Configure `wrangler.toml` with D1 binding
-5. Deploy Worker + D1 database to Cloudflare
-6. Update LP template to include analytics `<script>` tag
-7. Add `app/services/analytics_fetcher.py`
-8. Add `/api/landing-pages/{slug}/analytics` endpoint
-9. Test: Open generated HTML locally, verify `/track` call (will fail until deployed)
-
-**Why Third:** Can develop Worker independently, test locally with `wrangler dev`
-
-### Phase 4: Cloudflare Pages Deployment
-**Goal:** Deploy LPs to public URLs
-
-1. Add `cloudflare_*` settings to `app/config.py`
-2. Create `app/services/cloudflare_deployer.py`
-3. Add `deploy_landing_page_task` to `app/tasks.py`
-4. Add `/api/lp-deploy` endpoint
-5. Update Dockerfile to install Node.js + Wrangler CLI
-6. Add "Deploy" button to `/ui/landing-pages` UI
-7. Test: Deploy LP, verify live at `https://{slug}.pages.dev`
-
-**Why Last:** Requires Cloudflare account + API token, most complex integration
+### Step 5: Media Preview Wiring
+**Files:** Template `<img>/<video>` tags using `/output/` paths, `ui.css` additions
+**Why fifth:** Requires real generated files to verify. Depends on Stage 2 (images) and Stage 4-5 (video clips) having run at least once.
 
 ---
 
-## Local-to-Hosted Switchability
+## Scalability Notes
 
-### Configuration Strategy
-
-```python
-# app/config.py
-class Settings(BaseSettings):
-    # Deployment mode
-    deployment_mode: str = "local"  # local, docker, hosted
-
-    # Cloudflare (only needed for hosted mode)
-    cloudflare_api_token: str = ""
-    cloudflare_account_id: str = ""
-    cloudflare_pages_project: str = "viralforge-lps"
-    cloudflare_worker_url: str = ""
-
-    # Local fallbacks
-    local_lp_base_url: str = "http://localhost:8000/static/landing-pages"
-```
-
-### Conditional Logic
-
-```python
-# app/services/cloudflare_deployer.py
-class CloudflareDeployer:
-    def __init__(self):
-        self.settings = get_settings()
-
-    def deploy_landing_page(self, html_path: str, slug: str) -> str:
-        if self.settings.deployment_mode == "local":
-            # Local mode: Copy to static/ and return local URL
-            shutil.copy(html_path, f"app/static/landing-pages/{slug}.html")
-            return f"{self.settings.local_lp_base_url}/{slug}.html"
-
-        elif self.settings.deployment_mode in ("docker", "hosted"):
-            # Hosted mode: Deploy to Cloudflare Pages
-            return self._deploy_to_cloudflare(html_path, slug)
-```
-
-### Analytics Fetcher Fallback
-
-```python
-# app/services/analytics_fetcher.py
-class AnalyticsFetcher:
-    async def get_page_views(self, slug: str) -> int:
-        settings = get_settings()
-
-        if settings.deployment_mode == "local":
-            # No analytics in local mode
-            return 0
-
-        else:
-            # Fetch from Cloudflare Worker
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{settings.cloudflare_worker_url}/analytics",
-                    params={"slug": slug}
-                )
-                data = response.json()
-                return data[0]["views"] if data else 0
-```
-
-### Environment Variables
-
-**Local development (`.env`):**
-```bash
-DEPLOYMENT_MODE=local
-LOCAL_LP_BASE_URL=http://localhost:8000/static/landing-pages
-```
-
-**Docker Compose (production-like):**
-```yaml
-# docker-compose.yml
-environment:
-  - DEPLOYMENT_MODE=docker
-  - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-  - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
-  - CLOUDFLARE_WORKER_URL=https://viralforge-analytics.your-subdomain.workers.dev
-```
-
-**Hosted (Cloud Run, Fly.io, etc.):**
-```bash
-DEPLOYMENT_MODE=hosted
-CLOUDFLARE_API_TOKEN=<secret>
-CLOUDFLARE_ACCOUNT_ID=<secret>
-CLOUDFLARE_WORKER_URL=https://viralforge-analytics.your-subdomain.workers.dev
-```
-
----
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k LPs/month | Current design is fine. Single FastAPI instance, Celery worker handles LP gen/deploy sequentially. D1 free tier = 5M reads/day. |
-| 1k-10k LPs/month | Add Celery worker concurrency (multiple containers). Use CF Pages batch upload API if available. D1 still within free tier. |
-| 10k+ LPs/month | Move LP generation to dedicated worker queue. Consider CF Pages API rate limits (may need backoff/retry). Upgrade D1 to paid tier if >5M reads/day. |
-
-### First Bottleneck: Cloudflare Pages API Rate Limits
-
-**Problem:** CF Pages API has rate limits (exact limits not publicly documented, likely ~10-100 deploys/min)
-
-**Solution:**
-1. Add retry logic with exponential backoff to `deploy_landing_page_task`
-2. Use Celery rate limiting: `@task(rate_limit='10/m')` to cap deploys
-3. Batch deploy if CF Pages supports it (upload multiple files in one deployment)
-
-### Second Bottleneck: D1 Read Performance
-
-**Problem:** D1 free tier = 5M reads/day. At 10k LPs with 100 views each = 1M views/day. Admin checking analytics = 1 read per LP per check.
-
-**Solution:**
-1. Cache analytics in PostgreSQL (sync from D1 hourly via Celery Beat task)
-2. Use D1 query result caching (built-in, configurable in Worker)
-3. Aggregate analytics daily instead of real-time queries
-
----
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Deploying Each LP to Separate CF Pages Project
-
-**What people might do:** Create new Cloudflare Pages project for each landing page
-
-**Why it's wrong:**
-- CF Pages has project limits (100 projects per account on free tier)
-- Each project needs separate DNS, SSL, config
-- Deployment complexity scales linearly with LP count
-
-**Do this instead:**
-- Use **one CF Pages project** for all LPs
-- Deploy LPs to different paths: `/{slug}/index.html`
-- Or use custom domains with wildcard routing
-
-### Anti-Pattern 2: Storing LP Analytics in PostgreSQL
-
-**What people might do:** Skip Cloudflare Workers, track analytics in PostgreSQL
-
-**Why it's wrong:**
-- PostgreSQL is not at edge, high latency for global users
-- Tracking pixel needs fast response (<100ms), PostgreSQL adds 200-500ms
-- Wastes database connections for lightweight analytics
-
-**Do this instead:**
-- Use Cloudflare D1 for edge analytics (50ms response globally)
-- Sync aggregated data to PostgreSQL hourly for reports
-- Best of both worlds: fast tracking + rich querying
-
-### Anti-Pattern 3: Generating LPs Synchronously in API Endpoint
-
-**What people might do:** Render LP in `/api/lp-generate` endpoint, block until done
-
-**Why it's wrong:**
-- Template rendering + file I/O can take 500ms-2s
-- Blocks API thread, reduces throughput
-- No retry logic if generation fails
-
-**Do this instead:**
-- Queue `generate_landing_page_task` via Celery
-- Return immediately with `task_id`
-- Poll `/api/jobs/{task_id}` for completion
-- Pattern already established in existing pipeline
-
-### Anti-Pattern 4: Embedding Cloudflare Worker Code in Python
-
-**What people might do:** Try to write Cloudflare Worker in Python using Python Workers beta
-
-**Why it's wrong:**
-- Python Workers are beta, limited library support
-- D1 binding from Python Workers is experimental
-- JavaScript/TypeScript Workers are mature, well-documented
-- Mixing Python + Python Workers = confusing codebase
-
-**Do this instead:**
-- Keep Worker as separate TypeScript project
-- Python backend calls Worker via HTTP
-- Clear separation of concerns
-- Use each tool for what it's good at
-
----
-
-## Integration Points Summary
-
-### Existing → New Connections
-
-| Existing Component | New Component | Connection Type | Purpose |
-|-------------------|---------------|-----------------|---------|
-| Video model | LandingPage model | Foreign Key | Link LP to source video |
-| FastAPI `/api/*` | FastAPI `/ui/*` | Same app, different router | Web UI for admin |
-| Celery tasks | `generate_landing_page_task` | Same Celery app | Async LP generation |
-| Celery tasks | `deploy_landing_page_task` | Same Celery app | Async CF deployment |
-| FastAPI | Cloudflare Worker | HTTP (fetch) | Retrieve analytics from D1 |
-| Cloudflare Pages | Cloudflare Worker | JavaScript `<script>` tag | Track page views |
-
-### External Dependencies
-
-| Service | Purpose | Python Integration | Configuration |
-|---------|---------|-------------------|---------------|
-| Cloudflare Pages | Host LPs | `cloudflare-python` SDK | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
-| Cloudflare Workers | Edge analytics | HTTP API calls | `CLOUDFLARE_WORKER_URL` |
-| Cloudflare D1 | Analytics storage | Via Worker proxy | Managed by Worker |
+| Concern | At Current Scale (1 user) | At 10 concurrent jobs |
+|---------|--------------------------|----------------------|
+| Celery worker | `worker_prefetch_multiplier=1` means 1 task at a time | Add `--concurrency=4` to Celery worker |
+| DB connections | SQLAlchemy async pool (default 5) | Fine; each task holds connection only during DB ops |
+| SSE connections | One per browser tab | FastAPI handles many SSE streams as async generators |
+| Stage output storage | Files in `output/`, paths in `UGCJob` JSON columns | Fine up to ~1000 jobs before disk management needed |
+| Media preview | FastAPI StaticFiles | At high load: Nginx to serve `output/` directly |
 
 ---
 
 ## Sources
 
-### Landing Pages
-- [40 best landing page examples of 2026](https://unbounce.com/landing-page-examples/best-landing-page-examples/)
-- [Landing Page Best Practices for Creators (2026 Edition)](https://www.newzenler.com/blog/landing-page-best-practices-creators-2026)
+All findings are HIGH confidence — derived directly from codebase inspection:
 
-### Cloudflare Integration
-- [Query D1 from Python Workers](https://developers.cloudflare.com/d1/examples/query-d1-from-python-workers/)
-- [Cloudflare Python SDK](https://github.com/cloudflare/cloudflare-python)
-- [Build an API to access D1 using a proxy Worker](https://developers.cloudflare.com/d1/tutorials/build-an-api-to-access-d1/)
-- [D1py - Python wrapper for D1 REST API](https://github.com/Suleman-Elahi/D1py)
-- [Cloudflare Pages Deployment API](https://developers.cloudflare.com/api/python/resources/pages/subresources/projects/subresources/deployments/)
-- [Fetch · Cloudflare Workers docs](https://developers.cloudflare.com/workers/runtime-apis/fetch/)
-
-### FastAPI + Jinja2
-- [FastAPI Templates](https://fastapi.tiangolo.com/advanced/templates/)
-- [How to Serve a Website With FastAPI Using HTML and Jinja2 – Real Python](https://realpython.com/fastapi-jinja2-template/)
-- [The Ultimate FastAPI Tutorial Part 6 - Serving HTML with Jinja Templates](https://christophergs.com/tutorials/ultimate-fastapi-tutorial-pt-6-jinja-templates/)
-
-### Architecture Patterns
-- [Developing a Single Page App with FastAPI and React](https://testdriven.io/blog/fastapi-react/)
-- [FastAPI Static Files](https://fastapi.tiangolo.com/tutorial/static-files/)
-- [Serving a React Frontend Application with FastAPI](https://davidmuraya.com/blog/serving-a-react-frontend-application-with-fastapi/)
-
----
-
-*Architecture research for: ViralForge LP + Cloudflare Integration*
-*Researched: 2026-02-19*
+- `app/tasks.py: generate_ugc_ad_task` — existing monolithic pipeline structure (lines 355-510)
+- `app/services/ugc_pipeline/` — 4 service modules: product_analyzer, script_engine, asset_generator, ugc_compositor
+- `app/ui/router.py` — SSE pattern (lines 72-86), in-memory `_jobs` dict, Jinja2Templates usage
+- `app/models.py` — existing `Job`, `Video`, `LandingPage` model patterns
+- `app/pipeline.py` — `_update_job_status`, `_mark_job_complete`, `_mark_job_failed` helpers (reuse as-is)
+- `app/main.py` — `/output` StaticFiles mount (line 89), router mounting pattern
+- `app/database.py` — `get_task_session_factory` for Celery task DB access
+- `.planning/phases/17-web-ui/17-RESEARCH.md` — SSE + asyncio background task patterns
+- `.planning/phases/19-admin-dashboard-deployment/19-RESEARCH.md` — existing router patterns, confirmed patterns
