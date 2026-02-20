@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 19 Plan 01 COMPLETE — admin dashboard with per-LP analytics, waitlist table, CSV export
+**Current focus:** Phase 19 Plan 02 COMPLETE — one-click Cloudflare Pages deployment from preview page
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 19 of 19 (Admin Dashboard & Deployment) - IN PROGRESS
-Plan: 1 of 2 - COMPLETE
-Status: Phase 19 Plan 01 complete — dashboard, waitlist, CSV export routes + templates
-Last activity: 2026-02-20 - Phase 19 Plan 01 executed (2 tasks, 2 commits)
+Phase: 19 of 19 (Admin Dashboard & Deployment) - COMPLETE
+Plan: 2 of 2 - COMPLETE
+Status: ALL PHASES COMPLETE — full smoke test platform shipped
+Last activity: 2026-02-20 - Phase 19 Plan 02 executed (2 tasks, 2 commits)
 
-Progress: [███████████████████████░] 97% (43/44 plans total, v1.0 complete, v2.0 phase 18+19-01 complete)
+Progress: [████████████████████████] 100% (44/44 plans total, v1.0 complete, v2.0 complete)
 
 ## Performance Metrics
 
@@ -32,9 +32,9 @@ Progress: [███████████████████████
 - Timeline: 3 days (Feb 13-15, 2026)
 - Average duration: 3 min/plan
 
-**v2.0 (in progress):**
+**v2.0 (COMPLETE):**
 - Total plans: 14 (across 6 phases)
-- Plans completed: 5
+- Plans completed: 14
 - Phase 14 Plan 01: 6.2 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 02: 3.8 minutes, 2 tasks, 2 commits
 - Phase 14 Plan 03: 32 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
@@ -48,6 +48,7 @@ Progress: [███████████████████████
 - Phase 18 Plan 01: 1 minute, 2 tasks, 2 commits
 - Phase 18 Plan 02: 2 minutes, 2 tasks, 2 commits
 - Phase 19 Plan 01: 3 minutes, 2 tasks, 2 commits
+- Phase 19 Plan 02: 2 minutes, 2 tasks, 2 commits
 
 ## Accumulated Context
 
@@ -129,21 +130,27 @@ Full decision log: .planning/PROJECT.md Key Decisions table
 - [Phase 19-01]: _parse_date_range() extracted as helper — date parsing reused by all 3 routes without duplication
 - [Phase 19-01]: End date + timedelta(days=1) makes inclusive — user-entered end date includes that full day
 
+**Phase 19 Plan 02:**
+- [Phase 19-02]: Beacon injection at deploy-time in deployer.py — source HTML stays clean, beacon only on deployed copies
+- [Phase 19-02]: asyncio.create_subprocess_exec for wrangler — non-blocking subprocess, 120s timeout with proc.kill() on timeout
+- [Phase 19-02]: Graceful error return dict on missing CF credentials — better UX than HTTP 500, JS displays message in red
+- [Phase 19-02]: Re-deploy by overwriting deployed_url and deployed_at — no special logic needed, same code path
+
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 19-01-PLAN.md (admin dashboard + waitlist + CSV export)
+Stopped at: Completed 19-02-PLAN.md (CF Pages deployment) — ALL PHASES COMPLETE
 Resume file: None
-Next step: Execute Phase 19 Plan 02 (Cloudflare deployment implementation)
+Next step: None — v2.0 smoke test platform fully shipped
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 19-01 complete (dashboard + waitlist routes, Jinja2 templates, CSV export, date filtering)*
+*Last updated: 2026-02-20 - Phase 19-02 complete (deployer service, real deploy route, preview UI with deployed URL)*
