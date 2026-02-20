@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 17 - Web UI (in progress) — Plan 02 complete
+**Current focus:** Phase 17 - Web UI COMPLETE — all 3 plans done, all 5 UI requirements verified
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 ## Current Position
 
-Phase: 17 of 19 (Web UI) - IN PROGRESS
-Plan: 2 of 3 - COMPLETE (Plan 03 next)
-Status: Phase 17 Plan 02 complete — LP generate form + SSE progress + background task runner shipped
-Last activity: 2026-02-19 - Completed Plan 17-02 (LP generate form with SSE progress)
+Phase: 17 of 19 (Web UI) - COMPLETE
+Plan: 3 of 3 - COMPLETE
+Status: Phase 17 complete — full Web UI shipped: dashboard, generate form, SSE progress, preview, deploy stub
+Last activity: 2026-02-20 - Completed Plan 17-03 (LP list dashboard + preview + deploy stub)
 
-Progress: [█████████████████████░] 88% (39/44 plans total, v1.0 complete, v2.0 phase 17 plan 02 complete)
+Progress: [█████████████████████░] 91% (40/44 plans total, v1.0 complete, v2.0 phase 17 complete)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [█████████████████████░] 8
 - Phase 16 Plan 02: 2 minutes, 2 tasks, 2 commits
 - Phase 17 Plan 01: 9 minutes, 2 tasks, 2 commits
 - Phase 17 Plan 02: 4 minutes, 1 task, 1 commit
+- Phase 17 Plan 03: ~30 minutes, 2 tasks, 1 commit (includes human-verify checkpoint)
 
 ## Accumulated Context
 
@@ -95,6 +96,11 @@ Progress: [█████████████████████░] 8
 - [Phase 17-02]: async_session_factory() directly in background task — get_session() is a FastAPI Depends generator, not for standalone use
 - [Phase 17-02]: Default color_preference=research not extract — extract requires image_path not available in form submission
 
+**Phase 17 Plan 03:**
+- [Phase 17-03]: get_session Depends on dashboard and preview routes — same session lifecycle as API routes, simpler than async_session_factory() in HTML routes
+- [Phase 17-03]: Deploy stub as POST endpoint — REST convention for side-effect actions, stub shape matches Phase 19 real implementation
+- [Phase 17-03]: Status badge via .status-{status} CSS class — dynamic from DB value, zero JS needed
+
 **From PROJECT.md affecting v2.0 work:**
 - **Cloudflare Pages + Worker + D1 for LP hosting + analytics**: $0 cost, globally distributed, works with local or hosted app (Phase 18-19)
 - **Single-file HTML LPs**: No build step, no framework, deploy = copy one file (Phase 14)
@@ -112,11 +118,11 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Completed 17-02-PLAN.md (LP generate form + SSE progress) — Phase 17 Plan 2/3 done
+Last session: 2026-02-20
+Stopped at: Completed 17-03-PLAN.md (LP list dashboard + preview + deploy stub) — Phase 17 COMPLETE
 Resume file: None
-Next step: Execute Phase 17 Plan 03 (LP list dashboard + deploy actions)
+Next step: Execute Phase 18 (Cloudflare deployment)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-19 - Phase 17 Plan 02 complete (LP generate form + SSE progress + background task runner)*
+*Last updated: 2026-02-20 - Phase 17 complete (LP list dashboard + preview + deploy stub; all 5 UI requirements verified)*
