@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 20 — UGCJob Data Model (v3.0 start)
+**Current focus:** Phase 20 complete — ready for Phase 21 (Per-Stage Celery Tasks)
 
 ## Current Milestone
 
