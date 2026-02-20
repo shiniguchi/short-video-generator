@@ -10,6 +10,7 @@ from collections import defaultdict
 from app.api import routes
 from app.ui import router as ui_router
 from app.config import get_settings
+from app import ugc_router
 
 settings = get_settings()
 
@@ -89,3 +90,4 @@ _output_dir.mkdir(exist_ok=True)
 app.mount("/output", StaticFiles(directory=str(_output_dir)), name="lp-output")
 
 app.include_router(routes.router)
+app.include_router(ugc_router.router)

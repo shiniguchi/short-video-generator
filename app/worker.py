@@ -37,6 +37,7 @@ celery_app.conf.beat_schedule = {
 
 # Ensure pipeline tasks are registered
 import app.pipeline  # noqa: F401
+import app.ugc_tasks  # noqa: F401
 
 # Auto-discover tasks from app.tasks module
 celery_app.autodiscover_tasks(['app'])
