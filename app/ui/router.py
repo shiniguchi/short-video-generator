@@ -1,17 +1,20 @@
 import asyncio
+import csv
+import io
 import json
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory, get_session
-from app.models import LandingPage
+from app.models import LandingPage, WaitlistEntry
 # NOTE: landing_page service imports are deferred to _run_generation to avoid
 # google.genai module-level import error at server startup in Docker.
 
@@ -97,6 +100,119 @@ async def preview_lp(request: Request, run_id: str, session: AsyncSession = Depe
 async def deploy_lp(run_id: str):
     """Stub — actual Cloudflare deployment in Phase 19."""
     return {"status": "not_implemented", "message": "Cloudflare deployment coming in Phase 19"}
+
+
+def _parse_date_range(start_str: Optional[str], end_str: Optional[str]) -> Tuple[Optional[datetime], Optional[datetime]]:
+    """Parse optional YYYY-MM-DD strings into UTC datetimes. End date is inclusive (adds 1 day)."""
+    start_dt = datetime(*(date.fromisoformat(start_str).timetuple()[:3]), tzinfo=timezone.utc) if start_str else None
+    end_dt = (
+        datetime(*(date.fromisoformat(end_str).timetuple()[:3]), tzinfo=timezone.utc) + timedelta(days=1)
+        if end_str
+        else None
+    )
+    return start_dt, end_dt
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def analytics_dashboard(
+    request: Request,
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Analytics dashboard — per-LP traffic, signups, and CVR with optional date filter."""
+    start_dt, end_dt = _parse_date_range(start, end)
+
+    # Build signup count per LP source with optional date filter
+    signup_q = select(WaitlistEntry.lp_source, func.count(WaitlistEntry.id).label("count")).group_by(
+        WaitlistEntry.lp_source
+    )
+    if start_dt:
+        signup_q = signup_q.where(WaitlistEntry.signed_up_at >= start_dt)
+    if end_dt:
+        signup_q = signup_q.where(WaitlistEntry.signed_up_at < end_dt)
+    signup_result = await session.execute(signup_q)
+    signups_by_lp = {row.lp_source: row.count for row in signup_result}
+
+    # Fetch all LPs ordered newest first
+    lp_result = await session.execute(select(LandingPage).order_by(LandingPage.created_at.desc()))
+    lps = lp_result.scalars().all()
+
+    # Fetch analytics concurrently from Cloudflare Worker (lazy import)
+    from app.services.analytics.client import CloudflareAnalyticsClient  # noqa: PLC0415
+    client = CloudflareAnalyticsClient()
+    analytics_list = await asyncio.gather(*[client.get_lp_analytics(lp.run_id) for lp in lps])
+    analytics = {lp.run_id: data for lp, data in zip(lps, analytics_list)}
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"lps": lps, "signups_by_lp": signups_by_lp, "analytics": analytics, "start": start or "", "end": end or ""},
+    )
+
+
+@router.get("/waitlist", response_class=HTMLResponse)
+async def waitlist_view(
+    request: Request,
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Waitlist signups table with optional date filter."""
+    start_dt, end_dt = _parse_date_range(start, end)
+
+    q = select(WaitlistEntry).order_by(WaitlistEntry.signed_up_at.desc())
+    if start_dt:
+        q = q.where(WaitlistEntry.signed_up_at >= start_dt)
+    if end_dt:
+        q = q.where(WaitlistEntry.signed_up_at < end_dt)
+    result = await session.execute(q)
+    entries = result.scalars().all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="waitlist.html",
+        context={"entries": entries, "start": start or "", "end": end or ""},
+    )
+
+
+@router.get("/waitlist/export.csv")
+async def export_waitlist_csv(
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Stream waitlist signups as a CSV download with optional date filter."""
+    start_dt, end_dt = _parse_date_range(start, end)
+
+    q = select(WaitlistEntry).order_by(WaitlistEntry.signed_up_at.desc())
+    if start_dt:
+        q = q.where(WaitlistEntry.signed_up_at >= start_dt)
+    if end_dt:
+        q = q.where(WaitlistEntry.signed_up_at < end_dt)
+    result = await session.execute(q)
+    entries = result.scalars().all()
+
+    def generate():
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["email", "signed_up_at", "lp_source"])
+        yield buf.getvalue()
+        for e in entries:
+            buf.seek(0)
+            buf.truncate()
+            writer.writerow([
+                e.email,
+                e.signed_up_at.isoformat() if e.signed_up_at else "",
+                e.lp_source or "",
+            ])
+            yield buf.getvalue()
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="waitlist.csv"'},
+    )
 
 
 async def _run_generation(job_id: str, product_idea: str, target_audience: str, color_preference: str, use_mock: bool):
