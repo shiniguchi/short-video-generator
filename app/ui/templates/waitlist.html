@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Waitlist Signups</h1>
+  <a href="/ui/waitlist/export.csv{% if start %}?start={{ start }}{% if end %}&end={{ end }}{% endif %}{% elif end %}?end={{ end }}{% endif %}" class="btn btn-primary">Export CSV</a>
+</div>
+
+<!-- Date filter form -->
+<form class="filter-form" method="GET" action="/ui/waitlist">
+  <label for="start">From</label>
+  <input type="date" id="start" name="start" value="{{ start }}">
+  <label for="end">To</label>
+  <input type="date" id="end" name="end" value="{{ end }}">
+  <button class="btn btn-primary" type="submit">Filter</button>
+  <a href="/ui/waitlist">Clear</a>
+</form>
+
+<p class="empty-msg" style="margin-bottom: 12px;">Showing {{ entries|length }} signups</p>
+
+{% if entries %}
+<table class="lp-table">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Signed Up</th>
+      <th>Source LP</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      <td>{{ entry.email }}</td>
+      <td>{{ entry.signed_up_at.strftime("%Y-%m-%d %H:%M") if entry.signed_up_at else "—" }}</td>
+      <td>{{ entry.lp_source or "---" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-msg">No signups yet.</p>
+{% endif %}
+{% endblock %}

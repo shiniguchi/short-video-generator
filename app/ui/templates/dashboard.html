@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Analytics Dashboard</h1>
+</div>
+
+{% set total_signups = signups_by_lp.values() | sum %}
+{% set total_pageviews = analytics.values() | sum(attribute="pageviews") %}
+
+<!-- Summary cards -->
+<div class="summary-cards">
+  <div class="summary-card">
+    <div class="value">{{ lps | length }}</div>
+    <div class="label">Landing Pages</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ total_pageviews }}</div>
+    <div class="label">Total Pageviews</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ total_signups }}</div>
+    <div class="label">Total Signups</div>
+  </div>
+</div>
+
+<!-- Date filter form -->
+<form class="filter-form" method="GET" action="/ui/dashboard">
+  <label for="start">From</label>
+  <input type="date" id="start" name="start" value="{{ start }}">
+  <label for="end">To</label>
+  <input type="date" id="end" name="end" value="{{ end }}">
+  <button class="btn btn-primary" type="submit">Filter</button>
+  <a href="/ui/dashboard">Clear</a>
+</form>
+
+{% if lps %}
+<table class="lp-table">
+  <thead>
+    <tr>
+      <th>Product Idea</th>
+      <th>Status</th>
+      <th>Pageviews</th>
+      <th>Signups</th>
+      <th>CVR</th>
+      <th>Deployed URL</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for lp in lps %}
+    {% set pv = analytics.get(lp.run_id, {}).get("pageviews", 0) %}
+    {% set sg = signups_by_lp.get(lp.run_id, 0) %}
+    <tr>
+      <td>{{ lp.product_idea[:50] }}{% if lp.product_idea|length > 50 %}…{% endif %}</td>
+      <td><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
+      <td>{{ pv }}</td>
+      <td>{{ sg }}</td>
+      <td class="cvr-cell">{{ "%.1f%%"|format(sg / pv * 100) if pv > 0 else "---" }}</td>
+      <td>{% if lp.deployed_url %}<a href="{{ lp.deployed_url }}" target="_blank">{{ lp.deployed_url }}</a>{% else %}---{% endif %}</td>
+      <td><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-msg">No landing pages yet.</p>
+{% endif %}
+{% endblock %}
