@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     lp_color_scheme: str = "research"  # Options: "extract", "research" (default), "preset"
     lp_color_preset: str = ""  # Preset palette name when lp_color_scheme=preset
 
+    # Cloudflare Analytics (Phase 18)
+    cf_worker_url: str = ""        # e.g. https://lp-analytics.yourname.workers.dev
+    cf_worker_api_key: str = ""    # Bearer token for Worker /analytics endpoint
+
 
 @lru_cache()
 def get_settings():

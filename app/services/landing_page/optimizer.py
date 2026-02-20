@@ -104,3 +104,24 @@ def get_html_size_kb(html: str) -> float:
         logger.warning(f"HTML size is {size_kb:.1f} KB (> 100 KB threshold)")
 
     return size_kb
+
+
+# Beacon script template — uses %s to avoid conflicts with JS curly braces
+BEACON_TEMPLATE = """<script>
+(function(){
+  var w="%s";var id="%s";
+  if(!w)return;
+  var b=function(e,d){navigator.sendBeacon(w+"/track",JSON.stringify(d));};
+  b("pageview",{lp_id:id,event:"pageview",referrer:document.referrer||"direct"});
+  var f=document.querySelector("form");
+  if(f)f.addEventListener("submit",function(){b("form_submit",{lp_id:id,event:"form_submit"});});
+})();
+</script>"""
+
+
+def inject_analytics_beacon(html: str, worker_url: str, lp_id: str) -> str:
+    """Inject analytics beacon script before </body>. Call AFTER optimize_html()."""
+    if not worker_url:
+        return html  # No tracking in local dev
+    beacon = BEACON_TEMPLATE % (worker_url.rstrip("/"), lp_id)
+    return html.replace("</body>", beacon + "</body>", 1)
