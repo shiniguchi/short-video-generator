@@ -42,7 +42,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 15: AI Section Editing** - Edit LP sections via AI prompts after generation — completed 2026-02-19
 - [x] **Phase 16: Waitlist Collection** - Email capture, validation, storage with spam prevention — completed 2026-02-19
 - [x] **Phase 17: Web UI** - Browser-based product idea input and generation trigger — completed 2026-02-20
-- [ ] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1
+- [x] **Phase 18: Cloudflare Analytics** - Pageview/signup tracking via Worker + D1 — completed 2026-02-20
 - [ ] **Phase 19: Admin Dashboard & Deployment** - Dashboard + Cloudflare Pages auto-deploy
 
 ## Phase Details
@@ -147,8 +147,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 18-01-PLAN.md -- Cloudflare Worker + D1 schema (track + analytics routes)
-- [ ] 18-02-PLAN.md -- Beacon injection, Python analytics client, FastAPI route
+- [x] 18-01-PLAN.md -- Cloudflare Worker + D1 schema (track + analytics routes)
+- [x] 18-02-PLAN.md -- Beacon injection, Python analytics client, FastAPI route
 
 ### Phase 19: Admin Dashboard & Deployment
 **Goal**: User can view conversion metrics per LP, export signups, and deploy LPs to Cloudflare Pages with one click.
@@ -195,9 +195,9 @@ Phases execute in numeric order: 14 → 15 → 16 → 17 → 18 → 19
 | 15. AI Section Editing | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 16. Waitlist Collection | v2.0 | 2/2 | Complete | 2026-02-19 |
 | 17. Web UI | v2.0 | 3/3 | Complete | 2026-02-20 |
-| 18. Cloudflare Analytics | v2.0 | 0/2 | Not started | - |
+| 18. Cloudflare Analytics | v2.0 | 2/2 | Complete | 2026-02-20 |
 | 19. Admin Dashboard & Deployment | v2.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 17 complete (3/3 plans)*
+*Last updated: 2026-02-20 - Phase 18 complete (2/2 plans)*
