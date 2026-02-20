@@ -52,7 +52,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 - Decimal phases (20.1, 20.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 20: UGCJob Data Model** - DB-backed job state with typed per-stage columns and migration - completed 2026-02-20
-- [ ] **Phase 21: Per-Stage Celery Tasks** - Five stage tasks that run, write to DB, and wait for approval
+- [x] **Phase 21: Per-Stage Celery Tasks** - Five stage tasks that run, write to DB, and wait for approval - completed 2026-02-20
 - [ ] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream
 - [ ] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid
 - [ ] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek
@@ -95,8 +95,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 21-01-PLAN.md — use_mock threading through service functions + five per-stage Celery tasks
-- [ ] 21-02-PLAN.md — submit/advance/status endpoints + worker registration + main.py wiring
+- [x] 21-01-PLAN.md — use_mock threading through service functions + five per-stage Celery tasks
+- [x] 21-02-PLAN.md — submit/advance/status endpoints + worker registration + main.py wiring
 
 ### Phase 22: Review API Routes + SSE
 **Goal**: Every review action (view job, advance stage, regenerate item, stream progress) is wired to an HTTP endpoint.
@@ -203,7 +203,7 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 18. Cloudflare Analytics | v2.0 | 2/2 | Complete | 2026-02-20 |
 | 19. Admin Dashboard & Deployment | v2.0 | 2/2 | Complete | 2026-02-20 |
 | 20. UGCJob Data Model | v3.0 | 1/1 | Complete | 2026-02-20 |
-| 21. Per-Stage Celery Tasks | v3.0 | 0/TBD | Not started | - |
+| 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
 | 22. Review API Routes + SSE | v3.0 | 0/TBD | Not started | - |
 | 23. Review UI Templates | v3.0 | 0/TBD | Not started | - |
 | 24. Media Preview | v3.0 | 0/TBD | Not started | - |
@@ -211,4 +211,4 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-20 - v3.0 milestone roadmap added (Phases 20-25)*
+*Last updated: 2026-02-20 - Phase 21 complete (Per-Stage Celery Tasks)*
