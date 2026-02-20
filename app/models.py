@@ -142,3 +142,62 @@ class LandingPage(Base):
     __table_args__ = (
         UniqueConstraint('run_id', name='uq_lp_run_id'),
     )
+
+
+class UGCJob(Base):
+    """UGC video generation job — all pipeline state persists here.
+
+    Status valid values: pending, running, stage_analysis_review,
+    stage_script_review, stage_aroll_review, stage_broll_review,
+    stage_composition_review, approved, failed
+    """
+    __tablename__ = "ugc_jobs"
+
+    id = Column(Integer, primary_key=True)
+
+    # --- Input columns ---
+    product_name = Column(String(500), nullable=False)
+    description = Column(Text, nullable=False)
+    product_url = Column(String(1000), nullable=True)
+    product_image_paths = Column(JSON, nullable=True)  # list of local paths
+    target_duration = Column(Integer, default=30)
+    style_preference = Column(String(100), nullable=True)
+    use_mock = Column(Boolean, default=True)  # passed per job, not from settings
+
+    # --- State columns ---
+    status = Column(String(50), nullable=False, default="pending")
+    error_message = Column(Text, nullable=True)
+
+    # --- Stage 1: Product Analysis ---
+    analysis_category = Column(String(200), nullable=True)
+    analysis_ugc_style = Column(String(200), nullable=True)
+    analysis_emotional_tone = Column(String(200), nullable=True)
+    analysis_key_features = Column(JSON, nullable=True)       # list[str]
+    analysis_visual_keywords = Column(JSON, nullable=True)    # list[str]
+    analysis_target_audience = Column(String(500), nullable=True)
+
+    # --- Stage 2: Hero Image ---
+    hero_image_path = Column(String(1000), nullable=True)
+
+    # --- Stage 3: Script ---
+    master_script = Column(JSON, nullable=True)    # dict
+    aroll_scenes = Column(JSON, nullable=True)     # list[dict]
+    broll_shots = Column(JSON, nullable=True)      # list[dict]
+
+    # --- Stage 4: A-Roll ---
+    aroll_paths = Column(JSON, nullable=True)      # list[str]
+
+    # --- Stage 5: B-Roll ---
+    broll_paths = Column(JSON, nullable=True)      # list[str]
+
+    # --- Stage 6: Composition ---
+    final_video_path = Column(String(1000), nullable=True)
+    cost_usd = Column(Float, nullable=True)
+
+    # --- Candidate (regeneration) ---
+    candidate_video_path = Column(String(1000), nullable=True)
+
+    # --- Timestamps ---
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    approved_at = Column(DateTime(timezone=True), nullable=True)
