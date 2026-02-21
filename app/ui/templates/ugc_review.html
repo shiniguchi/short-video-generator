@@ -207,6 +207,18 @@
 
 {% endif %}
 
+<!-- Landing Page section (approved jobs only) -->
+{% if job.status == "approved" %}
+<div class="stage-section">
+  <h2>Landing Page</h2>
+  <div class="action-row">
+    <form method="post" action="/ui/ugc/{{ job.id }}/generate-lp">
+      <button type="submit" class="btn btn-primary">Generate LP</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
 <!-- Stage controls partial -->
 {% if job.status in review_states or job.status == "running" or job.status == "approved" %}
   {% include "partials/ugc_stage_controls.html" %}

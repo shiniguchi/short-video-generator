@@ -2,6 +2,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -21,6 +22,8 @@ from app.ugc_router import _STAGE_ADVANCE_MAP, _STAGE_REGEN_MAP
 from app.state_machines.ugc_job import UGCJobStateMachine
 # NOTE: landing_page service imports are deferred to _run_generation to avoid
 # google.genai module-level import error at server startup in Docker.
+
+logger = logging.getLogger(__name__)
 
 # Router for all web UI HTML pages
 router = APIRouter(prefix="/ui", tags=["web-ui"])
@@ -421,6 +424,27 @@ async def ugc_ui_advance(request: Request, job_id: int, session: AsyncSession = 
 
     await session.commit()
 
+    # Extract hero frame from approved video and unlock linked LPs
+    if approve_event == "approve_final" and job.final_video_path:
+        from app.services.video_compositor.thumbnail import generate_thumbnail
+        try:
+            frame_path = await asyncio.to_thread(
+                generate_thumbnail,
+                job.final_video_path,
+                2.0,
+                "output/lp_frames"
+            )
+            # Set hero image on any LP linked to this job and unlock review
+            lp_result = await session.execute(
+                select(LandingPage).where(LandingPage.ugc_job_id == job_id)
+            )
+            for lp_row in lp_result.scalars().all():
+                lp_row.lp_hero_image_path = frame_path
+                lp_row.lp_review_locked = False
+            await session.commit()
+        except Exception as e:
+            logger.warning(f"Frame extraction failed for job {job_id}: {e}")
+
     # Enqueue next stage task
     if next_task_name:
         import app.ugc_tasks as ugc_tasks_module
@@ -467,6 +491,77 @@ async def ugc_ui_regenerate(request: Request, job_id: int, session: AsyncSession
         name="partials/ugc_stage_controls.html",
         context={"job": job, "review_states": _REVIEW_STATES},
     )
+
+
+async def _run_generation_for_ugc(run_id: str, job: UGCJob, lp_id: int):
+    """Background task: run LP generation for a UGC job and update the linked LandingPage row."""
+    try:
+        from app.services.landing_page import LandingPageRequest, generate_landing_page  # noqa: PLC0415
+        from app.schemas import LandingPageRequest as LPRequest  # noqa: PLC0415
+
+        lp_request = LPRequest(
+            product_idea=f"{job.product_name}: {job.description}",
+            target_audience=job.analysis_target_audience or "general",
+            hero_image_path=job.hero_image_path,
+        )
+        result = await generate_landing_page(lp_request, use_mock=job.use_mock)
+
+        async with async_session_factory() as session:
+            lp_result = await session.execute(select(LandingPage).where(LandingPage.id == lp_id))
+            lp = lp_result.scalar_one_or_none()
+            if lp:
+                lp.html_path = result.html_path
+                lp.sections = result.sections
+                lp.lp_copy = result.lp_copy
+                lp.status = "generated"
+                await session.commit()
+    except Exception as e:
+        logger.error(f"_run_generation_for_ugc run_id={run_id} failed: {e}")
+
+
+@router.post("/ugc/{job_id}/generate-lp")
+async def ugc_generate_lp(job_id: int, session: AsyncSession = Depends(get_session)):
+    """Create a LandingPage linked to an approved UGC job and start generation."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+    if job.status != "approved":
+        raise HTTPException(status_code=400, detail="Job must be approved before generating an LP")
+
+    # Create LP row (locked initially, will be unlocked after frame extraction)
+    run_id = uuid4().hex[:8]
+    lp = LandingPage(
+        run_id=run_id,
+        product_idea=job.product_name,
+        ugc_job_id=job.id,
+        lp_review_locked=True,
+    )
+    session.add(lp)
+    await session.flush()  # get lp.id before commit
+    lp_id = lp.id
+
+    # Extract hero frame immediately (job is already approved)
+    if job.final_video_path:
+        from app.services.video_compositor.thumbnail import generate_thumbnail
+        try:
+            frame_path = await asyncio.to_thread(
+                generate_thumbnail,
+                job.final_video_path,
+                2.0,
+                "output/lp_frames"
+            )
+            lp.lp_hero_image_path = frame_path
+            lp.lp_review_locked = False
+        except Exception as e:
+            logger.warning(f"Frame extraction failed for job {job_id}: {e}")
+
+    await session.commit()
+
+    # Start LP generation in background
+    asyncio.create_task(_run_generation_for_ugc(run_id, job, lp_id))
+
+    return RedirectResponse(url=f"/ui/lp/{run_id}/review", status_code=303)
 
 
 async def _run_generation(job_id: str, product_idea: str, target_audience: str, color_preference: str, use_mock: bool):
