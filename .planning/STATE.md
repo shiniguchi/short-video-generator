@@ -29,7 +29,7 @@ Progress: [███████████████████████
 
 **v2.0 (SHIPPED):** 14 plans, 6 phases, avg ~7 min/plan (includes human-verify checkpoints)
 
-**v3.0 (in progress):**
+**v3.0 (SHIPPED):**
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|

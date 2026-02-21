@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** - Phases 1-13 (shipped 2026-02-15)
 - ✅ **v2.0 Smoke Test Platform** - Phases 14-19 (shipped 2026-02-20)
-- 🚧 **v3.0 Review Workflow UI** - Phases 20-25 (in progress)
+- ✅ **v3.0 Review Workflow UI** - Phases 20-25 (shipped 2026-02-21)
 
 ## Phases
 
@@ -43,7 +43,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 
 </details>
 
-### 🚧 v3.0 Review Workflow UI (In Progress)
+### ✅ v3.0 Review Workflow UI (SHIPPED 2026-02-21)
 
 **Milestone Goal:** Wire the UGC video pipeline into the web UI with a linear review workflow — users approve each stage (script, images, video clips, combined video, LP) before the next begins.
 
@@ -56,7 +56,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 - [x] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream - completed 2026-02-21
 - [x] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid - completed 2026-02-21
 - [x] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek - completed 2026-02-21
-- [ ] **Phase 25: LP Integration** - LP module review, video frame sourcing, LP-specific image regeneration
+- [x] **Phase 25: LP Integration** - LP module review, video frame sourcing, LP-specific image regeneration - completed 2026-02-21
 
 ## Phase Details
 
@@ -172,8 +172,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 25-01-PLAN.md — LP integration schema (migration + model) + LP review page with module cards and stage gate
-- [ ] 25-02-PLAN.md — Video frame extraction on approve_final + Generate LP button + LP hero regen task
+- [x] 25-01-PLAN.md — LP integration schema (migration + model) + LP review page with module cards and stage gate
+- [x] 25-02-PLAN.md — Video frame extraction on approve_final + Generate LP button + LP hero regen task
 
 ## Progress
 
@@ -206,8 +206,8 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 23. Review UI Templates | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 24. Media Preview | v3.0 | 1/1 | Complete | 2026-02-21 |
-| 25. LP Integration | v3.0 | 0/TBD | Not started | - |
+| 25. LP Integration | v3.0 | 2/2 | Complete | 2026-02-21 |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 24 complete (Media Preview)*
+*Last updated: 2026-02-21 - Phase 25 complete (LP Integration)*
