@@ -131,11 +131,11 @@ Plans:
   4. Locked stages (N+1) are visually disabled until stage N is fully approved
   5. Approve/reject actions update the item card in place via HTMX partial swap
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 23-01: ugc_new.html (job creation form with mock/real toggle) and ugc_list.html
-- [ ] 23-02: ugc_review.html with stage stepper, per-stage item grids, HTMX approve/reject
+- [ ] 23-01-PLAN.md — HTMX CDN setup, job creation form, job list page
+- [ ] 23-02-PLAN.md — Review page with stage stepper, item grids, HTMX approve/reject
 
 ### Phase 24: Media Preview
 **Goal**: Users can view generated images and play video clips directly in the review grid with full seek support.
@@ -205,10 +205,10 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 20. UGCJob Data Model | v3.0 | 1/1 | Complete | 2026-02-20 |
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
 | 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
-| 23. Review UI Templates | v3.0 | 0/TBD | Not started | - |
+| 23. Review UI Templates | v3.0 | 0/2 | Not started | - |
 | 24. Media Preview | v3.0 | 0/TBD | Not started | - |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 22 complete (Review API Routes + SSE)*
+*Last updated: 2026-02-21 - Phase 23 planned (2 plans)*
