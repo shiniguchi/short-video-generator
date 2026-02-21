@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 22 complete — ready for Phase 23 (Review UI Templates)
+**Current focus:** Phase 23 complete — ready for Phase 24 (Video Player)
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 23 of 25 (Review UI Templates) — IN PROGRESS
-Plan: 1 of 2 in current phase (complete)
-Status: Phase 23 Plan 01 complete — HTMX scripts, UGC list/create templates, GET routes wired
-Last activity: 2026-02-21 — Phase 23 Plan 01 complete
+Phase: 23 of 25 (Review UI Templates) — COMPLETE
+Plan: 2 of 2 in current phase (complete)
+Status: Phase 23 complete — review page, stage controls partial, stepper/card CSS, advance/regenerate routes
+Last activity: 2026-02-21 — Phase 23 Plan 02 complete
 
-Progress: [██████░░░░░░░░░░░░░░░░░░] 24% (v3.0, 6/25 plans)
+Progress: [███████░░░░░░░░░░░░░░░░░] 28% (v3.0, 7/25 plans)
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [██████░░░░░░░░░░░░░░░░░
 | 22-01 | SSE + job list endpoints | ~1 min | 1 | 1 |
 | 22-02 | Regenerate + edit endpoints | ~2 min | 2 | 1 |
 | 23-01 | UGC entry point templates | ~2 min | 2 | 5 |
+| 23-02 | Review page + advance/regen routes | ~2 min | 2 | 4 |
 
 ## Accumulated Context
 
@@ -59,6 +60,9 @@ Progress: [██████░░░░░░░░░░░░░░░░░
 - **_TERMINAL_STATES includes all review states**: Stream stops when user action is required (not just on approved/failed) — client doesn't need to keep polling during review.
 - **_STAGE_REGEN_MAP excludes stage_composition_review**: SM has no review->running path from composition review — approve_final goes directly to approved.
 - **Regenerate reuses _STAGE_ADVANCE_MAP approve events**: Drives SM review->running transition before re-enqueuing without adding new SM events.
+- **Per-item card display in review page**: Each analysis field, script scene, and file path is its own card — user evaluates every item before approving the stage.
+- **running_toward heuristic**: Derives which stage is in flight from populated data columns — no extra DB column needed.
+- **HTMX outerHTML swap on stage controls**: Approve/regenerate updates controls in place — no page reload needed.
 
 ### Research Flags for Planning
 
@@ -76,10 +80,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 23-01-PLAN.md
+Stopped at: Completed 23-02-PLAN.md
 Resume file: None
-Next step: Phase 23 Plan 02 (Review page template)
+Next step: Phase 24 (Video Player)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 23 Plan 01 complete (UGC entry point templates — HTMX scripts, list + create pages, GET routes)*
+*Last updated: 2026-02-21 - Phase 23 Plan 02 complete (Review page — stage stepper, per-item card grids, HTMX advance/regenerate routes)*
