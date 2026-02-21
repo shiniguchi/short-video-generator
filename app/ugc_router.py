@@ -1,22 +1,27 @@
 """FastAPI router for UGC job submission, advancement, and status.
 
 Endpoints:
+  GET  /ugc/jobs             — List all UGC jobs (newest first)
   POST /ugc/jobs             — Submit new UGC job (creates job, enqueues stage 1)
   POST /ugc/jobs/{id}/advance — Advance past review gate (enqueues next stage)
   GET  /ugc/jobs/{id}        — Get job status and stage outputs
+  GET  /ugc/jobs/{id}/events — SSE stream of job status updates
 """
-import os
+import asyncio
+import json
 import logging
+import os
 from datetime import datetime, timezone
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.database import get_session
+from app.database import async_session_factory, get_session
 from app.models import UGCJob
 from app.state_machines.ugc_job import UGCJobStateMachine
 
@@ -32,6 +37,26 @@ _STAGE_ADVANCE_MAP = {
     "stage_broll_review":       ("approve_broll",    "ugc_stage_5_compose"),
     "stage_composition_review": ("approve_final",    None),
 }
+
+
+# --- GET /ugc/jobs ---
+
+@router.get("/jobs")
+async def list_ugc_jobs(session: AsyncSession = Depends(get_session)):
+    """Return all UGCJobs ordered newest first."""
+    result = await session.execute(select(UGCJob).order_by(UGCJob.created_at.desc()))
+    jobs = result.scalars().all()
+    return [
+        {
+            "id": job.id,
+            "product_name": job.product_name,
+            "status": job.status,
+            "use_mock": job.use_mock,
+            "created_at": job.created_at,
+            "error_message": job.error_message,
+        }
+        for job in jobs
+    ]
 
 
 # --- POST /ugc/jobs ---
@@ -177,3 +202,57 @@ async def get_ugc_job(
         "cost_usd": job.cost_usd,
         "approved_at": job.approved_at,
     })
+
+
+# --- GET /ugc/jobs/{job_id}/events ---
+
+# Status values where the job will not change further
+_TERMINAL_STATES = {
+    "stage_analysis_review",
+    "stage_script_review",
+    "stage_aroll_review",
+    "stage_broll_review",
+    "stage_composition_review",
+    "approved",
+    "failed",
+}
+
+
+@router.get("/jobs/{job_id}/events")
+async def ugc_job_events(job_id: int, request: Request):
+    """SSE stream of job status updates at 1-second intervals.
+
+    Uses a fresh DB session per iteration so the connection is never
+    held open across the full stream duration.
+    Closes automatically on terminal state or client disconnect.
+    """
+    async def event_stream():
+        # Poll for up to 10 minutes (600 × 1s)
+        for _ in range(600):
+            # Check client disconnect before querying DB
+            if await request.is_disconnected():
+                break
+
+            async with async_session_factory() as s:
+                result = await s.execute(select(UGCJob).where(UGCJob.id == job_id))
+                job = result.scalars().first()
+
+            if job is None:
+                yield f"data: {json.dumps({'status': 'not_found'})}\n\n"
+                break
+
+            yield f"data: {json.dumps({'status': job.status, 'error': job.error_message})}\n\n"
+
+            if job.status in _TERMINAL_STATES:
+                break
+
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
