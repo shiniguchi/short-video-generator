@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>UGC Jobs</h1>
+  <a class="btn btn-primary" href="/ui/ugc/new">+ New Job</a>
+</div>
+
+{% if ugc_jobs %}
+<table class="lp-table">
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Status</th>
+      <th>Mock</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for job in ugc_jobs %}
+    <tr>
+      <td>{{ job.product_name[:60] }}{% if job.product_name|length > 60 %}…{% endif %}</td>
+      <td><span class="status-badge status-{{ job.status }}">{{ job.status }}</span></td>
+      <td>{{ "Yes" if job.use_mock else "No" }}</td>
+      <td>{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "—" }}</td>
+      <td><a href="/ui/ugc/{{ job.id }}/review">Review</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-msg">No UGC jobs yet. <a href="/ui/ugc/new">Create your first job</a>.</p>
+{% endif %}
+{% endblock %}

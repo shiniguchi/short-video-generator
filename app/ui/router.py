@@ -14,7 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory, get_session
-from app.models import LandingPage, WaitlistEntry
+from app.models import LandingPage, UGCJob, WaitlistEntry
 # NOTE: landing_page service imports are deferred to _run_generation to avoid
 # google.genai module-level import error at server startup in Docker.
 
@@ -234,6 +234,20 @@ async def export_waitlist_csv(
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="waitlist.csv"'},
     )
+
+
+@router.get("/ugc", response_class=HTMLResponse)
+async def ugc_list(request: Request, session: AsyncSession = Depends(get_session)):
+    """List all UGC jobs."""
+    result = await session.execute(select(UGCJob).order_by(UGCJob.created_at.desc()))
+    ugc_jobs = result.scalars().all()
+    return templates.TemplateResponse(request=request, name="ugc_list.html", context={"ugc_jobs": ugc_jobs})
+
+
+@router.get("/ugc/new", response_class=HTMLResponse)
+async def ugc_new(request: Request):
+    """Serve UGC job creation form."""
+    return templates.TemplateResponse(request=request, name="ugc_new.html", context={})
 
 
 async def _run_generation(job_id: str, product_idea: str, target_audience: str, color_preference: str, use_mock: bool):
