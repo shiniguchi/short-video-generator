@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 24 complete — ready for Phase 25 (LP Integration)
+**Current focus:** Phase 25 Plan 01 complete — LP schema and review UI wired
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 24 of 25 (Media Preview) — COMPLETE
-Plan: 1 of 1 in current phase (complete)
-Status: Phase 24 complete — inline img/video media previews, media_url filter, responsive CSS
-Last activity: 2026-02-21 — Phase 24 complete
+Phase: 25 of 25 (LP Integration) — in progress
+Plan: 1 of 1 complete in current phase (plan 01 done)
+Status: 25-01 complete — LP DB schema, review page, module approve endpoint, stage gate
+Last activity: 2026-02-21 — Phase 25 Plan 01 complete
 
-Progress: [████████░░░░░░░░░░░░░░░░] 32% (v3.0, 8/25 plans)
+Progress: [████████░░░░░░░░░░░░░░░░] 36% (v3.0, 9/25 plans)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [████████░░░░░░░░░░░░░░░
 | 23-01 | UGC entry point templates | ~2 min | 2 | 5 |
 | 23-02 | Review page + advance/regen routes | ~2 min | 2 | 4 |
 | 24-01 | Inline media previews (img + video) | ~1 min | 2 | 3 |
+| 25-01 | LP schema + review page + stage gate | ~2 min | 2 | 7 |
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ Progress: [████████░░░░░░░░░░░░░░░
 - **media-card class pattern**: Media cards add `media-card` class alongside `stage-card`, omit inner `card-value` div — media element fills the card directly.
 - **running_toward heuristic**: Derives which stage is in flight from populated data columns — no extra DB column needed.
 - **HTMX outerHTML swap on stage controls**: Approve/regenerate updates controls in place — no page reload needed.
+- **lp_copy field not copy in LandingPageResult**: Field named `copy` shadows Pydantic BaseModel.copy() method — renamed to `lp_copy` to avoid UserWarning.
+- **LP_MODULES list as single source of truth**: List of 4 module names shared between router and templates — validate module param against it in approve endpoint.
+- **Standalone LP skips stage gate**: ugc_job_id is None → video_approved defaults True — no gate without linked video.
+- **lp_module_approvals dict reassignment**: Mutate a copy, reassign to column — SQLAlchemy JSON dirty detection requires reassignment not in-place mutation.
 
 ### Research Flags for Planning
 
@@ -84,10 +89,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 24 complete
+Stopped at: Phase 25 Plan 01 complete (25-01-SUMMARY.md created)
 Resume file: None
-Next step: Phase 25 (LP Integration)
+Next step: Phase 25 complete — v3.0 milestone done
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 24 complete (Media Preview — inline img/video, media_url filter, responsive CSS)*
+*Last updated: 2026-02-21 - Phase 25-01 complete (LP Integration — DB schema, review page, module approve endpoint, stage gate)*
