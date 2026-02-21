@@ -287,3 +287,18 @@ input:focus, textarea:focus, select:focus {
   font-weight: 600;
   margin-right: 4px;
 }
+
+/* UGC job status badges */
+.status-pending    { background: #fef3c7; color: #92400e; }
+.status-running    { background: #dbeafe; color: #1d4ed8; }
+.status-approved   { background: #dcfce7; color: #15803d; }
+.status-failed     { background: #fdecea; color: #c0392b; }
+
+/* Review-stage badges */
+.status-stage_analysis_review,
+.status-stage_script_review,
+.status-stage_aroll_review,
+.status-stage_broll_review,
+.status-stage_composition_review {
+  background: #ede9fe; color: #6d28d9;
+}
