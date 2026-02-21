@@ -139,6 +139,14 @@ class LandingPage(Base):
     deployed_at = Column(DateTime(timezone=True), nullable=True)
     deployed_url = Column(String(1000), nullable=True)
 
+    # LP integration columns (phase 25)
+    ugc_job_id = Column(Integer, ForeignKey("ugc_jobs.id"), nullable=True)
+    lp_module_approvals = Column(JSON, nullable=True)  # {"headline": "approved", "hero": "pending", ...}
+    lp_hero_image_path = Column(String(1000), nullable=True)   # frame from approved video
+    lp_hero_candidate_path = Column(String(1000), nullable=True)  # regenerated candidate
+    lp_review_locked = Column(Boolean, default=True)   # unlocked when UGCJob.status == "approved"
+    lp_copy = Column(JSON, nullable=True)  # LandingPageCopy.model_dump() stored at generation time
+
     __table_args__ = (
         UniqueConstraint('run_id', name='uq_lp_run_id'),
     )

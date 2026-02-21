@@ -433,6 +433,7 @@ async def _run_generation(job_id: str, product_idea: str, target_audience: str, 
                 status="generated",
                 color_scheme_source=color_preference,
                 sections=result.sections,
+                lp_copy=result.lp_copy,
             )
             session.add(lp_record)
             await session.commit()

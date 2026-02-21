@@ -325,6 +325,7 @@ class LandingPageResult(BaseModel):
     product_idea: str
     color_scheme: ColorScheme
     sections: List[str]
+    lp_copy: Optional[dict] = None  # LandingPageCopy.model_dump() for LP review cards
 
 
 # Section-scoped edit schemas (Phase 15: AI Section Editing)

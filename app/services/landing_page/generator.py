@@ -142,7 +142,8 @@ async def generate_landing_page(request: LandingPageRequest, use_mock: bool = Fa
         html_path=str(html_path),
         product_idea=request.product_idea,
         color_scheme=color_scheme,
-        sections=actual_sections
+        sections=actual_sections,
+        lp_copy=copy.model_dump()
     )
 
     total_time = time.time() - pipeline_start
