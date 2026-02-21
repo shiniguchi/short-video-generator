@@ -13,13 +13,15 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from statemachine.exceptions import TransitionNotAllowed
 
 from app.database import async_session_factory, get_session
 from app.models import UGCJob
@@ -37,6 +39,32 @@ _STAGE_ADVANCE_MAP = {
     "stage_broll_review":       ("approve_broll",    "ugc_stage_5_compose"),
     "stage_composition_review": ("approve_final",    None),
 }
+
+# Maps review status -> celery task to re-run for that stage
+# stage_composition_review excluded — approve_final goes to approved (no path back to running)
+_STAGE_REGEN_MAP = {
+    "stage_analysis_review": "ugc_stage_1_analyze",
+    "stage_script_review":   "ugc_stage_2_script",
+    "stage_aroll_review":    "ugc_stage_3_aroll",
+    "stage_broll_review":    "ugc_stage_4_broll",
+}
+
+# All valid review states (used to gate the edit endpoint)
+_REVIEW_STATES = set(_STAGE_ADVANCE_MAP.keys())
+
+
+class UGCJobEdit(BaseModel):
+    """Editable stage output fields on a UGCJob."""
+
+    master_script: Optional[dict] = None
+    aroll_scenes: Optional[list] = None
+    broll_shots: Optional[list] = None
+    analysis_category: Optional[str] = None
+    analysis_ugc_style: Optional[str] = None
+    analysis_emotional_tone: Optional[str] = None
+    analysis_key_features: Optional[list] = None
+    analysis_visual_keywords: Optional[list] = None
+    analysis_target_audience: Optional[str] = None
 
 
 # --- GET /ugc/jobs ---
@@ -137,7 +165,6 @@ async def advance_ugc_job(
     approve_event, next_task_name = _STAGE_ADVANCE_MAP[job.status]
 
     # Transition via state machine
-    from statemachine.exceptions import TransitionNotAllowed
     try:
         sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
         sm.send(approve_event)
@@ -159,6 +186,80 @@ async def advance_ugc_job(
         task_fn.delay(job_id)
 
     return {"job_id": job.id, "status": job.status, "next_stage": next_task_name}
+
+
+# --- POST /ugc/jobs/{job_id}/regenerate ---
+
+@router.post("/jobs/{job_id}/regenerate")
+async def regenerate_ugc_stage(
+    job_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    """Re-run the current stage's Celery task from a review state."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalars().first()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    # Gate: must be a regeneratable review state
+    if job.status not in _STAGE_REGEN_MAP:
+        if job.status == "stage_composition_review":
+            detail = "Composition stage cannot be regenerated — approve or reject only"
+        else:
+            detail = f"Cannot regenerate from status '{job.status}' — job must be in a review state"
+        raise HTTPException(status_code=400, detail=detail)
+
+    task_name = _STAGE_REGEN_MAP[job.status]
+
+    # Use the advance map approve event to transition review -> running
+    approve_event, _ = _STAGE_ADVANCE_MAP[job.status]
+    try:
+        sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
+        sm.send(approve_event)
+        job.status = sm.current_state.id
+    except TransitionNotAllowed as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    await session.commit()
+    logger.info(f"UGCJob {job_id} regenerating via '{task_name}', status={job.status}")
+
+    # Lazy import to avoid circular import at module load time
+    import app.ugc_tasks as ugc_tasks_module
+    task_fn = getattr(ugc_tasks_module, task_name)
+    task_fn.delay(job_id)
+
+    return {"job_id": job_id, "status": job.status, "regenerating": task_name}
+
+
+# --- PATCH /ugc/jobs/{job_id}/edit ---
+
+@router.patch("/jobs/{job_id}/edit")
+async def edit_ugc_job(
+    job_id: int,
+    body: UGCJobEdit,
+    session: AsyncSession = Depends(get_session),
+):
+    """Update stage output columns while in a review state."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalars().first()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    if job.status not in _REVIEW_STATES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot edit from status '{job.status}' — job must be in a review state",
+        )
+
+    # Apply only non-None fields
+    updates = body.model_dump(exclude_none=True)
+    for field_name, value in updates.items():
+        setattr(job, field_name, value)
+
+    await session.commit()
+    logger.info(f"UGCJob {job_id} edited fields={list(updates.keys())}")
+
+    return {"job_id": job_id, "status": job.status, "updated_fields": list(updates.keys())}
 
 
 # --- GET /ugc/jobs/{job_id} ---
