@@ -99,9 +99,12 @@
       </div>
       {% endif %}
       {% if job.hero_image_path %}
-      <div class="stage-card">
+      <div class="stage-card media-card">
         <div class="card-label">Hero Image</div>
-        <div class="card-value">{{ job.hero_image_path }}</div>
+        <img src="{{ job.hero_image_path | media_url }}"
+             alt="Hero image for {{ job.product_name }}"
+             class="media-preview"
+             loading="lazy">
       </div>
       {% endif %}
     </div>
@@ -151,9 +154,11 @@
     <h2>A-Roll</h2>
     <div class="card-grid">
       {% for path in job.aroll_paths %}
-      <div class="stage-card">
+      <div class="stage-card media-card">
         <div class="card-label">A-Roll Clip {{ loop.index }}</div>
-        <div class="card-value">{{ path }}</div>
+        <video class="media-preview media-preview-video" controls preload="metadata">
+          <source src="{{ path | media_url }}" type="video/mp4">
+        </video>
       </div>
       {% endfor %}
     </div>
@@ -166,9 +171,11 @@
     <h2>B-Roll</h2>
     <div class="card-grid">
       {% for path in job.broll_paths %}
-      <div class="stage-card">
+      <div class="stage-card media-card">
         <div class="card-label">B-Roll Clip {{ loop.index }}</div>
-        <div class="card-value">{{ path }}</div>
+        <video class="media-preview media-preview-video" controls preload="metadata">
+          <source src="{{ path | media_url }}" type="video/mp4">
+        </video>
       </div>
       {% endfor %}
     </div>
@@ -180,14 +187,18 @@
   <div class="stage-section">
     <h2>Composition</h2>
     <div class="card-grid">
-      <div class="stage-card">
+      <div class="stage-card media-card">
         <div class="card-label">Final Video</div>
-        <div class="card-value">{{ job.final_video_path }}</div>
+        <video class="media-preview media-preview-video" controls preload="metadata">
+          <source src="{{ job.final_video_path | media_url }}" type="video/mp4">
+        </video>
       </div>
       {% if job.candidate_video_path %}
-      <div class="stage-card">
+      <div class="stage-card media-card">
         <div class="card-label">Candidate Video</div>
-        <div class="card-value">{{ job.candidate_video_path }}</div>
+        <video class="media-preview media-preview-video" controls preload="metadata">
+          <source src="{{ job.candidate_video_path | media_url }}" type="video/mp4">
+        </video>
       </div>
       {% endif %}
     </div>
