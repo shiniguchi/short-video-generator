@@ -394,3 +394,61 @@ def ugc_stage_5_compose(self, job_id: int):
         logger.error(f"ugc_stage_5_compose job {job_id} failed: {exc}")
         asyncio.run(_fail_job(job_id, str(exc)))
         raise
+
+
+# --- LP Hero Image Regeneration ---
+
+@celery_app.task(
+    bind=True,
+    name='app.ugc_tasks.lp_hero_regen',
+    max_retries=1,
+    time_limit=300,
+)
+def lp_hero_regen(self, lp_id: int):
+    """Regenerate LP hero image. Stores result as candidate (never overwrites approved hero)."""
+    logger.info(f"lp_hero_regen: starting for LP {lp_id}")
+
+    async def _run():
+        from app.database import get_task_session_factory
+        from app.models import LandingPage, UGCJob
+        from sqlalchemy import select
+
+        session_factory = get_task_session_factory()
+        async with session_factory() as session:
+            result = await session.execute(
+                select(LandingPage).where(LandingPage.id == lp_id)
+            )
+            lp = result.scalar_one_or_none()
+            if not lp:
+                raise ValueError(f"LandingPage {lp_id} not found")
+
+            # Determine use_mock from linked UGCJob
+            use_mock = False
+            if lp.ugc_job_id:
+                ugc_result = await session.execute(
+                    select(UGCJob).where(UGCJob.id == lp.ugc_job_id)
+                )
+                ugc_job = ugc_result.scalar_one_or_none()
+                if ugc_job:
+                    use_mock = ugc_job.use_mock
+
+            # Generate new hero image — stores as candidate per "regeneration produces candidates" decision
+            from app.services.ugc_pipeline.asset_generator import generate_hero_image
+            candidate_path = generate_hero_image(
+                product_image_path=lp.lp_hero_image_path or "",
+                ugc_style="product-hero",
+                emotional_tone="professional",
+                visual_keywords=["product", "hero", "landing page"],
+                use_mock=use_mock
+            )
+
+            # Store as candidate — never mutate approved content in place
+            lp.lp_hero_candidate_path = candidate_path
+            await session.commit()
+            logger.info(f"LP {lp_id}: hero candidate generated — {candidate_path}")
+
+    try:
+        asyncio.run(_run())
+    except Exception as exc:
+        logger.error(f"lp_hero_regen LP {lp_id} failed: {exc}")
+        raise

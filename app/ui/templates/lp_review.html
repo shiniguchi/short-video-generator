@@ -28,11 +28,36 @@
     <div class="card-label">{{ module | capitalize }}</div>
 
     {% if module == "hero" and lp.lp_hero_image_path %}
-      <!-- Hero image preview -->
+      <!-- Current hero image -->
       <img src="{{ lp.lp_hero_image_path | media_url }}"
            alt="Hero image"
            class="media-preview"
            loading="lazy">
+      <!-- Candidate hero image comparison (if regeneration ran) -->
+      {% if lp.lp_hero_candidate_path %}
+      <div class="card-label" style="margin-top:0.5rem;">Candidate</div>
+      <img src="{{ lp.lp_hero_candidate_path | media_url }}"
+           alt="Candidate hero image"
+           class="media-preview"
+           loading="lazy">
+      <button
+        hx-post="/ui/lp/{{ lp.run_id }}/accept-hero-candidate"
+        hx-target="#lp-stage-controls"
+        hx-swap="outerHTML"
+        class="btn btn-secondary">
+        Accept Candidate
+      </button>
+      {% endif %}
+      <!-- Regenerate hero button (only when not yet approved) -->
+      {% if not is_approved %}
+      <button
+        hx-post="/ui/lp/{{ lp.run_id }}/regenerate-hero"
+        hx-target="#lp-stage-controls"
+        hx-swap="outerHTML"
+        class="btn btn-secondary">
+        Regenerate Hero
+      </button>
+      {% endif %}
     {% else %}
       <div class="card-value" style="white-space: pre-line;">{{ lp_module_content[module] }}</div>
     {% endif %}

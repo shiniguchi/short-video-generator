@@ -222,6 +222,49 @@ async def lp_module_approve(request: Request, run_id: str, module: str, session:
     )
 
 
+@router.post("/lp/{run_id}/regenerate-hero", response_class=HTMLResponse)
+async def lp_regenerate_hero(request: Request, run_id: str, session: AsyncSession = Depends(get_session)):
+    """HTMX: enqueue LP hero image regeneration Celery task."""
+    result = await session.execute(select(LandingPage).where(LandingPage.run_id == run_id))
+    lp = result.scalar_one_or_none()
+    if not lp:
+        raise HTTPException(status_code=404, detail=f"LP {run_id} not found")
+    if lp.lp_review_locked:
+        raise HTTPException(status_code=400, detail="LP review is locked — approve the linked video first")
+
+    # Lazy import to avoid circular imports at module load time
+    import app.ugc_tasks as ugc_tasks_module
+    ugc_tasks_module.lp_hero_regen.delay(lp.id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/lp_stage_controls.html",
+        context={"lp": lp, "modules": LP_MODULES, "regen_status": "Regenerating hero image..."},
+    )
+
+
+@router.post("/lp/{run_id}/accept-hero-candidate", response_class=HTMLResponse)
+async def lp_accept_hero_candidate(request: Request, run_id: str, session: AsyncSession = Depends(get_session)):
+    """HTMX: swap candidate hero image into approved hero slot."""
+    result = await session.execute(select(LandingPage).where(LandingPage.run_id == run_id))
+    lp = result.scalar_one_or_none()
+    if not lp:
+        raise HTTPException(status_code=404, detail=f"LP {run_id} not found")
+    if lp.lp_hero_candidate_path is None:
+        raise HTTPException(status_code=400, detail="No candidate available")
+
+    # Swap candidate into approved slot
+    lp.lp_hero_image_path = lp.lp_hero_candidate_path
+    lp.lp_hero_candidate_path = None
+    await session.commit()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/lp_stage_controls.html",
+        context={"lp": lp, "modules": LP_MODULES},
+    )
+
+
 def _parse_date_range(start_str: Optional[str], end_str: Optional[str]) -> Tuple[Optional[datetime], Optional[datetime]]:
     """Parse optional YYYY-MM-DD strings into UTC datetimes. End date is inclusive (adds 1 day)."""
     start_dt = datetime(*(date.fromisoformat(start_str).timetuple()[:3]), tzinfo=timezone.utc) if start_str else None

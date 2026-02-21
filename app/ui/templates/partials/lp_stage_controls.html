@@ -3,11 +3,26 @@
   {% set approved_count = approvals.values() | selectattr("equalto", "approved") | list | length %}
   {% set total = modules | length %}
   {% set all_approved = approved_count == total %}
+  {% set hero_approved = approvals.get("hero") == "approved" %}
 
   {% if all_approved %}
     <p class="status-msg status-msg-success">LP review complete — all {{ total }} modules approved.</p>
   {% else %}
-    <p class="status-msg">{{ approved_count }}/{{ total }} modules approved.</p>
+    {% if regen_status is defined %}
+      <p class="status-msg">{{ regen_status }}</p>
+    {% else %}
+      <p class="status-msg">{{ approved_count }}/{{ total }} modules approved.</p>
+    {% endif %}
+    <!-- Regenerate hero button (when hero not yet approved and LP is not locked) -->
+    {% if not hero_approved and not lp.lp_review_locked %}
+    <button
+      hx-post="/ui/lp/{{ lp.run_id }}/regenerate-hero"
+      hx-target="#lp-stage-controls"
+      hx-swap="outerHTML"
+      class="btn btn-secondary">
+      Regenerate Hero
+    </button>
+    {% endif %}
   {% endif %}
 
   {% if lp.deployed_url %}
