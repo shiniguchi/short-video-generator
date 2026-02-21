@@ -53,7 +53,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 
 - [x] **Phase 20: UGCJob Data Model** - DB-backed job state with typed per-stage columns and migration - completed 2026-02-20
 - [x] **Phase 21: Per-Stage Celery Tasks** - Five stage tasks that run, write to DB, and wait for approval - completed 2026-02-20
-- [ ] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream
+- [x] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream - completed 2026-02-21
 - [ ] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid
 - [ ] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek
 - [ ] **Phase 25: LP Integration** - LP module review, video frame sourcing, LP-specific image regeneration
@@ -114,8 +114,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Job list endpoint + SSE progress stream with disconnect handling
-- [ ] 22-02-PLAN.md — Regenerate and edit endpoints with stage gate validation
+- [x] 22-01-PLAN.md — Job list endpoint + SSE progress stream with disconnect handling
+- [x] 22-02-PLAN.md — Regenerate and edit endpoints with stage gate validation
 
 ### Phase 23: Review UI Templates
 **Goal**: Users can navigate the full review pipeline in the browser — see their position, review items as a grid, and approve or reject each one.
@@ -204,11 +204,11 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 19. Admin Dashboard & Deployment | v2.0 | 2/2 | Complete | 2026-02-20 |
 | 20. UGCJob Data Model | v3.0 | 1/1 | Complete | 2026-02-20 |
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
-| 22. Review API Routes + SSE | v3.0 | 0/2 | Not started | - |
+| 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 23. Review UI Templates | v3.0 | 0/TBD | Not started | - |
 | 24. Media Preview | v3.0 | 0/TBD | Not started | - |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-20 - Phase 22 planned (Review API Routes + SSE)*
+*Last updated: 2026-02-21 - Phase 22 complete (Review API Routes + SSE)*

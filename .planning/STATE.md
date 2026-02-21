@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 22 Plan 02 complete — Regenerate and edit endpoints added to ugc_router
+**Current focus:** Phase 22 complete — ready for Phase 23 (Review UI Templates)
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 22 of 25 (Review API Routes + SSE)
+Phase: 22 of 25 (Review API Routes + SSE) — COMPLETE
 Plan: 2 of 2 in current phase (complete)
-Status: Phase 22 Plan 02 complete — POST /ugc/jobs/{id}/regenerate and PATCH /ugc/jobs/{id}/edit added
-Last activity: 2026-02-21 — Phase 22 Plan 02 executed
+Status: Phase 22 complete — all review API routes wired (list, SSE, regenerate, edit)
+Last activity: 2026-02-21 — Phase 22 verified and complete
 
-Progress: [████░░░░░░░░░░░░░░░░░░░░] 16% (v3.0, 4/25 plans)
+Progress: [█████░░░░░░░░░░░░░░░░░░░] 20% (v3.0, 5/25 plans)
 
 ## Performance Metrics
 
@@ -75,10 +75,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 22-02-PLAN.md (regenerate endpoint, edit endpoint)
+Stopped at: Phase 22 complete — verified 9/9 must-haves
 Resume file: None
-Next step: Phase 23 (Review Workflow UI)
+Next step: Phase 23 (Review UI Templates)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 22 Plan 02 complete (POST /ugc/jobs/{id}/regenerate, PATCH /ugc/jobs/{id}/edit)*
+*Last updated: 2026-02-21 - Phase 22 complete (Review API Routes + SSE — all endpoints verified)*
