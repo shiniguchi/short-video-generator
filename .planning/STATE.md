@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 22 Plan 01 complete — SSE endpoints added to ugc_router
+**Current focus:** Phase 22 Plan 02 complete — Regenerate and edit endpoints added to ugc_router
 
 ## Current Milestone
 
@@ -17,9 +17,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 22 of 25 (Review API Routes + SSE)
-Plan: 1 of 1 in current phase (complete)
-Status: Phase 22 Plan 01 complete — GET /ugc/jobs list and GET /ugc/jobs/{id}/events SSE stream added
-Last activity: 2026-02-21 — Phase 22 Plan 01 executed
+Plan: 2 of 2 in current phase (complete)
+Status: Phase 22 Plan 02 complete — POST /ugc/jobs/{id}/regenerate and PATCH /ugc/jobs/{id}/edit added
+Last activity: 2026-02-21 — Phase 22 Plan 02 executed
 
 Progress: [████░░░░░░░░░░░░░░░░░░░░] 16% (v3.0, 4/25 plans)
 
@@ -37,6 +37,7 @@ Progress: [████░░░░░░░░░░░░░░░░░░░
 | 21-01 | Per-stage Celery tasks | ~4 min | 2 | 4 |
 | 21-02 | UGC router and worker wiring | ~2 min | 2 | 3 |
 | 22-01 | SSE + job list endpoints | ~1 min | 1 | 1 |
+| 22-02 | Regenerate + edit endpoints | ~2 min | 2 | 1 |
 
 ## Accumulated Context
 
@@ -55,6 +56,8 @@ Progress: [████░░░░░░░░░░░░░░░░░░░
 - **_STAGE_ADVANCE_MAP as single source of truth**: Dict maps each review status to `(approve_event, next_task_name)` — advance endpoint logic reads only this map.
 - **No Depends(get_session) on SSE endpoint**: Generator opens/closes `async_session_factory()` per iteration — never holds a session for the full stream duration.
 - **_TERMINAL_STATES includes all review states**: Stream stops when user action is required (not just on approved/failed) — client doesn't need to keep polling during review.
+- **_STAGE_REGEN_MAP excludes stage_composition_review**: SM has no review->running path from composition review — approve_final goes directly to approved.
+- **Regenerate reuses _STAGE_ADVANCE_MAP approve events**: Drives SM review->running transition before re-enqueuing without adding new SM events.
 
 ### Research Flags for Planning
 
@@ -72,10 +75,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 22-01-PLAN.md (SSE endpoint, job list endpoint)
+Stopped at: Completed 22-02-PLAN.md (regenerate endpoint, edit endpoint)
 Resume file: None
 Next step: Phase 23 (Review Workflow UI)
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 22 Plan 01 complete (GET /ugc/jobs list, GET /ugc/jobs/{id}/events SSE stream)*
+*Last updated: 2026-02-21 - Phase 22 Plan 02 complete (POST /ugc/jobs/{id}/regenerate, PATCH /ugc/jobs/{id}/edit)*
