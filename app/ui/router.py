@@ -49,6 +49,9 @@ STAGE_ORDER = [
 ]
 _REVIEW_STATES = {s for s, _ in STAGE_ORDER}
 
+# LP module names — single source of truth for review and approve endpoint
+LP_MODULES = ["headline", "hero", "cta", "benefits"]
+
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, session: AsyncSession = Depends(get_session)):
@@ -145,6 +148,75 @@ async def deploy_lp(run_id: str, session: AsyncSession = Depends(get_session)):
     await session.commit()
 
     return {"status": "deployed", "url": url}
+
+
+@router.get("/lp/{run_id}/review", response_class=HTMLResponse)
+async def lp_review(request: Request, run_id: str, session: AsyncSession = Depends(get_session)):
+    """LP module review page — shows each copy module as a card with approve button."""
+    result = await session.execute(select(LandingPage).where(LandingPage.run_id == run_id))
+    lp = result.scalar_one_or_none()
+    if not lp:
+        raise HTTPException(status_code=404, detail=f"LP {run_id} not found")
+
+    # Check video approval status via ugc_job_id FK
+    if lp.ugc_job_id is not None:
+        ugc_result = await session.execute(select(UGCJob).where(UGCJob.id == lp.ugc_job_id))
+        ugc_job = ugc_result.scalar_one_or_none()
+        video_approved = ugc_job is not None and ugc_job.status == "approved"
+    else:
+        video_approved = True  # standalone LP — no stage gate
+
+    # Build per-module content from stored lp_copy
+    lp_copy = lp.lp_copy or {}
+    benefits = lp_copy.get("benefits") or []
+    benefits_text = "\n".join(
+        f"- {b.get('title', '')}: {b.get('description', '')}" if isinstance(b, dict) else str(b)
+        for b in benefits
+    )
+    lp_module_content = {
+        "headline": "\n".join(filter(None, [lp_copy.get("headline", ""), lp_copy.get("subheadline", "")])),
+        "hero": lp.lp_hero_image_path or "No hero image",
+        "cta": "\n".join(filter(None, [lp_copy.get("cta_text", ""), lp_copy.get("urgency_text") or ""])),
+        "benefits": benefits_text or "No benefits data",
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="lp_review.html",
+        context={
+            "lp": lp,
+            "video_approved": video_approved,
+            "modules": LP_MODULES,
+            "lp_module_content": lp_module_content,
+        },
+    )
+
+
+@router.post("/lp/{run_id}/module/{module}/approve", response_class=HTMLResponse)
+async def lp_module_approve(request: Request, run_id: str, module: str, session: AsyncSession = Depends(get_session)):
+    """HTMX: approve one LP module, return updated lp-stage-controls partial."""
+    if module not in LP_MODULES:
+        raise HTTPException(status_code=400, detail=f"Unknown module '{module}'")
+
+    result = await session.execute(select(LandingPage).where(LandingPage.run_id == run_id))
+    lp = result.scalar_one_or_none()
+    if not lp:
+        raise HTTPException(status_code=404, detail=f"LP {run_id} not found")
+
+    if lp.lp_review_locked:
+        raise HTTPException(status_code=400, detail="LP review is locked — approve the linked video first")
+
+    # Update approvals dict — reassign to trigger SQLAlchemy dirty detection
+    approvals = dict(lp.lp_module_approvals or {})
+    approvals[module] = "approved"
+    lp.lp_module_approvals = approvals
+    await session.commit()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/lp_stage_controls.html",
+        context={"lp": lp, "modules": LP_MODULES},
+    )
 
 
 def _parse_date_range(start_str: Optional[str], end_str: Optional[str]) -> Tuple[Optional[datetime], Optional[datetime]]:

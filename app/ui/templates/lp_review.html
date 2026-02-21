@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1>{{ lp.product_idea }}</h1>
+    <span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span>
+  </div>
+  <a href="/ui/" class="btn btn-secondary">&larr; Back to LPs</a>
+</div>
+
+<!-- Stage gate: locked when video not yet approved -->
+{% if not video_approved %}
+<div class="error-msg">
+  <strong>LP review locked</strong> — the linked UGC video is not yet approved.
+  Approve the video pipeline before reviewing LP modules.
+</div>
+{% else %}
+
+<!-- Module review cards -->
+<div class="card-grid">
+  {% for module in modules %}
+  {% set approvals = lp.lp_module_approvals or {} %}
+  {% set is_approved = approvals.get(module) == "approved" %}
+
+  <div class="stage-card {% if module == 'hero' and lp.lp_hero_image_path %}media-card{% endif %}">
+    <div class="card-label">{{ module | capitalize }}</div>
+
+    {% if module == "hero" and lp.lp_hero_image_path %}
+      <!-- Hero image preview -->
+      <img src="{{ lp.lp_hero_image_path | media_url }}"
+           alt="Hero image"
+           class="media-preview"
+           loading="lazy">
+    {% else %}
+      <div class="card-value" style="white-space: pre-line;">{{ lp_module_content[module] }}</div>
+    {% endif %}
+
+    <!-- Approval status -->
+    {% if is_approved %}
+      <span class="status-badge status-approved">Approved</span>
+    {% else %}
+      <button
+        hx-post="/ui/lp/{{ lp.run_id }}/module/{{ module }}/approve"
+        hx-target="#lp-stage-controls"
+        hx-swap="outerHTML"
+        class="btn btn-primary">
+        Approve {{ module | capitalize }}
+      </button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% endif %}
+
+<!-- LP stage controls partial -->
+{% include "partials/lp_stage_controls.html" %}
+{% endblock %}

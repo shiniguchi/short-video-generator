@@ -1,0 +1,18 @@
+<div id="lp-stage-controls">
+  {% set approvals = lp.lp_module_approvals or {} %}
+  {% set approved_count = approvals.values() | selectattr("equalto", "approved") | list | length %}
+  {% set total = modules | length %}
+  {% set all_approved = approved_count == total %}
+
+  {% if all_approved %}
+    <p class="status-msg status-msg-success">LP review complete — all {{ total }} modules approved.</p>
+  {% else %}
+    <p class="status-msg">{{ approved_count }}/{{ total }} modules approved.</p>
+  {% endif %}
+
+  {% if lp.deployed_url %}
+    <a href="{{ lp.deployed_url }}" target="_blank" rel="noopener" class="btn btn-secondary">
+      View Deployed LP &rarr;
+    </a>
+  {% endif %}
+</div>
