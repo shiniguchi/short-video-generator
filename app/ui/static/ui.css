@@ -410,3 +410,19 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 16px;
   color: #1d4ed8;
 }
+
+/* Media preview in review cards */
+.media-card {
+  padding: 12px;
+}
+.media-preview {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 4px;
+  display: block;
+  background: #000;
+}
+.media-preview-video {
+  max-height: 320px;
+  object-fit: contain;
+}

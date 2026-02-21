@@ -26,6 +26,16 @@ from app.state_machines.ugc_job import UGCJobStateMachine
 router = APIRouter(prefix="/ui", tags=["web-ui"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
+
+def _media_url(path: str) -> str:
+    """Convert stored relative path 'output/foo/bar.mp4' to URL '/output/foo/bar.mp4'."""
+    if not path:
+        return ""
+    return "/" + path.lstrip("/")
+
+
+templates.env.filters["media_url"] = _media_url
+
 # In-memory job store: job_id -> status dict
 _jobs: Dict[str, dict] = {}
 
