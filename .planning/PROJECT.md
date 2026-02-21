@@ -2,24 +2,11 @@
 
 ## What This Is
 
-ViralForge is a product smoke test platform that generates short-form video ads and landing pages from a product idea, deploys LPs to free static hosting, and tracks waitlist signups to validate demand. Colleagues clone the repo, run locally via Docker, input a product idea, and get publish-ready TikTok/YouTube videos + a live landing page with conversion tracking — all automated. Built on a pluggable multi-provider AI stack (Google Gemini/Imagen/Veo, Kling, ElevenLabs, HeyGen).
+ViralForge is a product smoke test platform that generates short-form video ads and landing pages from a product idea, deploys LPs to free static hosting, and tracks waitlist signups to validate demand. Users input a product idea and get: AI-generated UGC video ads (with per-stage review and approval), a landing page with analytics, and conversion tracking. Built on a pluggable multi-provider AI stack (Google Gemini/Imagen/Veo, Kling, ElevenLabs, HeyGen) with HTMX-powered review UI.
 
 ## Core Value
 
 Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
-
-## Current Milestone: v3.0 Review Workflow UI
-
-**Goal:** Wire the v1.0 video pipeline and LP generation into the web UI with a linear review workflow — users review and approve each stage (script, images, video clips, combined video, LP) before the next begins.
-
-**Target features:**
-- Linear review pipeline in web UI: Idea → Script → Images → Videos → Combined → LP
-- Per-frame review at every stage (approve/reject each scene individually)
-- AI regeneration on reject + manual prompt tweaking for specific changes
-- Video and LP as independent generation paths (user picks which to generate)
-- LP images sourced from video frames by default, with option to regenerate LP-specific images
-- Mock mode by default, toggle to real AI providers when ready
-- SSE progress streaming for each generation stage
 
 ## Requirements
 
@@ -44,20 +31,18 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 - ✓ Waitlist email collection on LP — v2.0
 - ✓ Admin dashboard with per-LP traffic, CVR, and signup counts — v2.0
 - ✓ Browser-based web UI for product idea input and generation — v2.0
+- ✓ Linear review pipeline: Idea → Script → Images → Videos → Combined → LP in web UI — v3.0
+- ✓ Per-frame review at every stage (approve/reject each scene/image/clip) — v3.0
+- ✓ DB-backed UGC job state with typed per-stage columns and state machine — v3.0
+- ✓ Mock/real AI toggle per job — v3.0
+- ✓ SSE real-time progress streaming for each generation stage — v3.0
+- ✓ Stage gate enforcement (next stage locked until current approved) — v3.0
+- ✓ Inline media preview (images + video with HTTP 206 seek) — v3.0
+- ✓ LP per-module review with video frame hero image and LP-specific regen — v3.0
 
 ### Active
 
-- [ ] Linear review pipeline: Idea → Script → Images → Videos → Combined → LP in web UI
-- [ ] Per-frame script review with approve/reject per scene
-- [ ] Per-frame image review with approve/reject per frame
-- [ ] Per-frame video clip review with approve/reject per clip
-- [ ] Combined video preview with final approval
-- [ ] LP module review with approve/reject per section
-- [ ] AI regeneration on rejected frames with prompt feedback
-- [ ] Manual prompt tweaking and re-generation option
-- [ ] Video and LP as independent generation paths
-- [ ] LP images from video frames by default, option to regenerate
-- [ ] Mock/real AI toggle in web UI
+(None — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -67,21 +52,27 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 - Voice cloning — legal considerations; use pre-built TTS voices
 - Auto-publishing to social platforms — separate concern, manual post for now
 - Payment processing — LPs collect waitlist signups only, no actual purchases
-- A/B testing — single LP per product idea for v2; A/B is future scope
-- Custom domain per LP — single domain with subpaths (e.g., domain.com/product-a)
+- A/B testing — single LP per product idea; future scope
+- Custom domain per LP — single domain with subpaths
+- Full video timeline editor — regeneration handles most needs
+- Real-time collaborative review — single-user tool
+- Parallel stage review — breaks linear pipeline contract
 
 ## Context
 
-**Shipped v1.0 with 7,628 LOC Python across 13 phases (30 plans).**
+**Shipped v3.0 with 12,190 LOC Python across 25 phases (54 plans).**
 
-- **Pipeline architecture**: 5-stage orchestrated pipeline (trend_collection → trend_analysis → content_generation → composition → review) + dedicated UGC product ad pipeline
+- **UGC Review Pipeline**: 5-stage linear review (Analysis → Script → A-Roll → B-Roll → Composition) with HTMX approve/reject cards, SSE progress, stage gates
+- **LP Pipeline**: LP generation from UGC output, per-module review (headline, hero, CTA, benefits), hero image from video frames with regen option
 - **AI Providers**: Pluggable providers for LLM (Gemini, Claude), video (Kling, Minimax, Veo), images (Imagen), TTS (OpenAI, ElevenLabs, Fish Audio), avatars (HeyGen) — all with mock fallbacks
-- **Google AI unification**: Single GOOGLE_API_KEY drives Gemini + Imagen + Veo, replacing need for separate API keys
-- **UGC Pipeline**: Product input → Gemini analysis → Imagen hero image → Veo A-Roll/B-Roll → MoviePy composite
-- **Tech stack**: Python 3.9+, FastAPI, Celery + Redis, PostgreSQL/SQLite, MoviePy v2, Docker Compose
-- **Local dev**: SQLite + aiosqlite, USE_MOCK_DATA=true default, no API keys required
+- **Tech stack**: Python 3.9+, FastAPI, Celery + Redis, PostgreSQL, HTMX 2.0.8, MoviePy v2, Docker Compose
+- **Frontend**: Jinja2 templates + HTMX (no build step, no JS framework)
+- **State management**: UGCJob model with python-statemachine 2.6.0 guard layer, per-job use_mock toggle
 
-**v2.0 distribution model**: Colleagues clone private GitHub repo, run via Docker Compose locally. Code designed to switch to hosted public server deployment without changes. LPs always deployed to Cloudflare (publicly accessible for TikTok/YouTube traffic). Analytics always via Cloudflare Worker + D1 (works regardless of whether app is local or hosted).
+**Known tech debt (v3.0):**
+- SSE raw JSON in progress div (cosmetic)
+- Accept-hero-candidate shows controls partial only (requires reload for hero image)
+- Dead import in ui/router.py (LandingPageRequest)
 
 ## Constraints
 
@@ -95,8 +86,7 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Stable Video Diffusion for prototype | Free, local, no API key needed. Architecture designed for easy swap. | ✓ Good — swapped to Kling/Veo in Phase 11-12 |
-| Google Sheets with local fallback | Build full integration, use sample data until configured | ⚠️ Revisit — local config only, Sheets integration deferred to v2 |
+| Stable Video Diffusion for prototype | Free, local, no API key needed | ✓ Good — swapped to Kling/Veo in Phase 11-12 |
 | 6 microservices architecture | Each maps to future Cloud Run service | ✓ Good — clean separation of concerns |
 | Celery + Redis for task queue | Standard Python async task processing | ✓ Good — handles pipeline orchestration well |
 | Provider abstraction pattern | ABC base + mock + real providers with factory function | ✓ Good — enabled plugging in 10+ providers |
@@ -104,9 +94,14 @@ Enable rapid product idea validation: product idea in → video ads + landing pa
 | LLMProvider two-call pattern | generate_text() for freeform + generate_structured() for schema | ✓ Good — reliable structured output |
 | MoviePy v2 immutable API | with_* methods instead of set_*, explicit resource cleanup | ✓ Good — prevented memory leaks |
 | UGC Hook-Problem-Proof-CTA structure | Proven ad script framework, category-agnostic | ✓ Good — works for any product type |
-| Cloudflare Pages + Worker + D1 for LP hosting + analytics | $0 cost, globally distributed, works with local or hosted app | — Pending |
-| Single-file HTML LPs | No build step, no framework, deploy = copy one file | — Pending |
-| Web UI as FastAPI templates (Jinja2) | No separate frontend build, stays in Python ecosystem | — Pending |
+| Cloudflare Pages + Worker + D1 | $0 cost, globally distributed | ✓ Good — works for both local and hosted app |
+| Single-file HTML LPs | No build step, deploy = copy one file | ✓ Good — fast deployment |
+| Web UI as FastAPI templates (Jinja2) | No separate frontend build, stays in Python ecosystem | ✓ Good — HTMX handles interactivity well |
+| python-statemachine as guard layer | DB column is source of truth, SM validates transitions only | ✓ Good — clean separation |
+| UGCJob typed columns (not JSON blob) | Each stage output has its own column with proper type | ✓ Good — queryable, validated |
+| HTMX outerHTML swap for review actions | No page reload on approve/reject/regenerate | ✓ Good — instant UI feedback |
+| SSE per-iteration session pattern | Fresh DB session per poll, not held for stream duration | ✓ Good — no connection leaks |
+| Candidate pattern for regeneration | Never mutate approved content; store candidate separately | ✓ Good — safe content management |
 
 ---
-*Last updated: 2026-02-20 after v3.0 milestone start*
+*Last updated: 2026-02-21 after v3.0 milestone*
