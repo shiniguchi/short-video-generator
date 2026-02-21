@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Enable rapid product idea validation: product idea in → video ads + landing page out → deploy → measure waitlist signups — cheapest possible, zero manual steps between stages.
 
-**Current focus:** Phase 25 Plan 01 complete — LP schema and review UI wired
+**Current focus:** Phase 25 complete — v3.0 milestone done — full UGC-to-LP pipeline wired
 
 ## Current Milestone
 
@@ -16,12 +16,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 25 of 25 (LP Integration) — in progress
-Plan: 1 of 1 complete in current phase (plan 01 done)
-Status: 25-01 complete — LP DB schema, review page, module approve endpoint, stage gate
-Last activity: 2026-02-21 — Phase 25 Plan 01 complete
+Phase: 25 of 25 (LP Integration) — COMPLETE
+Plan: 2 of 2 complete in current phase (plan 02 done)
+Status: 25-02 complete — frame extraction, Generate LP button, LP hero regen task + endpoints
+Last activity: 2026-02-21 — Phase 25 Plan 02 complete — v3.0 DONE
 
-Progress: [████████░░░░░░░░░░░░░░░░] 36% (v3.0, 9/25 plans)
+Progress: [████████████████████████] 100% (v3.0, 11/25 plans complete, all phases done)
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [████████░░░░░░░░░░░░░░░
 | 23-02 | Review page + advance/regen routes | ~2 min | 2 | 4 |
 | 24-01 | Inline media previews (img + video) | ~1 min | 2 | 3 |
 | 25-01 | LP schema + review page + stage gate | ~2 min | 2 | 7 |
+| 25-02 | Frame extraction + Generate LP + hero regen | ~3 min | 2 | 5 |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Progress: [████████░░░░░░░░░░░░░░░
 - **LP_MODULES list as single source of truth**: List of 4 module names shared between router and templates — validate module param against it in approve endpoint.
 - **Standalone LP skips stage gate**: ugc_job_id is None → video_approved defaults True — no gate without linked video.
 - **lp_module_approvals dict reassignment**: Mutate a copy, reassign to column — SQLAlchemy JSON dirty detection requires reassignment not in-place mutation.
+- **asyncio.to_thread for generate_thumbnail**: Blocking IO call wrapped in to_thread in async FastAPI endpoint — avoids blocking event loop.
+- **generate-lp creates LP immediately, generates async**: LandingPage row created synchronously, _run_generation_for_ugc runs as asyncio.create_task — redirect happens before generation completes.
+- **LP hero regen candidate pattern**: lp_hero_regen Celery task stores result in lp_hero_candidate_path — accept-hero-candidate swaps into lp_hero_image_path on explicit acceptance.
 
 ### Research Flags for Planning
 
@@ -89,10 +93,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 25 Plan 01 complete (25-01-SUMMARY.md created)
+Stopped at: Phase 25 Plan 02 complete (25-02-SUMMARY.md created)
 Resume file: None
-Next step: Phase 25 complete — v3.0 milestone done
+Next step: v3.0 complete — full UGC + LP pipeline shipped
 
 ---
 *State initialized: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 25-01 complete (LP Integration — DB schema, review page, module approve endpoint, stage gate)*
+*Last updated: 2026-02-21 - Phase 25-02 complete (LP Integration — frame extraction, Generate LP button, LP hero regen task + endpoints) — v3.0 DONE*
