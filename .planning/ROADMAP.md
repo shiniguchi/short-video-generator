@@ -54,7 +54,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 - [x] **Phase 20: UGCJob Data Model** - DB-backed job state with typed per-stage columns and migration - completed 2026-02-20
 - [x] **Phase 21: Per-Stage Celery Tasks** - Five stage tasks that run, write to DB, and wait for approval - completed 2026-02-20
 - [x] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream - completed 2026-02-21
-- [ ] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid
+- [x] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid - completed 2026-02-21
 - [ ] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek
 - [ ] **Phase 25: LP Integration** - LP module review, video frame sourcing, LP-specific image regeneration
 
@@ -134,8 +134,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 23-01-PLAN.md — HTMX CDN setup, job creation form, job list page
-- [ ] 23-02-PLAN.md — Review page with stage stepper, item grids, HTMX approve/reject
+- [x] 23-01-PLAN.md — HTMX CDN setup, job creation form, job list page
+- [x] 23-02-PLAN.md — Review page with stage stepper, item grids, HTMX approve/reject
 
 ### Phase 24: Media Preview
 **Goal**: Users can view generated images and play video clips directly in the review grid with full seek support.
@@ -205,10 +205,10 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 20. UGCJob Data Model | v3.0 | 1/1 | Complete | 2026-02-20 |
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
 | 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
-| 23. Review UI Templates | v3.0 | 0/2 | Not started | - |
+| 23. Review UI Templates | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 24. Media Preview | v3.0 | 0/TBD | Not started | - |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 23 planned (2 plans)*
+*Last updated: 2026-02-21 - Phase 23 complete (Review UI Templates)*
