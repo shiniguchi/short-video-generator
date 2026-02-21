@@ -169,11 +169,11 @@ Plans:
   3. User can trigger LP-specific image regeneration to replace the video frame default
   4. LP review is locked until the video pipeline is fully approved
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 25-01: LP module review cards and stage gate wiring from video approval
-- [ ] 25-02: Video frame extraction for LP hero, LP-specific image regeneration endpoint
+- [ ] 25-01-PLAN.md — LP integration schema (migration + model) + LP review page with module cards and stage gate
+- [ ] 25-02-PLAN.md — Video frame extraction on approve_final + Generate LP button + LP hero regen task
 
 ## Progress
 
