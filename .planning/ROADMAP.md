@@ -55,7 +55,7 @@ Full details: `.planning/phases/` (14-01 through 19-02)
 - [x] **Phase 21: Per-Stage Celery Tasks** - Five stage tasks that run, write to DB, and wait for approval - completed 2026-02-20
 - [x] **Phase 22: Review API Routes + SSE** - HTTP routes for job creation, stage advance, SSE progress stream - completed 2026-02-21
 - [x] **Phase 23: Review UI Templates** - HTMX-powered review pages with stepper, approve/reject grid - completed 2026-02-21
-- [ ] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek
+- [x] **Phase 24: Media Preview** - Image and video serving with HTTP 206 range support for seek - completed 2026-02-21
 - [ ] **Phase 25: LP Integration** - LP module review, video frame sourcing, LP-specific image regeneration
 
 ## Phase Details
@@ -154,7 +154,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 24-01-PLAN.md — Jinja2 media_url filter + inline img/video tags in review template + responsive media CSS
+- [x] 24-01-PLAN.md — Jinja2 media_url filter + inline img/video tags in review template + responsive media CSS
 
 ### Phase 25: LP Integration
 **Goal**: Users can review LP modules individually and the LP hero image is populated from approved video frames by default.
@@ -205,9 +205,9 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
 | 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 23. Review UI Templates | v3.0 | 2/2 | Complete | 2026-02-21 |
-| 24. Media Preview | v3.0 | 0/1 | Not started | - |
+| 24. Media Preview | v3.0 | 1/1 | Complete | 2026-02-21 |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-21 - Phase 23 complete (Review UI Templates)*
+*Last updated: 2026-02-21 - Phase 24 complete (Media Preview)*
