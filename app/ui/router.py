@@ -13,8 +13,12 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from statemachine.exceptions import TransitionNotAllowed
+
 from app.database import async_session_factory, get_session
 from app.models import LandingPage, UGCJob, WaitlistEntry
+from app.ugc_router import _STAGE_ADVANCE_MAP, _STAGE_REGEN_MAP
+from app.state_machines.ugc_job import UGCJobStateMachine
 # NOTE: landing_page service imports are deferred to _run_generation to avoid
 # google.genai module-level import error at server startup in Docker.
 
@@ -24,6 +28,16 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 # In-memory job store: job_id -> status dict
 _jobs: Dict[str, dict] = {}
+
+# Stage order for stepper rendering
+STAGE_ORDER = [
+    ("stage_analysis_review", "Analysis"),
+    ("stage_script_review", "Script"),
+    ("stage_aroll_review", "A-Roll"),
+    ("stage_broll_review", "B-Roll"),
+    ("stage_composition_review", "Composition"),
+]
+_REVIEW_STATES = {s for s, _ in STAGE_ORDER}
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -248,6 +262,129 @@ async def ugc_list(request: Request, session: AsyncSession = Depends(get_session
 async def ugc_new(request: Request):
     """Serve UGC job creation form."""
     return templates.TemplateResponse(request=request, name="ugc_new.html", context={})
+
+
+@router.get("/ugc/{job_id}/review", response_class=HTMLResponse)
+async def ugc_review(request: Request, job_id: int, session: AsyncSession = Depends(get_session)):
+    """Stage stepper + item grids for a UGC job."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    # Derive stepper state
+    stage_keys = [s for s, _ in STAGE_ORDER]
+    if job.status in stage_keys:
+        current_idx = stage_keys.index(job.status)
+        completed_stages = set(stage_keys[:current_idx])
+    elif job.status == "approved":
+        completed_stages = set(stage_keys)
+    else:
+        completed_stages = set()
+
+    # When running, derive which stage is "in progress" by checking populated data columns
+    running_toward = None
+    if job.status == "running":
+        if job.final_video_path is not None or job.broll_paths is not None:
+            running_toward = "stage_composition_review"
+            completed_stages = set(stage_keys[:4])
+        elif job.aroll_paths is not None:
+            running_toward = "stage_broll_review"
+            completed_stages = set(stage_keys[:3])
+        elif job.aroll_scenes is not None:
+            running_toward = "stage_aroll_review"
+            completed_stages = set(stage_keys[:2])
+        elif job.master_script is not None:
+            running_toward = "stage_script_review"
+            completed_stages = set(stage_keys[:1])
+        else:
+            running_toward = "stage_analysis_review"
+
+    return templates.TemplateResponse(
+        request=request,
+        name="ugc_review.html",
+        context={
+            "job": job,
+            "stage_order": STAGE_ORDER,
+            "completed_stages": completed_stages,
+            "review_states": _REVIEW_STATES,
+            "running_toward": running_toward,
+        },
+    )
+
+
+@router.post("/ugc/{job_id}/advance", response_class=HTMLResponse)
+async def ugc_ui_advance(request: Request, job_id: int, session: AsyncSession = Depends(get_session)):
+    """HTMX: approve current stage, return updated stage-controls partial."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    if job.status not in _STAGE_ADVANCE_MAP:
+        raise HTTPException(status_code=400, detail=f"Cannot advance from '{job.status}'")
+
+    approve_event, next_task_name = _STAGE_ADVANCE_MAP[job.status]
+
+    try:
+        sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
+        sm.send(approve_event)
+        job.status = sm.current_state.id
+    except TransitionNotAllowed as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    # Set approved_at on final approval (uses module-level datetime import)
+    if approve_event == "approve_final":
+        job.approved_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    # Enqueue next stage task
+    if next_task_name:
+        import app.ugc_tasks as ugc_tasks_module
+        getattr(ugc_tasks_module, next_task_name).delay(job_id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/ugc_stage_controls.html",
+        context={"job": job, "review_states": _REVIEW_STATES},
+    )
+
+
+@router.post("/ugc/{job_id}/regenerate", response_class=HTMLResponse)
+async def ugc_ui_regenerate(request: Request, job_id: int, session: AsyncSession = Depends(get_session)):
+    """HTMX: regenerate current stage, return updated stage-controls partial."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    if job.status not in _STAGE_REGEN_MAP:
+        detail = ("Composition stage cannot be regenerated"
+                  if job.status == "stage_composition_review"
+                  else f"Cannot regenerate from '{job.status}'")
+        raise HTTPException(status_code=400, detail=detail)
+
+    task_name = _STAGE_REGEN_MAP[job.status]
+    approve_event, _ = _STAGE_ADVANCE_MAP[job.status]
+
+    try:
+        sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
+        sm.send(approve_event)
+        job.status = sm.current_state.id
+    except TransitionNotAllowed as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    await session.commit()
+
+    import app.ugc_tasks as ugc_tasks_module
+    getattr(ugc_tasks_module, task_name).delay(job_id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/ugc_stage_controls.html",
+        context={"job": job, "review_states": _REVIEW_STATES},
+    )
 
 
 async def _run_generation(job_id: str, product_idea: str, target_audience: str, color_preference: str, use_mock: bool):
