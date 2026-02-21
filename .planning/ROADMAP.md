@@ -151,11 +151,10 @@ Plans:
   4. Video serving returns HTTP 206 partial content (browser seek does not break)
   5. File paths are validated within the output directory (no path traversal)
 
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 24-01: Static image serving route + video streaming endpoint with HTTP 206 range handling
-- [ ] 24-02: Wire preview src attributes in review template, path traversal validation
+- [ ] 24-01-PLAN.md — Jinja2 media_url filter + inline img/video tags in review template + responsive media CSS
 
 ### Phase 25: LP Integration
 **Goal**: Users can review LP modules individually and the LP hero image is populated from approved video frames by default.
@@ -206,7 +205,7 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 21. Per-Stage Celery Tasks | v3.0 | 2/2 | Complete | 2026-02-20 |
 | 22. Review API Routes + SSE | v3.0 | 2/2 | Complete | 2026-02-21 |
 | 23. Review UI Templates | v3.0 | 2/2 | Complete | 2026-02-21 |
-| 24. Media Preview | v3.0 | 0/TBD | Not started | - |
+| 24. Media Preview | v3.0 | 0/1 | Not started | - |
 | 25. LP Integration | v3.0 | 0/TBD | Not started | - |
 
 ---
