@@ -1,6 +1,6 @@
 <div id="lp-stage-controls">
   {% set approvals = lp.lp_module_approvals or {} %}
-  {% set approved_count = approvals.values() | selectattr("equalto", "approved") | list | length %}
+  {% set approved_count = approvals.values() | select("equalto", "approved") | list | length %}
   {% set total = modules | length %}
   {% set all_approved = approved_count == total %}
   {% set hero_approved = approvals.get("hero") == "approved" %}
