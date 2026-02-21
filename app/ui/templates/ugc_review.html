@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1>{{ job.product_name }}</h1>
+    <span class="status-badge status-{{ job.status }}">{{ job.status.replace('_', ' ') }}</span>
+  </div>
+  <a href="/ui/ugc" class="btn btn-secondary">&larr; Back to Jobs</a>
+</div>
+
+<!-- Stage stepper -->
+<ol class="stage-stepper">
+  {% for status_key, label in stage_order %}
+    {% if status_key in completed_stages %}
+      <li class="step step-done">{{ label }}</li>
+    {% elif job.status == "running" and status_key == running_toward %}
+      <li class="step step-active">{{ label }} (running...)</li>
+    {% elif job.status == status_key %}
+      <li class="step step-active">{{ label }}</li>
+    {% elif job.status == "approved" %}
+      <li class="step step-done">{{ label }}</li>
+    {% else %}
+      <li class="step step-locked" aria-disabled="true">{{ label }}</li>
+    {% endif %}
+  {% endfor %}
+</ol>
+
+<!-- SSE progress section (running only) -->
+{% if job.status == "running" %}
+<div id="sse-progress"
+     hx-ext="sse"
+     sse-connect="/ugc/jobs/{{ job.id }}/events"
+     sse-swap="message"
+     hx-swap="innerHTML">
+  <p class="status-msg">Pipeline running...</p>
+</div>
+<script>
+  document.body.addEventListener("htmx:sseClose", function() {
+    window.location.reload();
+  });
+</script>
+{% endif %}
+
+<!-- Error state -->
+{% if job.status == "failed" %}
+<div class="error-msg">
+  Job failed: {{ job.error_message or "Unknown error" }}
+</div>
+{% endif %}
+
+<!-- Per-item stage content sections -->
+{% if job.status in review_states or job.status == "approved" %}
+
+  <!-- Analysis stage content -->
+  {% if job.analysis_category is not none %}
+  <div class="stage-section">
+    <h2>Analysis</h2>
+    <div class="card-grid">
+      <div class="stage-card">
+        <div class="card-label">Category</div>
+        <div class="card-value">{{ job.analysis_category }}</div>
+      </div>
+      <div class="stage-card">
+        <div class="card-label">UGC Style</div>
+        <div class="card-value">{{ job.analysis_ugc_style }}</div>
+      </div>
+      <div class="stage-card">
+        <div class="card-label">Emotional Tone</div>
+        <div class="card-value">{{ job.analysis_emotional_tone }}</div>
+      </div>
+      <div class="stage-card">
+        <div class="card-label">Target Audience</div>
+        <div class="card-value">{{ job.analysis_target_audience }}</div>
+      </div>
+      {% if job.analysis_key_features %}
+      <div class="stage-card">
+        <div class="card-label">Key Features</div>
+        <div class="card-value">
+          <ul>
+            {% for feature in job.analysis_key_features %}
+            <li>{{ feature }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+      {% if job.analysis_visual_keywords %}
+      <div class="stage-card">
+        <div class="card-label">Visual Keywords</div>
+        <div class="card-value">
+          <ul>
+            {% for kw in job.analysis_visual_keywords %}
+            <li>{{ kw }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+      {% if job.hero_image_path %}
+      <div class="stage-card">
+        <div class="card-label">Hero Image</div>
+        <div class="card-value">{{ job.hero_image_path }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Script stage content -->
+  {% if job.master_script is not none %}
+  <div class="stage-section">
+    <h2>Script</h2>
+    <div class="card-grid">
+      {% if job.master_script.hook %}
+      <div class="stage-card">
+        <div class="card-label">Hook</div>
+        <div class="card-value">{{ job.master_script.hook }}</div>
+      </div>
+      {% endif %}
+      {% if job.master_script.cta %}
+      <div class="stage-card">
+        <div class="card-label">CTA</div>
+        <div class="card-value">{{ job.master_script.cta }}</div>
+      </div>
+      {% endif %}
+      {% if job.aroll_scenes %}
+        {% for scene in job.aroll_scenes %}
+        <div class="stage-card">
+          <div class="card-label">A-Roll Scene {{ loop.index }}</div>
+          <div class="card-value">{{ scene.description or scene }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+      {% if job.broll_shots %}
+        {% for shot in job.broll_shots %}
+        <div class="stage-card">
+          <div class="card-label">B-Roll Shot {{ loop.index }}</div>
+          <div class="card-value">{{ shot.description or shot }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- A-Roll stage content -->
+  {% if job.aroll_paths is not none %}
+  <div class="stage-section">
+    <h2>A-Roll</h2>
+    <div class="card-grid">
+      {% for path in job.aroll_paths %}
+      <div class="stage-card">
+        <div class="card-label">A-Roll Clip {{ loop.index }}</div>
+        <div class="card-value">{{ path }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- B-Roll stage content -->
+  {% if job.broll_paths is not none %}
+  <div class="stage-section">
+    <h2>B-Roll</h2>
+    <div class="card-grid">
+      {% for path in job.broll_paths %}
+      <div class="stage-card">
+        <div class="card-label">B-Roll Clip {{ loop.index }}</div>
+        <div class="card-value">{{ path }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Composition stage content -->
+  {% if job.final_video_path is not none %}
+  <div class="stage-section">
+    <h2>Composition</h2>
+    <div class="card-grid">
+      <div class="stage-card">
+        <div class="card-label">Final Video</div>
+        <div class="card-value">{{ job.final_video_path }}</div>
+      </div>
+      {% if job.candidate_video_path %}
+      <div class="stage-card">
+        <div class="card-label">Candidate Video</div>
+        <div class="card-value">{{ job.candidate_video_path }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+{% endif %}
+
+<!-- Stage controls partial -->
+{% if job.status in review_states or job.status == "running" or job.status == "approved" %}
+  {% include "partials/ugc_stage_controls.html" %}
+{% endif %}
+
+{% endblock %}
