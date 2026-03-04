@@ -3,6 +3,9 @@
 > Research compiled from Reddit communities (r/aivideo, r/StableDiffusion, r/artificial),
 > developer forums, hands-on reviews, and API documentation. Focus on practical production
 > experience, not marketing claims.
+>
+> **See also**: [Imagen API Capabilities & Limitations](./imagen-api-capabilities.md) — detailed
+> reference on Google AI vs Vertex AI client differences, reference image types, and migration path.
 
 ---
 
