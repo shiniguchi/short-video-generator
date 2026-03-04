@@ -33,20 +33,37 @@ router = APIRouter(prefix="/ugc", tags=["ugc"])
 
 # Maps review status -> (approve_event, next_task_function_name)
 _STAGE_ADVANCE_MAP = {
-    "stage_analysis_review":    ("approve_analysis", "ugc_stage_2_script"),
-    "stage_script_review":      ("approve_script",   "ugc_stage_3_aroll"),
-    "stage_aroll_review":       ("approve_aroll",    "ugc_stage_4_broll"),
-    "stage_broll_review":       ("approve_broll",    "ugc_stage_5_compose"),
-    "stage_composition_review": ("approve_final",    None),
+    "stage_analysis_review":      ("approve_analysis",    "ugc_stage_2_script"),
+    "stage_script_review":        ("approve_script",      "ugc_stage_3a_aroll_images"),
+    "stage_aroll_image_review":   ("approve_aroll_images", "ugc_stage_3_aroll"),
+    "stage_aroll_review":         ("approve_aroll",       "ugc_stage_4a_broll_images"),
+    "stage_broll_image_review":   ("approve_broll_images", "ugc_stage_4_broll"),
+    "stage_broll_review":         ("approve_broll",       "ugc_stage_5_compose"),
+    "stage_composition_review":   ("approve_final",       None),
 }
 
 # Maps review status -> celery task to re-run for that stage
-# stage_composition_review excluded — approve_final goes to approved (no path back to running)
 _STAGE_REGEN_MAP = {
-    "stage_analysis_review": "ugc_stage_1_analyze",
-    "stage_script_review":   "ugc_stage_2_script",
-    "stage_aroll_review":    "ugc_stage_3_aroll",
-    "stage_broll_review":    "ugc_stage_4_broll",
+    "stage_analysis_review":      "ugc_stage_1_analyze",
+    "stage_script_review":        "ugc_stage_2_script",
+    "stage_aroll_image_review":   "ugc_stage_3a_aroll_images",
+    "stage_aroll_review":         "ugc_stage_3_aroll",
+    "stage_broll_image_review":   "ugc_stage_4a_broll_images",
+    "stage_broll_review":         "ugc_stage_4_broll",
+}
+
+# Skip video generation config: image review stage -> how to fast-forward
+_STAGE_SKIP_VIDEO_CONFIG = {
+    "stage_aroll_image_review": {
+        "video_col": "aroll_paths",
+        "count_source": "aroll_scenes",
+        "complete_event": "complete_aroll",
+    },
+    "stage_broll_image_review": {
+        "video_col": "broll_paths",
+        "count_source": "broll_shots",
+        "complete_event": "complete_broll",
+    },
 }
 
 # All valid review states (used to gate the edit endpoint)
@@ -231,6 +248,97 @@ async def regenerate_ugc_stage(
     return {"job_id": job_id, "status": job.status, "regenerating": task_name}
 
 
+# Maps populated columns -> Celery task to resume from (bottom-up check)
+_RETRY_RESUME_MAP = [
+    ("broll_paths",       "ugc_stage_5_compose"),
+    ("broll_image_paths", "ugc_stage_4_broll"),
+    ("aroll_paths",       "ugc_stage_4a_broll_images"),
+    ("aroll_image_paths", "ugc_stage_3_aroll"),
+    ("master_script",     "ugc_stage_3a_aroll_images"),
+    ("analysis_category", "ugc_stage_2_script"),
+]
+
+
+def _determine_resume_task(job) -> str:
+    """Pick the Celery task to resume from based on which columns are populated."""
+    for column, task_name in _RETRY_RESUME_MAP:
+        if getattr(job, column, None) is not None:
+            return task_name
+    return "ugc_stage_1_analyze"
+
+
+# --- POST /ugc/jobs/{job_id}/retry ---
+
+@router.post("/jobs/{job_id}/retry")
+async def retry_ugc_job(
+    job_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    """Retry a failed job — resumes from the last successful checkpoint."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalars().first()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    if job.status != "failed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot retry from status '{job.status}' — job must be failed",
+        )
+
+    task_name = _determine_resume_task(job)
+
+    # Transition failed -> running
+    try:
+        sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
+        sm.send("retry")
+        job.status = sm.current_state.id
+    except TransitionNotAllowed as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    job.error_message = None
+    await session.commit()
+    logger.info(f"UGCJob {job_id} retrying via '{task_name}', status={job.status}")
+
+    import app.ugc_tasks as ugc_tasks_module
+    getattr(ugc_tasks_module, task_name).delay(job_id)
+
+    return {"job_id": job_id, "status": job.status, "resuming": task_name}
+
+
+# --- POST /ugc/jobs/{job_id}/reopen ---
+
+@router.post("/jobs/{job_id}/reopen")
+async def reopen_ugc_job(
+    job_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    """Reopen an approved job back to composition review for re-editing."""
+    result = await session.execute(select(UGCJob).where(UGCJob.id == job_id))
+    job = result.scalars().first()
+    if not job:
+        raise HTTPException(status_code=404, detail=f"UGCJob {job_id} not found")
+
+    if job.status != "approved":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reopen from status '{job.status}' — job must be approved",
+        )
+
+    try:
+        sm = UGCJobStateMachine(model=job, state_field="status", start_value=job.status)
+        sm.send("reopen")
+        job.status = sm.current_state.id
+    except TransitionNotAllowed as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    job.approved_at = None
+    await session.commit()
+    logger.info(f"UGCJob {job_id} reopened, status={job.status}")
+
+    return {"job_id": job_id, "status": job.status}
+
+
 # --- PATCH /ugc/jobs/{job_id}/edit ---
 
 @router.patch("/jobs/{job_id}/edit")
@@ -294,6 +402,9 @@ async def get_ugc_job(
         "master_script": job.master_script,
         "aroll_scenes": job.aroll_scenes,
         "broll_shots": job.broll_shots,
+        # Stage 3a/4a outputs (per-scene images)
+        "aroll_image_paths": job.aroll_image_paths,
+        "broll_image_paths": job.broll_image_paths,
         # Stage 3 outputs
         "aroll_paths": job.aroll_paths,
         # Stage 4 outputs
@@ -311,12 +422,42 @@ async def get_ugc_job(
 _TERMINAL_STATES = {
     "stage_analysis_review",
     "stage_script_review",
+    "stage_aroll_image_review",
     "stage_aroll_review",
+    "stage_broll_image_review",
     "stage_broll_review",
     "stage_composition_review",
     "approved",
     "failed",
 }
+
+
+def _derive_stage_progress(job) -> dict:
+    """Derive current stage, sub-step detail, and progress % from job data.
+
+    7 stages each ~14% of total. Starts at 0% and ends at 98%.
+    """
+    num_scenes = len(job.aroll_scenes or [])
+    num_shots = len(job.broll_shots or [])
+
+    if job.final_video_path:
+        return {"stage": "Composition", "percent": 98, "detail": "Done"}
+    if job.broll_paths:
+        return {"stage": "Composing final video", "percent": 88, "detail": "Rendering final cut..."}
+    if job.broll_image_paths:
+        return {"stage": "Generating B-Roll videos", "percent": 74,
+                "detail": f"0/{num_shots} clips" if num_shots else "Starting..."}
+    if job.aroll_paths:
+        return {"stage": "Generating B-Roll images", "percent": 60,
+                "detail": f"0/{num_shots} shots" if num_shots else "Starting..."}
+    if job.aroll_image_paths:
+        return {"stage": "Generating A-Roll videos", "percent": 44,
+                "detail": f"0/{num_scenes} clips" if num_scenes else "Starting..."}
+    if job.master_script:
+        return {"stage": "Generating A-Roll image", "percent": 30, "detail": "Creating creator image..."}
+    if job.analysis_category:
+        return {"stage": "Writing video script", "percent": 16, "detail": "Drafting hook, proof, CTA..."}
+    return {"stage": "Analyzing product", "percent": 0, "detail": "Reading product info..."}
 
 
 @router.get("/jobs/{job_id}/events")
@@ -342,7 +483,10 @@ async def ugc_job_events(job_id: int, request: Request):
                 yield f"data: {json.dumps({'status': 'not_found'})}\n\n"
                 break
 
-            yield f"data: {json.dumps({'status': job.status, 'error': job.error_message})}\n\n"
+            payload = {"status": job.status, "error": job.error_message}
+            if job.status == "running":
+                payload.update(_derive_stage_progress(job))
+            yield f"data: {json.dumps(payload)}\n\n"
 
             if job.status in _TERMINAL_STATES:
                 break

@@ -1,32 +1,36 @@
-<div id="lp-stage-controls">
+<div id="lp-stage-controls" class="lp-progress-bar">
   {% set approvals = lp.lp_module_approvals or {} %}
   {% set approved_count = approvals.values() | select("equalto", "approved") | list | length %}
   {% set total = modules | length %}
   {% set all_approved = approved_count == total %}
-  {% set hero_approved = approvals.get("hero") == "approved" %}
+  {% set pct = (approved_count * 100 / total) | int if total else 0 %}
 
-  {% if all_approved %}
-    <p class="status-msg status-msg-success">LP review complete — all {{ total }} modules approved.</p>
-  {% else %}
+  <div class="lp-progress-row">
     {% if regen_status is defined %}
-      <p class="status-msg">{{ regen_status }}</p>
+      <span class="lp-progress-label">{{ regen_status }}</span>
+    {% elif all_approved %}
+      <span class="lp-progress-label lp-progress-done">All {{ total }} modules approved</span>
     {% else %}
-      <p class="status-msg">{{ approved_count }}/{{ total }} modules approved.</p>
+      <span class="lp-progress-label">{{ approved_count }} of {{ total }} modules approved</span>
     {% endif %}
-    <!-- Regenerate hero button (when hero not yet approved and LP is not locked) -->
-    {% if not hero_approved and not lp.lp_review_locked %}
-    <button
-      hx-post="/ui/lp/{{ lp.run_id }}/regenerate-hero"
-      hx-target="#lp-stage-controls"
-      hx-swap="outerHTML"
-      class="btn btn-secondary">
-      Regenerate Hero
-    </button>
-    {% endif %}
-  {% endif %}
+
+    <div class="lp-progress-track">
+      <div class="lp-progress-fill {% if all_approved %}lp-progress-fill-done{% endif %}"
+           style="width: {{ pct }}%;"></div>
+    </div>
+
+    {% for m in modules %}
+      {% set ok = approvals.get(m) == "approved" %}
+      <span class="lp-progress-dot {% if ok %}lp-dot-ok{% endif %}"
+            title="{{ m | capitalize }}">
+        {% if ok %}&#10003;{% else %}{{ loop.index }}{% endif %}
+      </span>
+    {% endfor %}
+  </div>
 
   {% if lp.deployed_url %}
-    <a href="{{ lp.deployed_url }}" target="_blank" rel="noopener" class="btn btn-secondary">
+    <a href="{{ lp.deployed_url }}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm"
+       style="margin-top:8px;">
       View Deployed LP &rarr;
     </a>
   {% endif %}

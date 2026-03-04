@@ -26,7 +26,9 @@ COPY ./fonts /usr/share/fonts/truetype/montserrat
 RUN fc-cache -f
 
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser \
+    && mkdir -p /app/output \
+    && chown -R appuser:appuser /app
 USER appuser
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -3,7 +3,7 @@
         <h2 class="faq__heading">Frequently Asked Questions</h2>
         <div class="faq__list">
             {% for item in faq_items %}
-            <details class="faq__item">
+            <details class="faq__item stagger-item">
                 <summary class="faq__question">{{ item.question }}</summary>
                 <p class="faq__answer">{{ item.answer }}</p>
             </details>
@@ -61,13 +61,13 @@
     font-size: 1.5rem;
     font-weight: 300;
     color: var(--color-primary);
-    transition: transform 0.2s;
+    transition: transform 0.3s ease;
     flex-shrink: 0;
     margin-left: 1rem;
 }
 
 .faq__item[open] .faq__question::after {
-    content: "−";
+    transform: rotate(45deg);
 }
 
 .faq__answer {
@@ -75,6 +75,12 @@
     color: #666;
     line-height: 1.7;
     margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.faq__item[open] .faq__answer {
+    max-height: 500px;
 }
 
 @media (min-width: 1024px) {

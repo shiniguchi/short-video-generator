@@ -7,7 +7,6 @@ from typing import List, Optional
 
 import httpx
 
-from app.config import get_settings
 from app.services.avatar_generator.base import AvatarProvider
 from app.services.avatar_generator.mock import MockAvatarProvider
 
@@ -69,10 +68,8 @@ class HeyGenAvatarProvider(AvatarProvider):
         Returns:
             Path to generated avatar video file
         """
-        settings = get_settings()
-
-        # Fallback to mock if configured or no API key
-        if settings.use_mock_data or not self.api_key:
+        # Fallback to mock if no API key
+        if not self.api_key:
             return self.mock_provider.generate_avatar_video(script_text, avatar_id, voice_id)
 
         # Use default avatar if not specified

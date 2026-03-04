@@ -1,15 +1,19 @@
 """Jinja2 template rendering engine for landing pages."""
 
+import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.schemas import LandingPageCopy, ColorScheme
+from app.services.landing_page.contrast import ensure_contrast
 
 logger = logging.getLogger(__name__)
 
 # Template directory
 TEMPLATES_DIR = Path(__file__).parent / "templates"
+THEMES_DIR = TEMPLATES_DIR / "themes"
+PRESETS_PATH = TEMPLATES_DIR / "presets" / "templates.json"
 
 
 def _create_jinja_env() -> Environment:
@@ -61,6 +65,32 @@ def get_section_list() -> List[str]:
     return sorted(sections)
 
 
+def get_available_templates() -> List[Dict[str, Any]]:
+    """Return list of template presets for the UI picker."""
+    if not PRESETS_PATH.exists():
+        return []
+    with open(PRESETS_PATH, "r") as f:
+        return json.load(f)
+
+
+def _load_template_config(template_key: str) -> Optional[Dict[str, Any]]:
+    """Load a single template config by key from presets JSON."""
+    templates = get_available_templates()
+    for t in templates:
+        if t["key"] == template_key:
+            return t
+    return None
+
+
+def _load_theme_css(template_key: str) -> str:
+    """Read theme CSS file for the given template key."""
+    css_path = THEMES_DIR / f"{template_key}.css"
+    if not css_path.exists():
+        logger.warning(f"Theme CSS not found: {css_path}")
+        return ""
+    return css_path.read_text(encoding="utf-8")
+
+
 def build_landing_page(
     copy: LandingPageCopy,
     color_scheme: ColorScheme,
@@ -68,7 +98,9 @@ def build_landing_page(
     hero_image: Optional[str] = None,
     product_images: Optional[List[str]] = None,
     sections_order: Optional[List[str]] = None,
-    lp_source: Optional[str] = None
+    lp_source: Optional[str] = None,
+    template_key: Optional[str] = None,
+    section_images: Optional[Dict[str, List[str]]] = None,
 ) -> str:
     """
     Build complete landing page HTML from copy and design elements.
@@ -86,24 +118,39 @@ def build_landing_page(
     """
     # Default section order — high-converting LP structure
     if sections_order is None:
-        sections_order = ["hero", "benefits", "gallery", "features", "how_it_works", "cta_repeat", "faq", "waitlist", "footer"]
+        sections_order = ["hero", "benefits", "gallery", "features", "how_it_works", "cta_repeat", "faq", "footer"]
 
     logger.info(f"Building landing page with sections: {sections_order}")
+
+    # Contrast guardrails — darken primary/secondary if white text unreadable
+    safe_primary = ensure_contrast(color_scheme.primary, "primary")
+    safe_secondary = ensure_contrast(color_scheme.secondary, "secondary")
 
     # Extract product name for sections that need it
     product_name = copy.meta_title.split("—")[0].split("-")[0].strip() if copy.meta_title else "this product"
 
-    # Distribute product images across sections
+    # Distribute images — prefer AI-generated section images over pool
     imgs = product_images or []
-    # benefits: first N images (one per benefit)
     benefits_count = len(copy.benefits) if copy.benefits else 0
-    benefits_imgs = imgs[:benefits_count]
-    # how_it_works: next N images (one per step)
     steps_count = len(copy.how_it_works) if copy.how_it_works else 0
-    hiw_imgs = imgs[benefits_count:benefits_count + steps_count]
-    # gallery: next batch (up to 6)
-    gallery_start = benefits_count + steps_count
-    gallery_imgs = imgs[gallery_start:gallery_start + 6]
+
+    if section_images and "benefits" in section_images:
+        benefits_imgs = section_images["benefits"]
+    else:
+        benefits_imgs = imgs[:benefits_count]
+
+    if section_images and "how_it_works" in section_images:
+        hiw_imgs = section_images["how_it_works"]
+    else:
+        hiw_imgs = imgs[benefits_count:benefits_count + steps_count]
+
+    # Gallery: deduplicated union of section images + pool (up to 6)
+    all_unique = list(dict.fromkeys(
+        (section_images.get("benefits", []) if section_images else [])
+        + (section_images.get("how_it_works", []) if section_images else [])
+        + imgs
+    ))
+    gallery_imgs = all_unique[:6]
 
     # Inject images into benefits
     benefits_with_images = []
@@ -182,25 +229,47 @@ def build_landing_page(
 
     # Build CSS with color variables
     # Note: Individual section CSS is already embedded in each section template
-    # We just need to define the CSS custom properties
     inline_css = ""  # Section styles are already in templates
 
-    # Render base template
     env = _create_jinja_env()
-    base_template = env.get_template("base.html.j2")
 
-    html = base_template.render(
-        meta_title=copy.meta_title,
-        meta_description=copy.meta_description,
-        color_primary=color_scheme.primary,
-        color_secondary=color_scheme.secondary,
-        color_accent=color_scheme.accent,
-        color_bg=color_scheme.background,
-        color_text=color_scheme.text,
-        inline_css=inline_css,
-        sections=rendered_sections,
-        lp_source=lp_source or ""
-    )
+    # Choose themed or plain base template
+    tmpl_config = _load_template_config(template_key) if template_key else None
+    if tmpl_config:
+        theme_css = _load_theme_css(template_key)
+        base_template = env.get_template("base_themed.html.j2")
+        html = base_template.render(
+            meta_title=copy.meta_title,
+            meta_description=copy.meta_description,
+            color_primary=safe_primary,
+            color_secondary=safe_secondary,
+            color_accent=color_scheme.accent,
+            color_bg=color_scheme.background,
+            color_text=color_scheme.text,
+            inline_css=inline_css,
+            sections=rendered_sections,
+            lp_source=lp_source or "",
+            fonts_url=tmpl_config["fonts_url"],
+            heading_font=tmpl_config["heading_font"],
+            body_font=tmpl_config["body_font"],
+            theme_css=theme_css,
+            cta_text=copy.cta_text,
+        )
+    else:
+        base_template = env.get_template("base.html.j2")
+        html = base_template.render(
+            meta_title=copy.meta_title,
+            meta_description=copy.meta_description,
+            color_primary=safe_primary,
+            color_secondary=safe_secondary,
+            color_accent=color_scheme.accent,
+            color_bg=color_scheme.background,
+            color_text=color_scheme.text,
+            inline_css=inline_css,
+            sections=rendered_sections,
+            lp_source=lp_source or "",
+            cta_text=copy.cta_text,
+        )
 
     logger.info(f"Generated landing page HTML: {len(html)} characters")
     return html

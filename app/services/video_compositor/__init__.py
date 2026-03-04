@@ -1,9 +1,5 @@
-"""
-Video Compositor Service
+"""Video compositor — thumbnail extraction utility."""
 
-Combines video clips, audio, text overlays, and background music into publish-ready MP4 files.
-"""
+from .thumbnail import generate_thumbnail
 
-from .compositor import VideoCompositor
-
-__all__ = ["VideoCompositor"]
+__all__ = ["generate_thumbnail"]

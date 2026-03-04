@@ -12,10 +12,58 @@
 </div>
 
 <div class="preview-container">
-  <iframe src="/output/{{ run_id }}/landing-page.html" style="width:100%; height:80vh; border:1px solid #ddd; border-radius:4px;"></iframe>
+  <iframe id="lp-iframe" src="/output/{{ run_id }}/landing-page.html" style="width:100%; height:80vh; border:1px solid #ddd; border-radius:4px;"></iframe>
 </div>
 
+<!-- Section Image Editor -->
+{% if sections_data %}
+<div class="section-image-editor">
+  <h2>Section Images</h2>
+  {% if has_section_images %}
+    {% for section in sections_data %}
+    <h3>{{ section.label }}</h3>
+    <div class="section-image-grid">
+      {% for item in section.entries %}
+      <div class="section-image-card" id="si-card-{{ section.key }}-{{ item.index }}">
+        {% if item.image_url %}
+        <img class="section-image-preview" src="{{ item.image_url }}" alt="{{ item.title }}">
+        {% else %}
+        <div class="section-image-placeholder">No image</div>
+        {% endif %}
+        <div class="section-image-title">{{ item.title }}</div>
+        <div class="section-image-actions">
+          <button class="btn btn-secondary btn-sm"
+            onclick="regenSectionImage('{{ run_id }}', '{{ section.key }}', {{ item.index }}, this)">
+            Regenerate
+          </button>
+          <button class="btn btn-secondary btn-sm"
+            onclick="uploadSectionImage('{{ run_id }}', '{{ section.key }}', {{ item.index }})">
+            Upload
+          </button>
+        </div>
+        <div class="regen-overlay" style="display:none;">
+          <div class="regen-spinner"></div>
+          <div class="regen-status">Generating...</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="action-row" style="margin-top:12px;">
+      <button class="btn btn-primary" onclick="rebuildLP('{{ run_id }}', this)">Rebuild LP</button>
+      <button class="btn btn-secondary" onclick="generateAllSectionImages('{{ run_id }}', this)">Regenerate All Section Images</button>
+    </div>
+  {% else %}
+    <p class="text-muted">Section items exist but no images have been generated yet.</p>
+    <button class="btn btn-primary" onclick="generateAllSectionImages('{{ run_id }}', this)">Generate Section Images</button>
+  {% endif %}
+</div>
+{% elif sections_data is defined and sections_data|length == 0 %}
+  {# No imageable sections in LP copy — nothing to show #}
+{% endif %}
+
 <div class="action-row">
+  <a href="/ui/lp/{{ run_id }}/review" class="btn btn-secondary">Edit LP</a>
   <button id="deploy-btn" class="btn btn-primary" onclick="deployLP('{{ run_id }}')">
     {% if lp.deployed_url %}Re-deploy to Cloudflare{% else %}Deploy to Cloudflare{% endif %}
   </button>

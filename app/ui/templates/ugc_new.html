@@ -1,38 +1,63 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>New UGC Job</h1>
+<h1>Create your Video Ad</h1>
+<p class="page-intro">
+  Tell us about your product and we'll make a scroll-stopping video ad for you.
+</p>
+
+<div class="next-steps-hint">
+  <strong>Here's how it works:</strong>
+  After you hit go, we build your video in 7 steps &mdash;
+  <em>Analysis &rarr; Script &rarr; A-Roll Images &rarr; A-Roll Videos &rarr; B-Roll Images &rarr; B-Roll Videos &rarr; Final Cut</em>.
+  You get to review and tweak each step before moving on.
+</div>
 
 <form method="POST" action="/ugc/jobs" enctype="multipart/form-data">
 
   <div class="form-group">
-    <label for="product_name">Product Name</label>
-    <input type="text" id="product_name" name="product_name" required placeholder="e.g., AeroGlide Running Shoes">
+    <label for="product_name">What's your product called?</label>
+    <input type="text" id="product_name" name="product_name" required placeholder="e.g., GlowUp Lip Gloss">
   </div>
 
   <div class="form-group">
-    <label for="description">Description</label>
-    <textarea id="description" name="description" required placeholder="Describe the product and what makes it unique..."></textarea>
+    <label for="description">Tell us about it</label>
+    <textarea id="description" name="description" required placeholder="e.g., A sparkly lip gloss that keeps your lips hydrated all day. Comes in 12 shades, smells like vanilla, and looks amazing in selfies."></textarea>
   </div>
 
   <div class="form-group">
-    <label for="product_url">Product URL (optional)</label>
-    <input type="text" id="product_url" name="product_url" placeholder="https://example.com/product">
+    <label for="target_duration">Video Length</label>
+    <select id="target_duration" name="target_duration">
+      <option value="15">15s &mdash; Quick teaser</option>
+      <option value="30" selected>30s &mdash; Sweet spot</option>
+      <option value="45">45s &mdash; More detail</option>
+      <option value="60">60s &mdash; Full story</option>
+    </select>
   </div>
 
   <div class="form-group">
-    <label for="target_duration">Target Duration (seconds)</label>
-    <input type="number" id="target_duration" name="target_duration" value="30" min="10" max="120">
+    <label for="product_url">Product or App Store URL (optional)</label>
+    <input type="url" id="product_url" name="product_url" placeholder="e.g., https://example.com/product or App Store link">
+    <small class="form-hint">We'll pull details from your page to make a better video &amp; landing page.</small>
   </div>
 
   <div class="form-group">
-    <label for="style_preference">Style Preference (optional)</label>
-    <input type="text" id="style_preference" name="style_preference" placeholder="e.g., energetic, lifestyle, testimonial">
+    <label for="style_preference">Vibe (optional)</label>
+    <input type="text" id="style_preference" name="style_preference" placeholder="e.g., aesthetic, get-ready-with-me, unboxing, lifestyle">
   </div>
 
   <div class="form-group">
-    <label for="images">Product Images (optional)</label>
-    <input type="file" id="images" name="images" multiple accept="image/*">
+    <label for="images">Product Photos (optional)</label>
+    <div class="file-dropzone" id="dropzone" onclick="document.getElementById('images').click()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <span class="dropzone-text" id="dropzone-text">Click to upload or drag &amp; drop</span>
+      <span class="dropzone-hint">PNG, JPG up to 10MB</span>
+      <input type="file" id="images" name="images" multiple accept="image/*" hidden>
+    </div>
   </div>
 
   <!-- Mock toggle: hidden sends "false" when unchecked, checkbox overrides with "true" when checked -->
@@ -42,7 +67,7 @@
     <label for="use_mock">Use mock data (no API calls)</label>
   </div>
 
-  <button type="submit" class="btn btn-primary">Start UGC Job</button>
+  <button type="submit" class="btn btn-primary">Make my Video</button>
 </form>
 
 <script>
@@ -54,5 +79,27 @@ document.querySelector("form").addEventListener("submit", function(e) {
     .then(function(data) { window.location.href = "/ui/ugc/" + data.job_id + "/review"; })
     .catch(function(err) { alert("Error: " + err.message); });
 });
+
+/* Dropzone: drag-and-drop + file count */
+(function() {
+  var dz = document.getElementById('dropzone');
+  var input = document.getElementById('images');
+  var txt = document.getElementById('dropzone-text');
+
+  input.addEventListener('change', function() {
+    var n = input.files.length;
+    txt.textContent = n ? n + ' file' + (n > 1 ? 's' : '') + ' selected' : 'Click to upload or drag & drop';
+    dz.classList.toggle('dropzone-has-files', n > 0);
+  });
+
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('dropzone-drag'); });
+  dz.addEventListener('dragleave', function() { dz.classList.remove('dropzone-drag'); });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dz.classList.remove('dropzone-drag');
+    input.files = e.dataTransfer.files;
+    input.dispatchEvent(new Event('change'));
+  });
+})();
 </script>
 {% endblock %}

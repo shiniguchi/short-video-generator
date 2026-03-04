@@ -3,7 +3,7 @@
         <h2 class="features__heading">Why {{ product_name }}</h2>
         <div class="features__grid">
             {% for feature in features %}
-            <div class="features__card">
+            <div class="features__card stagger-item">
                 <div class="features__stat">{{ feature.stat }}</div>
                 <h3 class="features__title">{{ feature.title }}</h3>
                 <p class="features__description">{{ feature.description }}</p>
@@ -16,8 +16,24 @@
 <style>
 .features {
     padding: 4rem 1rem;
+    padding-bottom: 5rem;
     background-color: var(--color-primary);
     color: white;
+    position: relative;
+}
+/* Wave divider at bottom */
+.features::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    background: var(--color-bg, #ffffff);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 48h1200V24c-200 32-400-16-600 8S200 0 0 24z' fill='%23000'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 48h1200V24c-200 32-400-16-600 8S200 0 0 24z' fill='%23000'/%3E%3C/svg%3E");
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
 }
 
 .features__container {
@@ -44,6 +60,11 @@
     border-radius: 12px;
     text-align: center;
     backdrop-filter: blur(4px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.features__card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .features__stat {
@@ -74,7 +95,7 @@
 
 @media (min-width: 1024px) {
     .features {
-        padding: 5rem 2rem;
+        padding: 5rem 2rem 5rem;
     }
     .features__grid {
         grid-template-columns: repeat(3, 1fr);

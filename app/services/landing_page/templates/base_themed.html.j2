@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meta_title }}</title>
+    <meta name="description" content="{{ meta_description }}">
+    <meta property="og:title" content="{{ meta_title }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:type" content="website">
+    <meta name="lp-source" content="{{ lp_source | default('') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="{{ fonts_url }}" rel="stylesheet">
+    <style>
+        /* CSS Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* CSS Custom Properties */
+        :root {
+            --color-primary: {{ color_primary }};
+            --color-secondary: {{ color_secondary }};
+            --color-accent: {{ color_accent }};
+            --color-bg: {{ color_bg }};
+            --color-text: {{ color_text }};
+            --font-heading: {{ heading_font }};
+            --font-body: {{ body_font }};
+        }
+
+        /* Base Typography — themed fonts */
+        body {
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            line-height: 1.2;
+            margin-bottom: 0.5em;
+        }
+
+        h1 { font-size: 2.5rem; font-weight: 700; }
+        h2 { font-size: 2rem; font-weight: 600; }
+        h3 { font-size: 1.5rem; font-weight: 600; }
+        p { margin-bottom: 1em; }
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Scroll-reveal base */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Staggered child items */
+        .stagger-item {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .stagger-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hero entrance — slower, bouncier */
+        .hero-enter {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hero-enter.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Sticky top header bar — always visible after scrolling past hero */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        .sticky-header.show {
+            transform: translateY(0);
+        }
+        .sticky-header__title {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--color-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 16px;
+        }
+        .sticky-header__cta {
+            display: inline-block;
+            background: var(--color-primary);
+            color: #fff;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 8px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .sticky-header__cta:hover {
+            background: var(--color-secondary);
+        }
+
+        /* Mobile sticky CTA bar (bottom) — only on small screens */
+        .sticky-cta-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--color-primary);
+            padding: 12px 16px;
+            text-align: center;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .sticky-cta-bar.show {
+            transform: translateY(0);
+        }
+        .sticky-cta-bar a {
+            display: inline-block;
+            background: #fff;
+            color: var(--color-primary);
+            font-weight: 700;
+            font-size: 16px;
+            padding: 12px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+        @media (min-width: 768px) {
+            .sticky-cta-bar { display: none; }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .fade-in-section,
+            .stagger-item,
+            .hero-enter {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+            .sticky-cta-bar { transition: none; }
+        }
+
+        /* Section-specific styles */
+        {{ inline_css }}
+    </style>
+</head>
+<body>
+    <!-- Sticky top header — appears after scrolling past hero -->
+    <div class="sticky-header" id="sticky-header">
+        <span class="sticky-header__title">{{ meta_title | default('') }}</span>
+        <a href="#hero" class="sticky-header__cta">{{ cta_text | default('Buy Now') }}</a>
+    </div>
+
+    {% for section in sections %}{{ section | safe }}{% endfor %}
+
+    <!-- Mobile sticky CTA bar (bottom) -->
+    <div class="sticky-cta-bar" id="sticky-cta">
+        <a href="#hero">{{ cta_text | default('Buy Now') }}</a>
+    </div>
+
+    <!-- Theme overrides — last in cascade so they win -->
+    <style>{{ theme_css }}</style>
+
+    <script>
+    /* Scroll-reveal: sections fade in, stagger children animate per-item */
+    (function() {
+        var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var sections = document.querySelectorAll('section[data-section]');
+
+        /* Tag sections for fade-in (skip hero — uses hero-enter) */
+        sections.forEach(function(s) {
+            if (s.getAttribute('data-section') !== 'hero') {
+                s.classList.add('fade-in-section');
+            }
+        });
+
+        if (reducedMotion) {
+            /* Instant show */
+            document.querySelectorAll('.fade-in-section, .stagger-item, .hero-enter').forEach(function(el) {
+                el.classList.add('visible');
+            });
+        } else if ('IntersectionObserver' in window) {
+            /* Section observer */
+            var sectionObs = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        /* Stagger children inside this section */
+                        var items = entry.target.querySelectorAll('.stagger-item');
+                        items.forEach(function(item, i) {
+                            item.style.transitionDelay = (i * 0.1) + 's';
+                            item.classList.add('visible');
+                        });
+                        sectionObs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            sections.forEach(function(s) { sectionObs.observe(s); });
+
+            /* Hero observer — fires hero-enter elements */
+            var heroObs = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        var heroes = entry.target.querySelectorAll('.hero-enter');
+                        heroes.forEach(function(el, i) {
+                            el.style.transitionDelay = (i * 0.15) + 's';
+                            el.classList.add('visible');
+                        });
+                        heroObs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.05 });
+            var heroSection = document.querySelector('section[data-section="hero"]');
+            if (heroSection) heroObs.observe(heroSection);
+        } else {
+            document.querySelectorAll('.fade-in-section, .stagger-item, .hero-enter').forEach(function(el) {
+                el.classList.add('visible');
+            });
+        }
+
+        /* Sticky bars — show after hero scrolls out */
+        var stickyCta = document.getElementById('sticky-cta');
+        var stickyHeader = document.getElementById('sticky-header');
+        var heroEl = document.getElementById('hero');
+        if (heroEl) {
+            var stickyObs = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    var show = !entry.isIntersecting;
+                    if (stickyCta) stickyCta.classList.toggle('show', show);
+                    if (stickyHeader) stickyHeader.classList.toggle('show', show);
+                });
+            }, { threshold: 0.1 });
+            stickyObs.observe(heroEl);
+        }
+    })();
+    </script>
+</body>
+</html>

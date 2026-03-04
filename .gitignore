@@ -17,6 +17,9 @@ build/
 # Local databases
 *.db
 
+# Claude Code local settings (contains machine-specific paths & permissions)
+.claude/settings.local.json
+
 # IDE
 .vscode/
 .idea/
@@ -30,3 +33,4 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+vertex-ai-key.json

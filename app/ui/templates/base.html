@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ViralForge</title>
-  <link rel="stylesheet" href="/ui/static/ui.css">
+  <link rel="stylesheet" href="/ui/static/ui.css?v=36">
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
     integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
     crossorigin="anonymous"></script>
@@ -15,11 +15,14 @@
 <body>
   <nav class="nav">
     <a class="nav-brand" href="/ui/">ViralForge</a>
+    <button class="nav-toggle" aria-label="Toggle menu" onclick="this.closest('.nav').classList.toggle('nav-open')">
+      <span></span><span></span><span></span>
+    </button>
     <div class="nav-links">
-      <a href="/ui/dashboard">Dashboard</a>
-      <a href="/ui/waitlist">Waitlist</a>
-      <a href="/ui/generate">Generate</a>
-      <a href="/ui/ugc">UGC</a>
+      <a href="/ui/">Home</a>
+      <a href="/ui/ugc">Video</a>
+      <a href="/ui/lp">Landing Page</a>
+      <a href="/ui/dashboard">Insights</a>
     </div>
   </nav>
 
@@ -27,6 +30,20 @@
     {% block content %}{% endblock %}
   </main>
 
-  <script src="/ui/static/ui.js"></script>
+  <!-- Generic detail modal (reusable by any page) -->
+  <div id="detail-modal-overlay" class="detail-modal-overlay" style="display:none" onclick="closeDetailModal(event)">
+    <div class="detail-modal">
+      <button class="detail-modal-close" onclick="closeDetailModal()">&times;</button>
+      <h3 id="detail-modal-title" aria-live="polite"></h3>
+      <table class="lp-table" id="detail-modal-table"><thead></thead><tbody></tbody></table>
+      <p id="detail-modal-empty" class="empty-msg" style="display:none">No data.</p>
+    </div>
+  </div>
+
+  <script src="/ui/static/ui.js?v=36"></script>
+  <script>
+    /* Highlight active nav link */
+    (function(){var links=document.querySelectorAll('.nav-links a');var path=location.pathname;links.forEach(function(a){var href=a.getAttribute('href');if(href==='/ui/'){if(path==='/ui/'||path==='/ui')a.classList.add('active');}else if(href==='/ui/lp'){if(path.startsWith('/ui/lp')||path.startsWith('/ui/preview')||path.startsWith('/ui/generate'))a.classList.add('active');}else{if(path.startsWith(href))a.classList.add('active');}});})();
+  </script>
 </body>
 </html>

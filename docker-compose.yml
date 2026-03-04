@@ -42,15 +42,9 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://viralforge:dev_password_change_in_production@postgres:5432/viralforge
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - API_SECRET_KEY=dev_secret_key_change_in_production
-      - LOCAL_CONFIG_PATH=config/sample-data.yml
-      - USE_MOCK_DATA=true
-      - ANTHROPIC_API_KEY=
+      - shared_output:/app/output
+      - ./vertex-ai-key.json:/app/vertex-ai-key.json:ro
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,15 +65,10 @@ services:
     container_name: viralforge-worker
     entrypoint: ["/app/docker-entrypoint.sh"]
     command: celery -A app.worker.celery_app worker --loglevel=info --pool=threads --concurrency=4
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://viralforge:dev_password_change_in_production@postgres:5432/viralforge
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - API_SECRET_KEY=dev_secret_key_change_in_production
-      - LOCAL_CONFIG_PATH=config/sample-data.yml
-      - USE_MOCK_DATA=true
-      - ANTHROPIC_API_KEY=
+    volumes:
+      - shared_output:/app/output
+      - ./vertex-ai-key.json:/app/vertex-ai-key.json:ro
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,4 +80,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  shared_output:
     driver: local

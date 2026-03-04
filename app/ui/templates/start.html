@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>What do you want to create?</h1>
+</div>
+
+{# SVG icon definitions — referenced by workflow.icon key #}
+{% set icons = {
+  "video_lp": '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="14" height="12" rx="2"/><polygon points="22 3 16 8 22 13"/><rect x="6" y="18" width="12" height="4" rx="1"/><line x1="10" y1="15" x2="10" y2="18"/><line x1="14" y1="15" x2="14" y2="18"/></svg>',
+  "video": '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="12" rx="2"/><polygon points="22 4 16 10 22 16"/></svg>',
+  "globe": '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+} %}
+
+<div class="start-grid">
+  {% for w in workflows %}
+  <a class="start-card" href="{{ w.href }}" data-workflow="{{ w.id }}">
+    <div class="start-card-icon">{{ icons[w.icon] | safe }}</div>
+    <div class="start-card-title">{{ w.title }}</div>
+    <div class="start-card-desc">{{ w.desc }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

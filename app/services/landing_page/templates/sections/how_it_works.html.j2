@@ -3,7 +3,7 @@
         <h2 class="how-it-works__heading">How It Works</h2>
         <div class="how-it-works__steps">
             {% for step in steps %}
-            <div class="how-it-works__step">
+            <div class="how-it-works__step stagger-item">
                 {% if step.image %}
                 <div class="how-it-works__image-wrap">
                     <img src="{{ step.image }}" alt="Step {{ step.step_number }}: {{ step.title }}" class="how-it-works__image" loading="lazy">
@@ -79,6 +79,15 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 1rem;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stagger-item.visible .how-it-works__number {
+    animation: number-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes number-pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .how-it-works__title {

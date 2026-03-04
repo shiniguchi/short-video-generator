@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join the Waitlist — {{ product_name }}</title>
+    <meta name="lp-source" content="{{ lp_source | default('') }}">
+    {% if fonts_url %}<link href="{{ fonts_url }}" rel="stylesheet">{% endif %}
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --color-primary: {{ color_primary }};
+            --color-secondary: {{ color_secondary }};
+            --color-accent: {{ color_accent }};
+            --color-bg: {{ color_bg | default('#ffffff') }};
+            --color-text: {{ color_text | default('#1F2937') }};
+        }
+        body {
+            font-family: {{ body_font | default("-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif") }};
+            background: var(--color-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .wl { max-width: 480px; width: 100%; text-align: center; }
+        .wl-back {
+            display: inline-block; margin-bottom: 32px;
+            font-size: 13px; color: #6b7280; text-decoration: none;
+        }
+        .wl-back:hover { color: var(--color-primary); }
+        .wl h1 {
+            font-family: {{ heading_font | default('inherit') }};
+            font-size: 28px; font-weight: 700; margin-bottom: 12px;
+        }
+        .wl-desc {
+            font-size: 15px; color: #6b7280; line-height: 1.6; margin-bottom: 32px;
+        }
+        .wl-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .wl-input {
+            padding: 14px 16px; font-size: 16px; font-family: inherit; border: 2px solid #e5e7eb;
+            border-radius: 8px; outline: none; transition: border-color 0.2s;
+        }
+        .wl-input:focus { border-color: var(--color-primary); }
+        .wl-submit {
+            padding: 14px 28px; font-size: 16px; font-weight: 700;
+            font-family: inherit;
+            color: #fff; background: var(--color-primary); border: none;
+            border-radius: 8px; cursor: pointer; transition: background 0.15s;
+        }
+        .wl-submit:hover { background: var(--color-secondary); }
+        .wl-success {
+            display: none; padding: 16px; background: #d1fae5;
+            color: #065f46; border-radius: 8px; font-weight: 600;
+        }
+        .wl-error {
+            display: none; padding: 12px; background: #fef2f2;
+            color: #991b1b; border-radius: 8px; font-size: 14px;
+        }
+        .wl-trust { font-size: 12px; color: #9ca3af; margin-top: 8px; }
+        .hp-field, .hp-label { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+        @media (min-width: 640px) {
+            .wl-form { flex-direction: row; }
+            .wl-input { flex: 1; }
+            .wl-submit { flex-shrink: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wl">
+        <a href="landing-page.html" class="wl-back">&larr; Back</a>
+        <h1>{{ product_name }} is coming soon</h1>
+        <p class="wl-desc">We're not quite ready yet. Leave your email and we'll let you know as soon as you can get it.</p>
+
+        <form id="wl-form" class="wl-form">
+            <input type="email" id="email" name="email" class="wl-input" placeholder="Enter your email" required>
+            <button type="submit" class="wl-submit">Subscribe Now</button>
+            <label for="hp_field" class="hp-label">Website</label>
+            <input type="text" name="website_url" id="hp_field" class="hp-field" tabindex="-1" autocomplete="off">
+            <input type="hidden" name="form_ts" id="form_ts">
+        </form>
+        <div id="wl-success" class="wl-success">You're on the list! We'll be in touch.</div>
+        <div id="wl-error" class="wl-error"></div>
+        <p class="wl-trust">No spam. Unsubscribe anytime.</p>
+    </div>
+
+    <script>
+    (function(){
+        document.getElementById('form_ts').value = Date.now();
+        var form = document.getElementById('wl-form');
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            if (document.getElementById('hp_field').value) return;
+            var ts = parseInt(document.getElementById('form_ts').value);
+            if ((Date.now() - ts) / 1000 < 2) return;
+
+            var lpMeta = document.querySelector('meta[name="lp-source"]');
+            var lpSource = lpMeta ? lpMeta.getAttribute('content') : '';
+            var apiBase = document.querySelector('meta[name="api-base"]');
+            var baseUrl = apiBase ? apiBase.getAttribute('content') : '';
+
+            var btn = form.querySelector('button');
+            btn.disabled = true; btn.textContent = 'Submitting...';
+            var errEl = document.getElementById('wl-error');
+            errEl.style.display = 'none';
+
+            fetch(baseUrl + '/waitlist', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email: document.getElementById('email').value, lp_source: lpSource})
+            })
+            .then(function(r){ if(r.ok) return r.json(); return r.json().then(function(d){throw d;}); })
+            .then(function(){
+                form.style.display = 'none';
+                document.getElementById('wl-success').style.display = 'block';
+            })
+            .catch(function(err){
+                if(err && err.detail){ errEl.textContent = err.detail; errEl.style.display = 'block'; }
+                else { form.style.display='none'; document.getElementById('wl-success').style.display='block'; }
+            })
+            .finally(function(){ btn.disabled=false; btn.textContent='Notify Me'; });
+        });
+    })();
+    </script>
+</body>
+</html>

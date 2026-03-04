@@ -23,11 +23,13 @@ class UGCJobStateMachine(StateMachine):
     running = State()
     stage_analysis_review = State()
     stage_script_review = State()
+    stage_aroll_image_review = State()
     stage_aroll_review = State()
+    stage_broll_image_review = State()
     stage_broll_review = State()
     stage_composition_review = State()
-    approved = State(final=True)
-    failed = State(final=True)
+    approved = State()
+    failed = State()
 
     # --- Transitions ---
     start = pending.to(running)
@@ -35,12 +37,22 @@ class UGCJobStateMachine(StateMachine):
     approve_analysis = stage_analysis_review.to(running)
     complete_script = running.to(stage_script_review)
     approve_script = stage_script_review.to(running)
+    complete_aroll_images = running.to(stage_aroll_image_review)
+    approve_aroll_images = stage_aroll_image_review.to(running)
     complete_aroll = running.to(stage_aroll_review)
     approve_aroll = stage_aroll_review.to(running)
+    complete_broll_images = running.to(stage_broll_image_review)
+    approve_broll_images = stage_broll_image_review.to(running)
     complete_broll = running.to(stage_broll_review)
     approve_broll = stage_broll_review.to(running)
     complete_composition = running.to(stage_composition_review)
     approve_final = stage_composition_review.to(approved)
+
+    # Reopen approved job back to composition review for re-editing
+    reopen = approved.to(stage_composition_review)
+
+    # Retry: resume from failed state
+    retry = failed.to(running)
 
     # fail is reachable from any non-final state
     fail = (
@@ -48,7 +60,10 @@ class UGCJobStateMachine(StateMachine):
         | running.to(failed)
         | stage_analysis_review.to(failed)
         | stage_script_review.to(failed)
+        | stage_aroll_image_review.to(failed)
         | stage_aroll_review.to(failed)
+        | stage_broll_image_review.to(failed)
         | stage_broll_review.to(failed)
         | stage_composition_review.to(failed)
+        | approved.to(failed)
     )

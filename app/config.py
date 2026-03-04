@@ -23,53 +23,36 @@ class Settings(BaseSettings):
     # API
     api_secret_key: str
 
-    # Local config fallback
-    local_config_path: str = "config/sample-data.yml"
-
-    # Trend Intelligence
-    use_mock_data: bool = True  # Default to mock for local dev
-    apify_api_token: str = ""
-    youtube_api_key: str = ""
-    anthropic_api_key: str = ""
-
-    # Schedule
-    trend_scrape_interval_hours: int = 6
-    trend_analysis_delay_minutes: int = 30
-
-    # Content Generation (Phase 3)
-    openai_api_key: str = ""  # For TTS provider (OpenAI)
-    elevenlabs_api_key: str = ""  # For TTS provider (ElevenLabs)
-    fish_audio_api_key: str = ""  # For TTS provider (Fish Audio)
-    fal_key: str = ""  # For fal.ai video providers (Kling, Minimax)
-    heygen_api_key: str = ""  # For HeyGen avatar provider
-    video_provider_type: str = "mock"  # mock/svd/kling/minimax/veo/veo
-    tts_provider_type: str = "mock"  # mock/openai/elevenlabs/fish
-    avatar_provider_type: str = "mock"  # mock/heygen
-    heygen_avatar_id: str = ""  # Default avatar ID from HeyGen dashboard
-    google_api_key: str = ""  # Google AI API key (Gemini, Imagen, Veo)
+    # Google AI (Gemini + Imagen + Veo)
+    google_api_key: str = ""
     llm_provider_type: str = "mock"  # mock/gemini
     image_provider_type: str = "mock"  # mock/imagen
-    output_dir: str = "output"  # Base directory for generated files
+    imagen_model: str = "imagen-4.0-fast-generate-001"
+    imagen_edit_model: str = "imagen-3.0-capability-001"
 
-    # Video Composition (Phase 4)
-    background_music_path: str = ""  # Path to background music file (empty = no music)
-    music_volume: float = 0.3  # Background music volume (0.0-1.0), default 30%
-    thumbnail_timestamp: float = 2.0  # Seconds into video to extract thumbnail frame
-    composition_output_dir: str = "output/review"  # Directory for composed videos (REVIEW-01)
+    # Vertex AI (enables edit_image: subject refs, sketches, style transfer)
+    vertex_ai_project: str = ""       # GCP project ID
+    vertex_ai_location: str = "europe-west1"
+    google_application_credentials: str = ""  # Path to service account JSON key
 
-    # Review & Output (Phase 5)
-    approved_output_dir: str = "output/approved"  # Directory for approved videos
-    rejected_output_dir: str = "output/rejected"  # Directory for rejected videos
+    # Output
+    output_dir: str = "output"
 
-    # Landing Page Generation (Phase 14)
-    lp_color_scheme: str = "research"  # Options: "extract", "research" (default), "preset"
+    # Landing Page Generation
+    lp_color_scheme: str = "research"  # Options: "extract", "research", "preset"
     lp_color_preset: str = ""  # Preset palette name when lp_color_scheme=preset
 
-    # Cloudflare Analytics (Phase 18)
+    # Cloudflare Analytics
     cf_worker_url: str = ""        # e.g. https://lp-analytics.yourname.workers.dev
     cf_worker_api_key: str = ""    # Bearer token for Worker /analytics endpoint
 
-    # Cloudflare Pages Deployment (Phase 19)
+    # API Quota Limits (Google AI Paid Tier 1 defaults)
+    veo_quota_rpm: int = 4
+    veo_quota_rpd: int = 10
+    imagen_quota_rpm: int = 20
+    imagen_quota_rpd: int = 100
+
+    # Cloudflare Pages Deployment
     cf_api_token: str = ""             # CLOUDFLARE_API_TOKEN for wrangler auth
     cf_account_id: str = ""            # Cloudflare Account ID
     cf_pages_project_name: str = ""    # Pages project name (must pre-exist in CF dashboard)

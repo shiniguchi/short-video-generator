@@ -1,0 +1,185 @@
+/* Clean Modern — light, spacious, blue tones */
+
+/* Hero */
+.hero {
+    background: linear-gradient(160deg, #1E40AF 0%, #2563EB 50%, #3B82F6 100%);
+    color: #fff;
+    min-height: 85vh;
+}
+.hero__headline {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+.hero__subheadline {
+    color: rgba(255, 255, 255, 0.9);
+    opacity: 1;
+}
+.hero__cta {
+    background: #fff;
+    color: #1E40AF;
+    border-radius: 12px;
+    padding: 18px 40px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.hero__cta:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.hero__trust {
+    color: rgba(255, 255, 255, 0.7);
+    opacity: 1;
+}
+.hero__image, .hero__video {
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+/* Benefits */
+.benefits {
+    padding: 5rem 1.5rem;
+    background: #fff;
+}
+.benefits__heading {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.benefits__card {
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.benefits__card:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    border-color: #BFDBFE;
+}
+.benefits__title {
+    color: #1E40AF;
+}
+
+/* Features */
+.features {
+    background: #1E40AF;
+}
+.features__card {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.features__stat {
+    color: #FCD34D;
+}
+
+/* How It Works */
+.how-it-works {
+    padding: 5rem 1.5rem;
+    background: #F8FAFC;
+}
+.how-it-works__number {
+    background: #2563EB;
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.how-it-works__connector {
+    background: linear-gradient(to bottom, #2563EB, #60A5FA);
+}
+
+/* CTA Repeat */
+.cta-repeat {
+    background: linear-gradient(160deg, #2563EB 0%, #1D4ED8 100%);
+}
+.cta-repeat__button {
+    background: #fff;
+    color: #1E40AF;
+    border-radius: 12px;
+    padding: 18px 44px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.cta-repeat__button:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* FAQ */
+.faq {
+    background: #fff;
+    padding: 5rem 1.5rem;
+}
+.faq__item {
+    border-bottom: 1px solid #E2E8F0;
+}
+.faq__question {
+    font-weight: 600;
+}
+.faq__question::after {
+    color: #2563EB;
+}
+
+/* Waitlist */
+.waitlist {
+    background: #F1F5F9;
+    padding: 5rem 1.5rem;
+}
+.waitlist__input {
+    border-radius: 12px;
+    border: 2px solid #CBD5E1;
+}
+.waitlist__input:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.waitlist__submit {
+    background: #2563EB;
+    border-radius: 12px;
+    font-weight: 700;
+}
+.waitlist__submit:hover {
+    background: #1D4ED8;
+}
+
+/* Footer */
+.footer {
+    background: #0F172A;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .hero__headline { font-size: 3.25rem; }
+    .how-it-works__connector {
+        background: linear-gradient(to right, #2563EB, #60A5FA);
+    }
+}
+@media (min-width: 1024px) {
+    .hero__headline { font-size: 3.75rem; }
+}
+
+/* ── Motion: Crisp lifts, minimal, clean ── */
+.benefits__card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.benefits__card:hover {
+    transform: translateY(-2px);
+}
+.features__card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.features__card:hover {
+    transform: translateY(-2px);
+}
+.hero__cta {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hero__cta:hover {
+    transform: scale(1.03);
+}
+.cta-repeat__button:hover {
+    transform: scale(1.03);
+}
+
+/* Wave divider color overrides (match next section bg) */
+.hero::after { background: #fff; }
+.features::after { background: #F8FAFC; }
+.cta-repeat::before { background: #F8FAFC; }
+.cta-repeat::after { background: #fff; }

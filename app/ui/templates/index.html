@@ -7,9 +7,11 @@
 </div>
 
 {% if lps %}
+{% include "partials/bulk_delete_bar.html" %}
 <table class="lp-table">
   <thead>
     <tr>
+      <th><input type="checkbox" onchange="toggleSelectAll(this)"></th>
       <th>Product Idea</th>
       <th>Status</th>
       <th>Created</th>
@@ -19,14 +21,16 @@
   <tbody>
     {% for lp in lps %}
     <tr>
-      <td>{{ lp.product_idea[:60] }}{% if lp.product_idea|length > 60 %}…{% endif %}</td>
-      <td><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
-      <td>{{ lp.created_at.strftime("%Y-%m-%d %H:%M") if lp.created_at else "—" }}</td>
-      <td><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
+      <td><input type="checkbox" class="row-cb" value="{{ lp.id }}" onchange="updateBulkBar()"></td>
+      <td data-label="Product">{{ lp.product_idea[:60] }}{% if lp.product_idea|length > 60 %}…{% endif %}</td>
+      <td data-label="Status"><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
+      <td data-label="Created">{{ lp.created_at.strftime("%Y-%m-%d %H:%M") if lp.created_at else "—" }}</td>
+      <td data-label=""><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<script>var BULK_DELETE_URL = "/ui/lp/bulk-delete";</script>
 {% else %}
 <p class="empty-msg">No landing pages yet. <a href="/ui/generate">Generate your first LP</a>.</p>
 {% endif %}

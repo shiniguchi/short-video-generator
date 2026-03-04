@@ -5,81 +5,403 @@
 <div class="page-header">
   <div>
     <h1>{{ lp.product_idea }}</h1>
-    <span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span>
+    <span class="status-badge status-{{ lp.status }}">{{ lp.status | capitalize }}</span>
   </div>
   <a href="/ui/" class="btn btn-secondary">&larr; Back to LPs</a>
 </div>
 
-<!-- Stage gate: locked when video not yet approved -->
 {% if not video_approved %}
 <div class="error-msg">
-  <strong>LP review locked</strong> — the linked UGC video is not yet approved.
+  <strong>LP review locked</strong> — the linked video is not yet approved.
   Approve the video pipeline before reviewing LP modules.
+</div>
+{% elif lp.status == "pending" %}
+<div class="lp-generating">
+  <div class="lp-gen-icon">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lp-gen-spinner">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+    </svg>
+  </div>
+  <strong>Generating your landing page</strong>
+  <p class="lp-gen-sub">Researching, writing copy, and building layout</p>
+  <div class="lp-progress-track">
+    <div class="lp-progress-bar" id="lp-progress-bar"></div>
+  </div>
+  <p class="lp-gen-eta" id="lp-gen-eta">Estimating time remaining...</p>
+</div>
+
+<style>
+.lp-generating {
+  text-align: center;
+  padding: 48px 24px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.lp-gen-icon {
+  margin-bottom: 16px;
+}
+.lp-gen-spinner {
+  color: var(--primary);
+  animation: lp-spin 1.5s linear infinite;
+}
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
+.lp-generating strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 4px;
+}
+.lp-gen-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.lp-progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lp-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.lp-gen-eta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+</style>
+
+<script>
+(function() {
+  var bar = document.getElementById('lp-progress-bar');
+  var eta = document.getElementById('lp-gen-eta');
+  var startTime = Date.now();
+  var estDuration = 25000; // 25s estimate
+  var runId = '{{ lp.run_id }}';
+
+  function updateProgress() {
+    var elapsed = Date.now() - startTime;
+    // Ease toward 90% over estimated duration, never reach 100% until done
+    var pct = Math.min(90, (elapsed / estDuration) * 90);
+    bar.style.width = pct + '%';
+
+    var remaining = Math.max(0, Math.ceil((estDuration - elapsed) / 1000));
+    if (remaining > 0) {
+      eta.textContent = 'About ' + remaining + 's remaining';
+    } else {
+      eta.textContent = 'Almost done...';
+    }
+  }
+
+  // Update progress bar smoothly
+  var progressInterval = setInterval(updateProgress, 500);
+
+  // Poll server for completion
+  var pollInterval = setInterval(function() {
+    fetch('/ui/lp/' + runId + '/status')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 'generated') {
+          clearInterval(progressInterval);
+          clearInterval(pollInterval);
+          bar.style.width = '100%';
+          eta.textContent = 'Done!';
+          setTimeout(function() { window.location.reload(); }, 600);
+        } else if (data.status === 'failed') {
+          clearInterval(progressInterval);
+          clearInterval(pollInterval);
+          bar.style.background = 'var(--error)';
+          bar.style.width = '100%';
+          eta.textContent = 'Generation failed';
+          setTimeout(function() { window.location.reload(); }, 1000);
+        }
+      })
+      .catch(function() {});
+  }, 2000);
+})();
+</script>
+{% elif lp.status == "failed" %}
+<div class="error-msg" style="text-align:center; padding:2rem;">
+  <strong>LP generation failed.</strong><br>
+  Check server logs for details. You can retry from the video review page.
 </div>
 {% else %}
 
-<!-- Module review cards -->
-<div class="card-grid">
-  {% for module in modules %}
-  {% set approvals = lp.lp_module_approvals or {} %}
-  {% set is_approved = approvals.get(module) == "approved" %}
+{% set approvals = lp.lp_module_approvals or {} %}
+{% set all_approved = approvals.get("all") == "approved" %}
 
-  <div class="stage-card {% if module == 'hero' and lp.lp_hero_image_path %}media-card{% endif %}">
-    <div class="card-label">{{ module | capitalize }}</div>
-
-    {% if module == "hero" and lp.lp_hero_image_path %}
-      <!-- Current hero image -->
+<!-- HERO — centered -->
+<div class="lp-hero-section">
+  <div class="lp-hero-card">
+    <div class="lp-module-header">
+      <div class="card-label">Hero Image</div>
+    </div>
+    {% if lp.lp_hero_image_path %}
       <img src="{{ lp.lp_hero_image_path | media_url }}"
-           alt="Hero image"
-           class="media-preview"
-           loading="lazy">
-      <!-- Candidate hero image comparison (if regeneration ran) -->
+           alt="Hero image" class="lp-hero-img" loading="lazy">
       {% if lp.lp_hero_candidate_path %}
-      <div class="card-label" style="margin-top:0.5rem;">Candidate</div>
+      <div class="card-label" style="margin-top:0.75rem;">Candidate</div>
       <img src="{{ lp.lp_hero_candidate_path | media_url }}"
-           alt="Candidate hero image"
-           class="media-preview"
-           loading="lazy">
-      <button
-        hx-post="/ui/lp/{{ lp.run_id }}/accept-hero-candidate"
-        hx-target="#lp-stage-controls"
-        hx-swap="outerHTML"
-        class="btn btn-secondary">
-        Accept Candidate
-      </button>
-      {% endif %}
-      <!-- Regenerate hero button (only when not yet approved) -->
-      {% if not is_approved %}
-      <button
-        hx-post="/ui/lp/{{ lp.run_id }}/regenerate-hero"
-        hx-target="#lp-stage-controls"
-        hx-swap="outerHTML"
-        class="btn btn-secondary">
-        Regenerate Hero
-      </button>
+           alt="Candidate hero image" class="lp-hero-img" style="margin-top:6px;" loading="lazy">
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/accept-hero-candidate" style="margin-top:0.5rem;">
+        <button type="submit" class="btn btn-approve btn-sm">Accept Candidate</button>
+      </form>
       {% endif %}
     {% else %}
-      <div class="card-value" style="white-space: pre-line;">{{ lp_module_content[module] }}</div>
+      <div class="lp-empty">No hero image</div>
     {% endif %}
-
-    <!-- Approval status -->
-    {% if is_approved %}
-      <span class="status-badge status-approved">Approved</span>
-    {% else %}
-      <button
-        hx-post="/ui/lp/{{ lp.run_id }}/module/{{ module }}/approve"
-        hx-target="#lp-stage-controls"
-        hx-swap="outerHTML"
-        class="btn btn-primary">
-        Approve {{ module | capitalize }}
-      </button>
+    {% if not all_approved %}
+    <div class="lp-card-actions">
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/upload-hero"
+            enctype="multipart/form-data" style="display:inline">
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+          Upload
+          <input type="file" name="file" accept="image/*"
+                 onchange="this.closest('form').submit()" hidden>
+        </label>
+      </form>
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/regenerate-hero-sync" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Regenerate</button>
+      </form>
+    </div>
     {% endif %}
   </div>
-  {% endfor %}
+</div>
+
+<!-- TEXT MODULES — 3 columns -->
+<div class="lp-modules-grid">
+
+  <!-- HEADLINE -->
+  <div class="lp-module-card" id="mod-headline">
+    <div class="lp-module-header">
+      <div class="card-label">Headline</div>
+    </div>
+    <div class="lp-view" data-module="headline">
+      <div class="lp-headline-preview">
+        <h2 class="lp-headline-text">{{ lp_copy.get("headline", "—") }}</h2>
+        {% if lp_copy.get("subheadline") %}
+          <p class="lp-subheadline-text">{{ lp_copy.get("subheadline") }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <form class="lp-edit" data-module="headline" method="post"
+          action="/ui/lp/{{ lp.run_id }}/module/headline/save" style="display:none;">
+      <label class="lp-edit-label">Headline</label>
+      <input name="headline" class="lp-edit-input" value="{{ lp_copy.get('headline', '') }}">
+      <label class="lp-edit-label">Subheadline</label>
+      <textarea name="subheadline" class="lp-edit-textarea" rows="2">{{ lp_copy.get('subheadline', '') }}</textarea>
+      <div class="lp-edit-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('headline')">Cancel</button>
+        <button type="submit" class="btn btn-approve btn-sm">Save</button>
+      </div>
+    </form>
+    {% if not all_approved %}
+    <div class="lp-card-actions lp-view" data-module="headline">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('headline')">Edit</button>
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/module/headline/regenerate" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Regenerate</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- CTA -->
+  <div class="lp-module-card" id="mod-cta">
+    <div class="lp-module-header">
+      <div class="card-label">Call to Action</div>
+    </div>
+    <div class="lp-view" data-module="cta">
+      <div class="lp-cta-preview">
+        <div class="lp-cta-button-preview">{{ lp_copy.get("cta_text", "—") }}</div>
+        {% if lp_copy.get("urgency_text") %}
+          <p class="lp-urgency-text">{{ lp_copy.get("urgency_text") }}</p>
+        {% endif %}
+        {% if lp_copy.get("social_proof_text") %}
+          <p class="lp-social-proof">{{ lp_copy.get("social_proof_text") }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <form class="lp-edit" data-module="cta" method="post"
+          action="/ui/lp/{{ lp.run_id }}/module/cta/save" style="display:none;">
+      <label class="lp-edit-label">Button Text</label>
+      <input name="cta_text" class="lp-edit-input" value="{{ lp_copy.get('cta_text', '') }}">
+      <label class="lp-edit-label">Urgency Text</label>
+      <input name="urgency_text" class="lp-edit-input" value="{{ lp_copy.get('urgency_text', '') }}">
+      <label class="lp-edit-label">Social Proof</label>
+      <input name="social_proof_text" class="lp-edit-input" value="{{ lp_copy.get('social_proof_text', '') }}">
+      <div class="lp-edit-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('cta')">Cancel</button>
+        <button type="submit" class="btn btn-approve btn-sm">Save</button>
+      </div>
+    </form>
+    {% if not all_approved %}
+    <div class="lp-card-actions lp-view" data-module="cta">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('cta')">Edit</button>
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/module/cta/regenerate" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Regenerate</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- BENEFITS -->
+  <div class="lp-module-card" id="mod-benefits">
+    <div class="lp-module-header">
+      <div class="card-label">Benefits</div>
+    </div>
+    {% set benefits = lp_copy.get("benefits") or [] %}
+    <div class="lp-view" data-module="benefits">
+      <div class="lp-benefits-list">
+        {% if benefits %}
+          {% for b in benefits %}
+          <div class="lp-benefit-item">
+            {% if b.get("icon_emoji") %}<span class="lp-benefit-icon">{{ b.get("icon_emoji") }}</span>{% endif %}
+            <div>
+              <strong class="lp-benefit-title">{{ b.get("title", "") }}</strong>
+              <p class="lp-benefit-desc">{{ b.get("description", "") }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="lp-empty">No benefits data</div>
+        {% endif %}
+      </div>
+    </div>
+    <form class="lp-edit" data-module="benefits" method="post"
+          action="/ui/lp/{{ lp.run_id }}/module/benefits/save" style="display:none;">
+      {% for b in benefits %}
+      <div class="lp-edit-benefit">
+        <span class="lp-benefit-icon">{{ b.get("icon_emoji", "") }}</span>
+        <div style="flex:1">
+          <input name="benefit_title_{{ loop.index0 }}" class="lp-edit-input"
+                 value="{{ b.get('title', '') }}" placeholder="Title">
+          <textarea name="benefit_desc_{{ loop.index0 }}" class="lp-edit-textarea" rows="2"
+                    placeholder="Description">{{ b.get('description', '') }}</textarea>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="lp-edit-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('benefits')">Cancel</button>
+        <button type="submit" class="btn btn-approve btn-sm">Save</button>
+      </div>
+    </form>
+    {% if not all_approved %}
+    <div class="lp-card-actions lp-view" data-module="benefits">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('benefits')">Edit</button>
+      <form method="post" action="/ui/lp/{{ lp.run_id }}/module/benefits/regenerate" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-sm">Regenerate</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Approve / Template picker -->
+<div class="lp-approve-section">
+  {% if all_approved %}
+    <p class="lp-approved-msg">Choose a template, then generate your landing page.</p>
+
+    <!-- Template picker grid -->
+    <form id="build-lp-form" method="post" action="/ui/lp/{{ lp.run_id }}/build-html">
+      <div class="lp-template-grid">
+        {% for tmpl in templates %}
+        <label class="lp-template-card{% if loop.first %} selected{% endif %}" data-key="{{ tmpl.key }}">
+          <input type="radio" name="template_key" value="{{ tmpl.key }}"
+                 {% if loop.first %}checked{% endif %} hidden>
+          <div class="lp-template-preview lp-template-preview--{{ tmpl.key }}"
+               style="background: {{ tmpl.preview_gradient }};"></div>
+          <div class="lp-template-info">
+            <strong class="lp-template-name">{{ tmpl.name }}</strong>
+            <span class="lp-template-desc">{{ tmpl.description }}</span>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem;">
+        <button type="submit" class="btn btn-primary">Generate LP &rarr;</button>
+        <button type="button" class="btn btn-secondary" id="gen-section-imgs-btn"
+                onclick="generateSectionImages()">
+          {% if lp.lp_section_images %}Regenerate{% else %}Generate{% endif %} Section Images
+        </button>
+        {% if lp.html_path %}
+          <a href="/ui/preview/{{ lp.run_id }}" class="btn btn-secondary">Preview LP</a>
+        {% endif %}
+        {% if lp.deployed_url %}
+          <a href="{{ lp.deployed_url }}" target="_blank" rel="noopener" class="btn btn-secondary">
+            View Deployed LP &rarr;
+          </a>
+        {% endif %}
+      </div>
+    </form>
+
+  {% else %}
+    <form method="post" action="/ui/lp/{{ lp.run_id }}/approve-all">
+      <button type="submit" class="btn btn-primary lp-approve-btn">Approve LP</button>
+    </form>
+  {% endif %}
 </div>
 
 {% endif %}
 
-<!-- LP stage controls partial -->
-{% include "partials/lp_stage_controls.html" %}
+<script>
+function toggleEdit(mod) {
+  document.querySelectorAll('[data-module="'+mod+'"].lp-view').forEach(el => {
+    el.style.display = el.style.display === 'none' ? '' : 'none';
+  });
+  document.querySelectorAll('[data-module="'+mod+'"].lp-edit').forEach(el => {
+    el.style.display = el.style.display === 'none' ? '' : 'none';
+  });
+}
+
+/* Template picker — click card to select */
+document.querySelectorAll('.lp-template-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.lp-template-card').forEach(function(c) {
+      c.classList.remove('selected');
+    });
+    card.classList.add('selected');
+  });
+});
+
+/* Generate section images — POST trigger + poll task status */
+function generateSectionImages() {
+  var btn = document.getElementById('gen-section-imgs-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  fetch('/ui/lp/{{ lp.run_id }}/generate-section-images', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.task_id) { btn.textContent = 'Failed'; return; }
+      pollSectionTask(data.task_id, btn);
+    })
+    .catch(function() { btn.disabled = false; btn.textContent = 'Generate Section Images'; });
+}
+
+function pollSectionTask(taskId, btn) {
+  var url = '/ui/ugc/task-status/' + taskId;
+  var interval = setInterval(function() {
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.state === 'SUCCESS') {
+        clearInterval(interval);
+        btn.textContent = 'Done!';
+        window.location.reload();
+      } else if (data.state === 'FAILURE') {
+        clearInterval(interval);
+        btn.disabled = false;
+        btn.textContent = 'Failed — Retry';
+      }
+    });
+  }, 3000);
+}
+</script>
 {% endblock %}

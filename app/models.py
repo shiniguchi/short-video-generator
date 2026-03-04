@@ -1,112 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
-from datetime import datetime
 
 Base = declarative_base()
-
-
-class Job(Base):
-    """Pipeline execution job tracking"""
-    __tablename__ = "jobs"
-
-    id = Column(Integer, primary_key=True)
-    status = Column(String(50), nullable=False, default="pending")  # pending, running, completed, failed
-    stage = Column(String(50))  # current pipeline stage
-    theme = Column(String(255))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    error_message = Column(Text)
-    extra_data = Column("metadata", JSON)  # Flexible storage for stage-specific data
-
-
-class Trend(Base):
-    """Collected trending videos from TikTok/YouTube"""
-    __tablename__ = "trends"
-
-    id = Column(Integer, primary_key=True)
-    platform = Column(String(50), nullable=False)  # tiktok, youtube
-    external_id = Column(String(255), nullable=False)  # Platform's video ID
-    title = Column(String(500))
-    description = Column(Text)
-    creator = Column(String(255))
-    creator_id = Column(String(255))
-    hashtags = Column(JSON)  # Array of hashtag strings
-    views = Column(Integer)
-    likes = Column(Integer)
-    comments = Column(Integer)
-    shares = Column(Integer)
-    duration = Column(Integer)  # Video duration in seconds
-    sound_name = Column(String(500))  # Audio/sound used in video
-    video_url = Column(String(1000))
-    thumbnail_url = Column(String(1000))
-    posted_at = Column(DateTime(timezone=True))  # When video was originally posted
-    engagement_velocity = Column(Float)  # (likes+comments+shares)/hours_since_posted
-    collected_at = Column(DateTime(timezone=True), server_default=func.now())
-    extra_data = Column("metadata", JSON)
-
-    __table_args__ = (
-        UniqueConstraint('platform', 'external_id', name='uq_platform_external_id'),
-    )
-
-
-class TrendReport(Base):
-    """AI-generated trend analysis reports"""
-    __tablename__ = "trend_reports"
-
-    id = Column(Integer, primary_key=True)
-    analyzed_count = Column(Integer, nullable=False)
-    date_range_start = Column(DateTime(timezone=True), nullable=False)
-    date_range_end = Column(DateTime(timezone=True), nullable=False)
-    video_styles = Column(JSON, nullable=False)  # List of {category, confidence, count}
-    common_patterns = Column(JSON, nullable=False)  # List of pattern objects
-    avg_engagement_velocity = Column(Float)
-    top_hashtags = Column(JSON)  # List of hashtag strings
-    recommendations = Column(JSON)  # List of recommendation strings
-    raw_report = Column(JSON)  # Full Claude response for debugging
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-
-class Script(Base):
-    """Generated video production plans (scripts)"""
-    __tablename__ = "scripts"
-
-    id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey("jobs.id"))
-    video_prompt = Column(Text, nullable=False)
-    scenes = Column(JSON, nullable=False)  # Array of scene objects
-    text_overlays = Column(JSON)  # Array of text overlay objects
-    voiceover_script = Column(Text)
-    title = Column(String(500))
-    description = Column(Text)
-    hashtags = Column(JSON)
-    # Phase 3 additions
-    duration_target = Column(Integer)  # 15-30 seconds
-    aspect_ratio = Column(String(10), default="9:16")
-    hook_text = Column(String(500))  # First 3 seconds hook
-    cta_text = Column(String(500))  # Call-to-action
-    theme_config = Column(JSON)  # Snapshot of theme config used
-    trend_report_id = Column(Integer, ForeignKey("trend_reports.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-
-class Video(Base):
-    """Generated video metadata and file paths"""
-    __tablename__ = "videos"
-
-    id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey("jobs.id"))
-    script_id = Column(Integer, ForeignKey("scripts.id"))
-    status = Column(String(50), default="generated")  # generated, approved, rejected, published
-    file_path = Column(String(1000))
-    thumbnail_path = Column(String(1000))
-    duration_seconds = Column(Float)
-    cost_usd = Column(Float)  # Total generation cost
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    approved_at = Column(DateTime(timezone=True))
-    published_at = Column(DateTime(timezone=True))
-    published_url = Column(String(1000))
-    extra_data = Column("metadata", JSON)
 
 
 class WaitlistEntry(Base):
@@ -138,6 +34,8 @@ class LandingPage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     deployed_at = Column(DateTime(timezone=True), nullable=True)
     deployed_url = Column(String(1000), nullable=True)
+    template_key = Column(String(50), nullable=True)  # premium template selection
+    lp_section_images = Column(JSON, nullable=True)  # {"benefits": ["path0", ...], "how_it_works": [...]}
 
     # LP integration columns (phase 25)
     ugc_job_id = Column(Integer, ForeignKey("ugc_jobs.id"), nullable=True)
@@ -171,6 +69,7 @@ class UGCJob(Base):
     target_duration = Column(Integer, default=30)
     style_preference = Column(String(100), nullable=True)
     use_mock = Column(Boolean, default=True)  # passed per job, not from settings
+    broll_include_creator = Column(Boolean, default=False)  # include A-Roll creator in B-Roll images
 
     # --- State columns ---
     status = Column(String(50), nullable=False, default="pending")
@@ -186,17 +85,27 @@ class UGCJob(Base):
 
     # --- Stage 2: Hero Image ---
     hero_image_path = Column(String(1000), nullable=True)
+    hero_image_history = Column(JSON, nullable=True)  # list of previous hero image paths (newest first)
+    hero_sketch_path = Column(String(1000), nullable=True)  # optional hand-drawn sketch for guided gen
 
     # --- Stage 3: Script ---
     master_script = Column(JSON, nullable=True)    # dict
     aroll_scenes = Column(JSON, nullable=True)     # list[dict]
     broll_shots = Column(JSON, nullable=True)      # list[dict]
 
-    # --- Stage 4: A-Roll ---
-    aroll_paths = Column(JSON, nullable=True)      # list[str]
+    # --- Stage 3a/4a: Per-scene images (review before video gen) ---
+    aroll_image_paths = Column(JSON, nullable=True)  # list[str] per-scene images
+    broll_image_paths = Column(JSON, nullable=True)  # list[str] per-shot images
+    aroll_image_history = Column(JSON, nullable=True)  # list[list[str]] per-scene history (newest first)
+    broll_image_history = Column(JSON, nullable=True)  # list[list[str]] per-scene history (newest first)
 
-    # --- Stage 5: B-Roll ---
+    # --- Stage 4: A-Roll Videos ---
+    aroll_paths = Column(JSON, nullable=True)      # list[str]
+    aroll_video_history = Column(JSON, nullable=True)  # list[list[str]] per-scene video history
+
+    # --- Stage 5: B-Roll Videos ---
     broll_paths = Column(JSON, nullable=True)      # list[str]
+    broll_video_history = Column(JSON, nullable=True)  # list[list[str]] per-shot video history
 
     # --- Stage 6: Composition ---
     final_video_path = Column(String(1000), nullable=True)
@@ -204,6 +113,7 @@ class UGCJob(Base):
 
     # --- Candidate (regeneration) ---
     candidate_video_path = Column(String(1000), nullable=True)
+    trim_history = Column(JSON, nullable=True)  # stack of previous video paths for multi-undo
 
     # --- Timestamps ---
     created_at = Column(DateTime(timezone=True), server_default=func.now())

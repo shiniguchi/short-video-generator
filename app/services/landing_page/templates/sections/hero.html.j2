@@ -1,16 +1,23 @@
 <section class="hero" id="hero" data-section="hero">
     <div class="hero__container">
         <div class="hero__content">
-            <h1 class="hero__headline">{{ headline }}</h1>
-            <p class="hero__subheadline">{{ subheadline }}</p>
-            <div class="hero__cta-group">
-                <a href="#waitlist" class="hero__cta">{{ cta_text }}</a>
+            <h1 class="hero__headline hero-enter">{{ headline }}</h1>
+            <p class="hero__subheadline hero-enter">{{ subheadline }}</p>
+            <div class="hero__cta-group hero-enter">
+                <form class="inline-signup" onsubmit="return handleSignup(event, this)">
+                    <input type="email" name="email" class="inline-signup__input" placeholder="Enter your email" required>
+                    <button type="submit" class="hero__cta inline-signup__btn">{{ cta_text }}</button>
+                    <input type="text" name="website_url" class="hp-field" tabindex="-1" autocomplete="off">
+                    <input type="hidden" name="form_ts" value="">
+                </form>
+                <div class="inline-signup__ok" style="display:none">You're on the list! We'll be in touch.</div>
+                <div class="inline-signup__err" style="display:none"></div>
                 {% if trust_text %}
                 <p class="hero__trust">{{ trust_text }}</p>
                 {% endif %}
             </div>
         </div>
-        <div class="hero__media">
+        <div class="hero__media hero-enter">
             {% if video_url %}
             <video class="hero__video" autoplay muted loop playsinline poster="{{ hero_image }}">
                 <source src="{{ video_url }}" type="video/mp4">
@@ -18,6 +25,31 @@
             </video>
             {% elif hero_image %}
             <img src="{{ hero_image }}" alt="{{ headline }}" class="hero__image" loading="eager">
+            {% else %}
+            <!-- Fallback: decorative pattern when no media -->
+            <div class="hero__pattern" aria-hidden="true">
+                <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" class="hero__pattern-svg">
+                    <defs>
+                        <linearGradient id="hero-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:rgba(255,255,255,0.15)"/>
+                            <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Grid dots -->
+                    <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.2)"/>
+                    </pattern>
+                    <rect width="400" height="400" fill="url(#dots)"/>
+                    <!-- Accent shapes -->
+                    <circle cx="300" cy="80" r="60" fill="rgba(255,255,255,0.08)" />
+                    <circle cx="300" cy="80" r="40" fill="rgba(255,255,255,0.06)" />
+                    <rect x="40" y="260" width="100" height="100" rx="20" fill="rgba(255,255,255,0.06)" transform="rotate(-15 90 310)"/>
+                    <polygon points="200,160 240,240 160,240" fill="rgba(255,255,255,0.07)" />
+                    <!-- Large accent ring -->
+                    <circle cx="200" cy="200" r="120" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+                    <circle cx="200" cy="200" r="80" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1.5"/>
+                </svg>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -26,11 +58,34 @@
 <style>
 .hero {
     padding: 3rem 1rem;
+    padding-bottom: 5rem;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background-size: 200% 200%;
+    animation: hero-gradient-shift 8s ease infinite;
     color: white;
     min-height: 80vh;
     display: flex;
     align-items: center;
+    position: relative;
+}
+/* Wave divider at bottom of hero */
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    background: var(--color-bg, #ffffff);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 48h1200V24c-200 32-400-16-600 8S200 0 0 24z' fill='%23000'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 48h1200V24c-200 32-400-16-600 8S200 0 0 24z' fill='%23000'/%3E%3C/svg%3E");
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+}
+
+@keyframes hero-gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .hero__container {
@@ -91,7 +146,7 @@
 
 .hero__cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 20px rgba(255,255,255,0.2);
 }
 
 .hero__cta:active {
@@ -107,6 +162,17 @@
 .hero__media {
     width: 100%;
     max-width: 500px;
+    animation: hero-float 6s ease-in-out infinite;
+}
+
+@keyframes hero-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero { animation: none; }
+    .hero__media { animation: none; }
 }
 
 .hero__video,
@@ -117,10 +183,27 @@
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* Fallback pattern when no media */
+.hero__pattern {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 400px;
+    margin: 0 auto;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+.hero__pattern-svg {
+    width: 100%;
+    height: 100%;
+}
+
 /* Tablet: start split layout */
 @media (min-width: 768px) {
     .hero {
-        padding: 4rem 2rem;
+        padding: 4rem 2rem 5rem;
     }
 
     .hero__container {
@@ -156,7 +239,7 @@
 /* Desktop */
 @media (min-width: 1024px) {
     .hero {
-        padding: 5rem 3rem;
+        padding: 5rem 3rem 5rem;
     }
 
     .hero__headline {
@@ -167,4 +250,89 @@
         font-size: 1.35rem;
     }
 }
+
+/* Inline signup form */
+.inline-signup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 440px;
+}
+.inline-signup__input {
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    outline: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    transition: border-color 0.2s;
+}
+.inline-signup__input::placeholder { color: rgba(255,255,255,0.6); }
+.inline-signup__input:focus { border-color: rgba(255,255,255,0.7); }
+.inline-signup__btn { flex-shrink: 0; }
+.inline-signup__ok {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    font-weight: 600;
+    color: #fff;
+}
+.inline-signup__err {
+    padding: 10px 14px;
+    background: rgba(220,38,38,0.25);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #fecaca;
+}
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+@media (min-width: 640px) {
+    .inline-signup { flex-direction: row; }
+    .inline-signup__input { flex: 1; }
+}
 </style>
+
+<script>
+/* Shared inline signup handler — used by hero + cta_repeat forms */
+function handleSignup(e, form) {
+    e.preventDefault();
+    if (form.querySelector('[name="website_url"]').value) return false;
+    var ts = parseInt(form.querySelector('[name="form_ts"]').value);
+    if ((Date.now() - ts) / 1000 < 2) return false;
+
+    var lpMeta = document.querySelector('meta[name="lp-source"]');
+    var lpSource = lpMeta ? lpMeta.getAttribute('content') : '';
+    var apiBase = document.querySelector('meta[name="api-base"]');
+    var baseUrl = apiBase ? apiBase.getAttribute('content') : '';
+
+    var btn = form.querySelector('button');
+    var wrap = form.parentElement;
+    var okEl = wrap.querySelector('.inline-signup__ok');
+    var errEl = wrap.querySelector('.inline-signup__err');
+    btn.disabled = true; btn.textContent = 'Submitting...';
+    errEl.style.display = 'none';
+
+    fetch(baseUrl + '/waitlist', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: form.querySelector('[name="email"]').value, lp_source: lpSource})
+    })
+    .then(function(r){ if(r.ok) return r.json(); return r.json().then(function(d){throw d;}); })
+    .then(function(){
+        form.style.display = 'none';
+        okEl.style.display = 'block';
+    })
+    .catch(function(err){
+        if(err && err.detail){ errEl.textContent = err.detail; errEl.style.display = 'block'; }
+        else { form.style.display='none'; okEl.style.display='block'; }
+    })
+    .finally(function(){ btn.disabled=false; btn.textContent='Subscribe'; });
+    return false;
+}
+/* Init timestamps on all inline signup forms (DOMContentLoaded so CTA repeat form exists) */
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.inline-signup [name="form_ts"]').forEach(function(el){ el.value = Date.now(); });
+});
+</script>

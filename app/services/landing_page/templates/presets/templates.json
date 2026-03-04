@@ -1,0 +1,47 @@
+[
+  {
+    "key": "clean_modern",
+    "name": "Clean Modern",
+    "description": "Light, spacious layout with soft blues and clean typography",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap",
+    "heading_font": "'Plus Jakarta Sans', sans-serif",
+    "body_font": "'Inter', sans-serif",
+    "preview_gradient": "linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #EFF6FF 100%)"
+  },
+  {
+    "key": "bold_dark",
+    "name": "Bold Dark",
+    "description": "Dark background with neon cyan accents and tech feel",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+    "heading_font": "'Space Grotesk', sans-serif",
+    "body_font": "'Space Grotesk', sans-serif",
+    "preview_gradient": "linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #06B6D4 100%)"
+  },
+  {
+    "key": "warm_elegant",
+    "name": "Warm Elegant",
+    "description": "Warm tones with serif headings for a premium, luxury feel",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Lato:wght@300;400;700&display=swap",
+    "heading_font": "'Playfair Display', serif",
+    "body_font": "'Lato', sans-serif",
+    "preview_gradient": "linear-gradient(135deg, #92400E 0%, #D97706 50%, #FEF3C7 100%)"
+  },
+  {
+    "key": "saas_gradient",
+    "name": "SaaS Gradient",
+    "description": "Purple gradients with glassmorphism cards for modern SaaS",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap",
+    "heading_font": "'Outfit', sans-serif",
+    "body_font": "'Outfit', sans-serif",
+    "preview_gradient": "linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #E9D5FF 100%)"
+  },
+  {
+    "key": "ecommerce_product",
+    "name": "E-commerce",
+    "description": "Product-focused layout with urgency accents and bold CTAs",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap",
+    "heading_font": "'DM Sans', sans-serif",
+    "body_font": "'DM Sans', sans-serif",
+    "preview_gradient": "linear-gradient(135deg, #DC2626 0%, #F97316 50%, #FFF7ED 100%)"
+  }
+]

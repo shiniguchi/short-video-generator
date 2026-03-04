@@ -1,0 +1,218 @@
+/* E-commerce — product-focused, urgency red/orange, bold CTAs */
+
+/* Hero */
+.hero {
+    background: linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 40%, #F97316 100%);
+    color: #1C1917;
+    min-height: 85vh;
+}
+.hero__headline {
+    color: #0F172A;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+.hero__subheadline {
+    color: #44403C;
+    opacity: 1;
+}
+.hero__cta {
+    background: #DC2626;
+    color: #fff;
+    border-radius: 8px;
+    padding: 18px 44px;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.hero__cta:hover {
+    background: #B91C1C;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45);
+}
+.hero__trust {
+    color: #78716C;
+    opacity: 1;
+}
+.hero__image, .hero__video {
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+/* Benefits */
+.benefits {
+    padding: 5rem 1.5rem;
+    background: #fff;
+}
+.benefits__heading {
+    color: #0F172A;
+    font-weight: 800;
+}
+.benefits__card {
+    border-radius: 12px;
+    border: 2px solid #F3F4F6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.benefits__card:hover {
+    border-color: #F97316;
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.12);
+}
+.benefits__title {
+    color: #DC2626;
+    font-weight: 700;
+}
+.benefits__description {
+    color: #57534E;
+}
+
+/* Features */
+.features {
+    background: #0F172A;
+}
+.features__heading { color: #fff; }
+.features__card {
+    background: rgba(249, 115, 22, 0.08);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    border-radius: 12px;
+}
+.features__stat {
+    color: #F97316;
+    font-weight: 800;
+}
+.features__title { color: #fff; }
+.features__description { color: #94A3B8; }
+
+/* How It Works */
+.how-it-works {
+    padding: 5rem 1.5rem;
+    background: #FFF7ED;
+}
+.how-it-works__heading {
+    color: #0F172A;
+}
+.how-it-works__number {
+    background: #DC2626;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+.how-it-works__title { color: #1C1917; }
+.how-it-works__description { color: #57534E; }
+.how-it-works__connector {
+    background: linear-gradient(to bottom, #DC2626, #F97316);
+}
+
+/* CTA Repeat */
+.cta-repeat {
+    background: linear-gradient(160deg, #DC2626 0%, #B91C1C 100%);
+}
+.cta-repeat__heading { color: #fff; }
+.cta-repeat__text { color: rgba(255, 255, 255, 0.9); }
+.cta-repeat__button {
+    background: #fff;
+    color: #DC2626;
+    border-radius: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+.cta-repeat__button:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.cta-repeat__urgency {
+    color: #FEF3C7;
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* FAQ */
+.faq {
+    background: #fff;
+    padding: 5rem 1.5rem;
+}
+.faq__heading { color: #0F172A; }
+.faq__item { border-bottom: 1px solid #E5E7EB; }
+.faq__question { color: #1F2937; font-weight: 700; }
+.faq__question::after { color: #DC2626; }
+.faq__answer { color: #57534E; }
+
+/* Waitlist */
+.waitlist {
+    background: #FFF7ED;
+    padding: 5rem 1.5rem;
+}
+.waitlist__heading { color: #DC2626; }
+.waitlist__input {
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+}
+.waitlist__input:focus {
+    border-color: #F97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+.waitlist__submit {
+    background: #DC2626;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.waitlist__submit:hover {
+    background: #B91C1C;
+}
+
+/* Footer */
+.footer {
+    background: #0F172A;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .hero__headline { font-size: 3.25rem; }
+    .how-it-works__connector {
+        background: linear-gradient(to right, #DC2626, #F97316);
+    }
+}
+@media (min-width: 1024px) {
+    .hero__headline { font-size: 3.75rem; }
+}
+
+/* ── Motion: Urgency pulse, border flash, red sticky CTA ── */
+.hero__cta {
+    animation: urgency-pulse 1.5s ease-in-out infinite;
+}
+@keyframes urgency-pulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35); }
+    50% { box-shadow: 0 4px 24px rgba(220, 38, 38, 0.6); }
+}
+.benefits__card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.15s ease;
+}
+.benefits__card:hover {
+    border-color: #F97316;
+    animation: border-flash 0.3s ease;
+}
+@keyframes border-flash {
+    0% { border-color: #F3F4F6; }
+    50% { border-color: #F97316; }
+    100% { border-color: #F97316; }
+}
+.features__card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sticky-cta-bar {
+    background: #DC2626;
+}
+.sticky-cta-bar a {
+    color: #DC2626;
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero__cta { animation: none; }
+}
+
+/* Wave divider color overrides (match next section bg) */
+.hero::after { background: #fff; }
+.features::after { background: #FFF7ED; }
+.cta-repeat::before { background: #FFF7ED; }
+.cta-repeat::after { background: #fff; }

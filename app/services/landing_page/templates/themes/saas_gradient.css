@@ -1,0 +1,215 @@
+/* SaaS Gradient — purple gradients, glassmorphism, modern SaaS */
+
+/* Hero */
+.hero {
+    background: linear-gradient(160deg, #7C3AED 0%, #A855F7 40%, #C084FC 100%);
+    color: #fff;
+    min-height: 88vh;
+}
+.hero__headline {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+.hero__subheadline {
+    color: rgba(255, 255, 255, 0.88);
+    opacity: 1;
+}
+.hero__cta {
+    background: #fff;
+    color: #7C3AED;
+    border-radius: 50px;
+    padding: 18px 44px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.hero__cta:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+}
+.hero__trust {
+    color: rgba(255, 255, 255, 0.7);
+    opacity: 1;
+}
+.hero__image, .hero__video {
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Benefits — glassmorphism cards */
+.benefits {
+    padding: 5rem 1.5rem;
+    background: linear-gradient(180deg, #F5F3FF 0%, #EDE9FE 100%);
+}
+.benefits__heading {
+    color: #5B21B6;
+    font-weight: 800;
+}
+.benefits__card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+}
+.benefits__card:hover {
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.15);
+    border-color: rgba(167, 139, 250, 0.5);
+}
+.benefits__title {
+    color: #6D28D9;
+}
+.benefits__description {
+    color: #6B7280;
+}
+
+/* Features */
+.features {
+    background: linear-gradient(160deg, #5B21B6 0%, #7C3AED 100%);
+}
+.features__heading { color: #fff; }
+.features__card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+}
+.features__stat {
+    color: #FDE68A;
+}
+.features__title { color: #fff; }
+
+/* How It Works */
+.how-it-works {
+    padding: 5rem 1.5rem;
+    background: #F5F3FF;
+}
+.how-it-works__heading { color: #5B21B6; }
+.how-it-works__number {
+    background: linear-gradient(135deg, #7C3AED, #A855F7);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+.how-it-works__connector {
+    background: linear-gradient(to bottom, #7C3AED, #A855F7);
+}
+.how-it-works__image-wrap {
+    border-radius: 20px;
+}
+
+/* CTA Repeat */
+.cta-repeat {
+    background: linear-gradient(160deg, #7C3AED 0%, #6D28D9 50%, #5B21B6 100%);
+}
+.cta-repeat__button {
+    background: #fff;
+    color: #7C3AED;
+    border-radius: 50px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+.cta-repeat__button:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.cta-repeat__urgency {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Gallery */
+.gallery {
+    background: #F5F3FF;
+}
+.gallery__heading { color: #5B21B6; }
+.gallery__item { border-radius: 20px; }
+
+/* FAQ */
+.faq {
+    background: #fff;
+    padding: 5rem 1.5rem;
+}
+.faq__heading { color: #5B21B6; }
+.faq__item { border-bottom: 1px solid #EDE9FE; }
+.faq__question { color: #1F2937; }
+.faq__question::after { color: #7C3AED; }
+.faq__answer { color: #6B7280; }
+
+/* Waitlist */
+.waitlist {
+    background: linear-gradient(180deg, #EDE9FE 0%, #F5F3FF 100%);
+    padding: 5rem 1.5rem;
+}
+.waitlist__heading { color: #6D28D9; }
+.waitlist__input {
+    border: 2px solid #DDD6FE;
+    border-radius: 50px;
+    padding-left: 20px;
+}
+.waitlist__input:focus {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+.waitlist__submit {
+    background: linear-gradient(135deg, #7C3AED, #A855F7);
+    border-radius: 50px;
+    font-weight: 700;
+}
+.waitlist__submit:hover {
+    background: linear-gradient(135deg, #6D28D9, #7C3AED);
+}
+
+/* Footer */
+.footer {
+    background: #1E1B4B;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .hero__headline { font-size: 3.25rem; }
+    .how-it-works__connector {
+        background: linear-gradient(to right, #7C3AED, #A855F7);
+    }
+}
+@media (min-width: 1024px) {
+    .hero__headline { font-size: 3.75rem; }
+}
+
+/* ── Motion: Glass breathe, floating numbers, playful ── */
+.benefits__card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: glass-breathe 4s ease-in-out infinite;
+}
+@keyframes glass-breathe {
+    0%, 100% { backdrop-filter: blur(12px); }
+    50% { backdrop-filter: blur(16px); }
+}
+.how-it-works__number {
+    animation: float-number 3s ease-in-out infinite;
+}
+@keyframes float-number {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+.features__card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.features__card:hover {
+    transform: translateY(-4px) rotate(-0.5deg);
+}
+.hero__cta {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.hero__cta:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+@media (prefers-reduced-motion: reduce) {
+    .benefits__card { animation: none; }
+    .how-it-works__number { animation: none; }
+}
+
+/* Wave divider color overrides (match next section bg) */
+.hero::after { background: #F5F3FF; }
+.features::after { background: #F5F3FF; }
+.cta-repeat::before { background: #F5F3FF; }
+.cta-repeat::after { background: #fff; }

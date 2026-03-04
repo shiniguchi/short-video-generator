@@ -49,11 +49,43 @@
         /* Smooth scrolling */
         html { scroll-behavior: smooth; }
 
+        /* Sticky top header */
+        .sticky-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+            background: rgba(255,255,255,0.97); backdrop-filter: blur(8px);
+            padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transform: translateY(-100%); transition: transform 0.3s ease;
+        }
+        .sticky-header.show { transform: translateY(0); }
+        .sticky-header__title { font-weight: 700; font-size: 15px; color: var(--color-text); }
+        .sticky-header__cta {
+            display: inline-block; background: var(--color-primary); color: #fff;
+            font-weight: 700; font-size: 14px; padding: 8px 24px; border-radius: 6px;
+            text-decoration: none; transition: background 0.15s;
+        }
+        .sticky-header__cta:hover { background: var(--color-secondary); }
+
         /* Section-specific styles */
         {{ inline_css }}
     </style>
 </head>
 <body>
+    <div class="sticky-header" id="sticky-header">
+        <span class="sticky-header__title">{{ meta_title | default('') }}</span>
+        <a href="#hero" class="sticky-header__cta">{{ cta_text | default('Buy Now') }}</a>
+    </div>
     {% for section in sections %}{{ section | safe }}{% endfor %}
+    <script>
+    (function(){
+        var h = document.getElementById('sticky-header');
+        var hero = document.getElementById('hero');
+        if (h && hero && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function(e){
+                h.classList.toggle('show', !e[0].isIntersecting);
+            }, {threshold:0.1}).observe(hero);
+        }
+    })();
+    </script>
 </body>
 </html>

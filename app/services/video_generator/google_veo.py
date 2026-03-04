@@ -10,9 +10,9 @@ import httpx
 from google import genai
 from google.genai import types
 
-from app.config import get_settings
 from app.services.video_generator.base import VideoProvider
 from app.services.video_generator.mock import MockVideoProvider
+from app.services.quota_tracker import record_veo_request
 
 # Allowlisted domains for Veo video downloads
 _ALLOWED_DOWNLOAD_HOSTS = {
@@ -86,8 +86,8 @@ class GoogleVeoProvider(VideoProvider):
                     f"Unexpected Veo download domain: {parsed.hostname}"
                 )
 
-            # Use Authorization header instead of leaking API key in URL params
-            with httpx.Client(timeout=120, follow_redirects=False) as http_client:
+            # Follow redirects — Google storage uses 302 redirects for downloads
+            with httpx.Client(timeout=120, follow_redirects=True) as http_client:
                 response = http_client.get(
                     video_obj.uri,
                     headers={"X-Goog-Api-Key": self.google_api_key},
@@ -116,10 +116,8 @@ class GoogleVeoProvider(VideoProvider):
         Returns:
             Path to generated MP4 file
         """
-        settings = get_settings()
-
-        # Fallback to mock if configured or no API key
-        if settings.use_mock_data or not self.google_api_key:
+        # Fallback to mock if no API key
+        if not self.google_api_key:
             return self.mock_provider.generate_clip(
                 prompt=prompt,
                 duration_seconds=duration_seconds,
@@ -145,6 +143,7 @@ class GoogleVeoProvider(VideoProvider):
                 duration_seconds=duration_seconds,
             )
 
+            record_veo_request()
             operation = self.client.models.generate_videos(
                 model=self.model_name,
                 prompt=prompt,
@@ -157,8 +156,16 @@ class GoogleVeoProvider(VideoProvider):
                 time.sleep(10)
                 operation = self.client.operations.get(operation)
 
+            # Check for safety filter
+            resp = operation.response
+            if not resp or not resp.generated_videos:
+                reasons = getattr(resp, "rai_media_filtered_reasons", [])
+                raise RuntimeError(
+                    f"Veo safety filter blocked video: {reasons}"
+                )
+
             # Save video
-            video = operation.response.generated_videos[0]
+            video = resp.generated_videos[0]
             output_path = os.path.join(self.clips_dir, f"veo_{uuid4().hex[:8]}.mp4")
             self._save_video(video.video, output_path)
 
@@ -169,13 +176,8 @@ class GoogleVeoProvider(VideoProvider):
             return output_path
 
         except Exception as e:
-            print(f"Veo generation failed: {e}, falling back to mock")
-            return self.mock_provider.generate_clip(
-                prompt=prompt,
-                duration_seconds=duration_seconds,
-                width=width,
-                height=height
-            )
+            print(f"Veo generation failed: {e}")
+            raise
 
     def generate_clip_from_image(
         self,
@@ -197,10 +199,8 @@ class GoogleVeoProvider(VideoProvider):
         Returns:
             Path to generated MP4 file
         """
-        settings = get_settings()
-
-        # Fallback to mock if configured or no API key
-        if settings.use_mock_data or not self.google_api_key:
+        # Fallback to mock if no API key
+        if not self.google_api_key:
             return self.mock_provider.generate_clip(
                 prompt=prompt,
                 duration_seconds=duration_seconds,
@@ -237,6 +237,7 @@ class GoogleVeoProvider(VideoProvider):
                 duration_seconds=duration_seconds,
             )
 
+            record_veo_request()
             operation = self.client.models.generate_videos(
                 model=self.model_name,
                 prompt=prompt,
@@ -250,8 +251,16 @@ class GoogleVeoProvider(VideoProvider):
                 time.sleep(10)
                 operation = self.client.operations.get(operation)
 
+            # Check for safety filter
+            resp = operation.response
+            if not resp or not resp.generated_videos:
+                reasons = getattr(resp, "rai_media_filtered_reasons", [])
+                raise RuntimeError(
+                    f"Veo safety filter blocked video: {reasons}"
+                )
+
             # Save video
-            video = operation.response.generated_videos[0]
+            video = resp.generated_videos[0]
             output_path = os.path.join(self.clips_dir, f"veo_{uuid4().hex[:8]}.mp4")
             self._save_video(video.video, output_path)
 
@@ -262,13 +271,8 @@ class GoogleVeoProvider(VideoProvider):
             return output_path
 
         except Exception as e:
-            print(f"Veo image-to-video generation failed: {e}, falling back to mock")
-            return self.mock_provider.generate_clip(
-                prompt=prompt,
-                duration_seconds=duration_seconds,
-                width=width,
-                height=height
-            )
+            print(f"Veo image-to-video generation failed: {e}")
+            raise
 
     def supports_resolution(self, width: int, height: int) -> bool:
         """Check if Veo provider supports the given resolution."""

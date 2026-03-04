@@ -6,7 +6,6 @@ from typing import List, Optional
 
 import httpx
 
-from app.config import get_settings
 from app.services.voiceover_generator.base import TTSProvider
 from app.services.voiceover_generator.mock import MockTTSProvider
 
@@ -69,10 +68,8 @@ class FishAudioTTSProvider(TTSProvider):
         Returns:
             Path to generated audio file
         """
-        settings = get_settings()
-
-        # Fallback to mock if configured or no API key
-        if settings.use_mock_data or not self.api_key:
+        # Fallback to mock if no API key
+        if not self.api_key:
             return self.mock_provider.generate_speech(text, voice, output_path)
 
         # Map voice to reference_id

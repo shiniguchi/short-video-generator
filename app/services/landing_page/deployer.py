@@ -3,6 +3,7 @@
 import asyncio
 import os
 import re
+import shutil
 import tempfile
 import logging
 from pathlib import Path
@@ -10,20 +11,40 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-async def deploy_to_cloudflare_pages(html_path: str, run_id: str, settings) -> str:
+def _inject_api_base(html: str, api_base_url: str) -> str:
+    """Insert <meta name="api-base"> after <meta name="lp-source"> tag."""
+    meta_tag = f'<meta name="api-base" content="{api_base_url}">'
+    # Insert after lp-source meta tag
+    pattern = r'(<meta\s+name="lp-source"\s+content="[^"]*"\s*/?>)'
+    replaced = re.sub(pattern, rf'\1\n    {meta_tag}', html)
+    if replaced == html:
+        # Fallback: insert before </head>
+        replaced = html.replace('</head>', f'    {meta_tag}\n</head>')
+    return replaced
+
+
+async def deploy_to_cloudflare_pages(
+    html_path: str, run_id: str, settings, api_base_url: str = ""
+) -> str:
     """Deploy LP HTML to Cloudflare Pages. Returns deployed URL.
 
-    Flow: read HTML -> inject analytics beacon -> write to temp dir -> wrangler deploy.
+    Flow: read HTML -> inject analytics beacon + api-base -> write to temp dir -> wrangler deploy.
     Raises RuntimeError on failure.
     """
     # Lazy import — optimizer may pull in dependencies
     from app.services.landing_page.optimizer import inject_analytics_beacon
 
+    html_file = Path(html_path)
+
     # Read original HTML (never has beacon — beacon is deploy-time only)
-    html = Path(html_path).read_text(encoding="utf-8")
+    html = html_file.read_text(encoding="utf-8")
 
     # Inject analytics beacon if Worker URL configured
     html = inject_analytics_beacon(html, settings.cf_worker_url, run_id)
+
+    # Inject api-base meta tag so deployed forms POST to app server
+    if api_base_url:
+        html = _inject_api_base(html, api_base_url)
 
     # Validate config
     if not settings.cf_api_token:
@@ -35,6 +56,15 @@ async def deploy_to_cloudflare_pages(html_path: str, run_id: str, settings) -> s
         # Write as index.html — CF Pages serves index.html at root
         out_path = Path(tmpdir) / "index.html"
         out_path.write_text(html, encoding="utf-8")
+
+        # Also deploy waitlist.html if it exists alongside the LP
+        waitlist_src = html_file.parent / "waitlist.html"
+        if waitlist_src.exists():
+            wl_html = waitlist_src.read_text(encoding="utf-8")
+            wl_html = inject_analytics_beacon(wl_html, settings.cf_worker_url, run_id)
+            if api_base_url:
+                wl_html = _inject_api_base(wl_html, api_base_url)
+            (Path(tmpdir) / "waitlist.html").write_text(wl_html, encoding="utf-8")
 
         # Build env for subprocess — inherit PATH for npx, add CF credentials
         env = os.environ.copy()

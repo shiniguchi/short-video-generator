@@ -3,7 +3,7 @@
         <h2 class="gallery__heading">{{ heading }}</h2>
         <div class="gallery__grid">
             {% for image in images %}
-            <div class="gallery__item{% if loop.index <= 2 %} gallery__item--tall{% endif %}">
+            <div class="gallery__item stagger-item{% if loop.index <= 2 %} gallery__item--tall{% endif %}">
                 <img src="{{ image }}" alt="{{ product_name }} product image {{ loop.index }}" class="gallery__image" loading="lazy">
             </div>
             {% endfor %}
@@ -39,6 +39,19 @@
     border-radius: 12px;
     overflow: hidden;
     aspect-ratio: 3 / 4;
+    position: relative;
+}
+.gallery__item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.gallery__item:hover::after {
+    opacity: 1;
 }
 
 .gallery__item--tall {
@@ -54,7 +67,7 @@
 }
 
 .gallery__item:hover .gallery__image {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 /* Tablet: 3 columns with featured first item */

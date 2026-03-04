@@ -1,28 +1,43 @@
 <div id="stage-controls">
-  {% if job.status in review_states %}
-    <p class="review-hint">Review each item above, then approve or regenerate this stage.</p>
+  {% set at = active_tab|default("") %}
+  {% set viewing_past = (at in review_states and at != job.status and job.status in review_states) %}
+  {% if viewing_past %}
+    {# Viewing a completed earlier stage — allow re-advance #}
+    <p class="review-hint">
+      Edit fields above, then approve to re-generate all downstream stages.
+    </p>
     <div class="action-row">
-      <button
-        hx-post="/ui/ugc/{{ job.id }}/advance"
-        hx-target="#stage-controls"
-        hx-swap="outerHTML"
-        class="btn btn-primary">
+      <button type="button" class="btn btn-primary"
+        onclick="saveAndAdvance({{ job.id }}, '{{ at }}')">
         Approve &amp; Continue
       </button>
-      {% if job.status != "stage_composition_review" %}
-      <button
-        hx-post="/ui/ugc/{{ job.id }}/regenerate"
-        hx-target="#stage-controls"
-        hx-swap="outerHTML"
-        class="btn btn-secondary">
-        Regenerate
-      </button>
+    </div>
+  {% elif job.status in review_states and at == job.status %}
+    <p class="review-hint">
+      {% if job.status == "stage_analysis_review" %}
+        Edit fields or use per-item Regenerate above, then approve to continue.
+      {% elif job.status in ["stage_aroll_image_review", "stage_broll_image_review"] %}
+        Review each image above. Regenerate individual scenes or approve all to generate videos.
+      {% else %}
+        Review each item above, then approve or regenerate this stage.
       {% endif %}
+    </p>
+    <div class="action-row">
+      <button type="button" class="btn btn-primary"
+        onclick="saveAndAdvance({{ job.id }}, '{{ job.status }}')">
+        Approve &amp; Continue
+      </button>
     </div>
   {% elif job.status == "approved" %}
     <p class="status-msg status-msg-success">Job approved and complete.</p>
+    <div class="action-row" style="margin-top:12px;">
+      <form method="POST" action="/ui/ugc/{{ job.id }}/reopen">
+        <button type="submit" class="btn btn-secondary">Re-edit Video</button>
+      </form>
+    </div>
   {% elif job.status == "running" %}
-    <p class="status-msg">Pipeline running -- waiting for stage to complete...</p>
+    <p class="status-msg">Pipeline running &mdash; waiting for results...</p>
+    <script>setTimeout(function(){ window.location.reload(); }, 3000);</script>
   {% elif job.status == "failed" %}
     <p class="status-msg error-msg">Job failed: {{ job.error_message or "Unknown error" }}</p>
   {% endif %}

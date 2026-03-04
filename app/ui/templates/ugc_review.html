@@ -5,193 +5,990 @@
 <div class="page-header">
   <div>
     <h1>{{ job.product_name }}</h1>
-    <span class="status-badge status-{{ job.status }}">{{ job.status.replace('_', ' ') }}</span>
+    <span class="status-badge status-{{ job.status }}">{{ job.status.replace('_', ' ').replace('stage analysis review', 'overview review') }}</span>
   </div>
-  <a href="/ui/ugc" class="btn btn-secondary">&larr; Back to Jobs</a>
+  <a href="/ui/ugc" class="btn btn-secondary btn-sm">All Videos</a>
 </div>
+
+<!-- Quota monitor widget -->
+<div class="quota-widget" id="quota-widget">
+  <div class="quota-group">
+    <div class="quota-group-title">Video (Veo)</div>
+    <div class="quota-bar" id="qb-veo-rpm"><span class="quota-label">Per min</span><div class="quota-track"><div class="quota-fill"></div></div><span class="quota-val">-</span></div>
+    <div class="quota-bar" id="qb-veo-rpd"><span class="quota-label">Per day</span><div class="quota-track"><div class="quota-fill"></div></div><span class="quota-val">-</span></div>
+  </div>
+  <div class="quota-group">
+    <div class="quota-group-title">Image (Imagen)</div>
+    <div class="quota-bar" id="qb-imagen-rpm"><span class="quota-label">Per min</span><div class="quota-track"><div class="quota-fill"></div></div><span class="quota-val">-</span></div>
+    <div class="quota-bar" id="qb-imagen-rpd"><span class="quota-label">Per day</span><div class="quota-track"><div class="quota-fill"></div></div><span class="quota-val">-</span></div>
+  </div>
+</div>
+<script>
+(function(){
+  function updateQuota(){
+    fetch('/ui/quota-status').then(r=>r.json()).then(function(d){
+      [['veo','rpm'],['veo','rpd'],['imagen','rpm'],['imagen','rpd']].forEach(function(p){
+        var api=p[0], metric=p[1];
+        var el=document.getElementById('qb-'+api+'-'+metric);
+        if(!el) return;
+        var used=d[api][metric+'_used'], limit=d[api][metric+'_limit'], pct=d[api][metric+'_pct'];
+        el.querySelector('.quota-val').textContent=used+'/'+limit;
+        var fill=el.querySelector('.quota-fill');
+        fill.style.width=pct+'%';
+        fill.className='quota-fill'+(pct>=90?' quota-red':pct>=70?' quota-orange':'');
+      });
+    }).catch(function(){});
+  }
+  updateQuota();
+  setInterval(updateQuota, 10000);
+})();
+</script>
 
 <!-- Stage stepper -->
 <ol class="stage-stepper">
+  <li class="step step-done{% if active_tab == 'project_settings' %} step-viewing{% endif %}">
+    <a href="/ui/ugc/{{ job.id }}/review?tab=project_settings">Project</a>
+  </li>
   {% for status_key, label in stage_order %}
-    {% if status_key in completed_stages %}
-      <li class="step step-done">{{ label }}</li>
+    {% if status_key in viewable_stages %}
+      <li class="step {% if status_key in completed_stages or job.status == 'approved' %}step-done{% else %}step-active{% endif %}{% if status_key == active_tab %} step-viewing{% endif %}">
+        <a href="/ui/ugc/{{ job.id }}/review?tab={{ status_key }}">{{ label }}</a>
+      </li>
     {% elif job.status == "running" and status_key == running_toward %}
       <li class="step step-active">{{ label }} (running...)</li>
-    {% elif job.status == status_key %}
-      <li class="step step-active">{{ label }}</li>
-    {% elif job.status == "approved" %}
-      <li class="step step-done">{{ label }}</li>
     {% else %}
       <li class="step step-locked" aria-disabled="true">{{ label }}</li>
     {% endif %}
   {% endfor %}
 </ol>
 
-<!-- SSE progress section (running only) -->
-{% if job.status == "running" %}
-<div id="sse-progress"
-     hx-ext="sse"
-     sse-connect="/ugc/jobs/{{ job.id }}/events"
-     sse-swap="message"
-     hx-swap="innerHTML">
-  <p class="status-msg">Pipeline running...</p>
+<!-- Sticky progress bar (visible during running + regen) -->
+<div id="sticky-progress" class="sticky-progress">
+  <!-- SSE progress (running only) -->
+  {% if job.status == "running" %}
+  <div id="sse-progress">
+    <div class="running-progress">
+      <div class="progress-label" id="stage-label">Starting...</div>
+      <div class="progress-track">
+        <div id="stage-progress-bar" class="progress-bar" style="width: 0%"></div>
+      </div>
+      <div class="progress-detail" id="stage-detail">Step 1 of 7</div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    var src = new EventSource("/ugc/jobs/{{ job.id }}/events");
+    var stageMap = {
+      "Analyzing product": {num: 1, label: "Analyzing product..."},
+      "Writing video script": {num: 2, label: "Writing video script..."},
+      "Generating A-Roll image": {num: 3, label: "Creating creator image..."},
+      "Generating A-Roll videos": {num: 4, label: "Generating A-Roll videos..."},
+      "Generating B-Roll images": {num: 5, label: "Generating B-Roll images..."},
+      "Generating B-Roll videos": {num: 6, label: "Generating B-Roll videos..."},
+      "Composing final video": {num: 7, label: "Rendering final cut..."},
+      "Composition": {num: 7, label: "Almost done..."}
+    };
+    src.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      if (d.status === "running" && d.stage) {
+        var bar = document.getElementById("stage-progress-bar");
+        var label = document.getElementById("stage-label");
+        var detail = document.getElementById("stage-detail");
+        if (bar) bar.style.width = (d.percent || 0) + "%";
+        var info = stageMap[d.stage];
+        if (label && info) label.textContent = info.label;
+        if (detail) detail.textContent = "Step " + (info ? info.num : "?") + " of 7" + (d.detail ? " — " + d.detail : "");
+      }
+      if (d.status !== "running") {
+        src.close();
+        window.location.reload();
+      }
+    };
+    src.onerror = function() {
+      src.close();
+      window.location.reload();
+    };
+  })();
+  </script>
+  {% endif %}
+  <!-- Regen progress (shown by JS during regenerate-all operations) -->
+  <div id="regen-progress" style="display:none;">
+    <div class="running-progress">
+      <div class="progress-label" id="regen-label">Regenerating...</div>
+      <div class="progress-track">
+        <div id="regen-progress-bar" class="progress-bar regen-bar" style="width: 100%"></div>
+      </div>
+    </div>
+  </div>
 </div>
-<script>
-  document.body.addEventListener("htmx:sseClose", function() {
-    window.location.reload();
-  });
-</script>
-{% endif %}
 
 <!-- Error state -->
 {% if job.status == "failed" %}
 <div class="error-msg">
   Job failed: {{ job.error_message or "Unknown error" }}
 </div>
+<div style="display:flex; gap:12px; margin-top:12px;">
+  <form method="POST" action="/ui/ugc/{{ job.id }}/back-to-images">
+    <button type="submit" class="btn btn-secondary">Back to Image Review</button>
+  </form>
+  <form method="POST" action="/ui/ugc/{{ job.id }}/retry">
+    <button type="submit" class="btn btn-primary">Retry from Checkpoint</button>
+  </form>
+</div>
+{% endif %}
+
+<!-- Project settings (always viewable) -->
+{% if active_tab == "project_settings" %}
+<div class="stage-section">
+  <h2>Project Settings</h2>
+  <div class="card-grid">
+    <div class="stage-card">
+      <div class="card-label">Product Name</div>
+      <div class="card-value">{{ job.product_name }}</div>
+    </div>
+    <div class="stage-card">
+      <div class="card-label">Description</div>
+      <div class="card-value">{{ job.description }}</div>
+    </div>
+    <div class="stage-card">
+      <div class="card-label">Product URL</div>
+      <div class="card-value">{{ job.product_url or '—' }}</div>
+    </div>
+    <div class="stage-card">
+      <div class="card-label">Target Duration</div>
+      <div class="card-value">{{ job.target_duration or 30 }}s</div>
+    </div>
+    <div class="stage-card">
+      <div class="card-label">Style Preference</div>
+      <div class="card-value">{{ job.style_preference or '—' }}</div>
+    </div>
+    <div class="stage-card">
+      <div class="card-label">Use Mock</div>
+      <div class="card-value">{{ 'Yes' if job.use_mock else 'No' }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Parse failed scene index from error message for highlighting -->
+{% set err = job.error_message or "" %}
+{% set failed_aroll_idx = namespace(val=-1) %}
+{% set failed_broll_idx = namespace(val=-1) %}
+{% set failed_all_aroll = namespace(val=false) %}
+{% set failed_all_broll = namespace(val=false) %}
+{% if "[aroll_scene:" in err %}
+  {% set failed_aroll_idx.val = err.split("[aroll_scene:")[1].split("]")[0] | int %}
+{% elif err and ("celebrity" in err.lower() or "safety filter" in err.lower()) and "aroll" in (job.status or "") %}
+  {% set failed_all_aroll.val = true %}
+{% endif %}
+{% if "[broll_shot:" in err %}
+  {% set failed_broll_idx.val = err.split("[broll_shot:")[1].split("]")[0] | int %}
+{% elif err and "safety filter" in err.lower() and "broll" in (job.status or "") %}
+  {% set failed_all_broll.val = true %}
+{% endif %}
+
+<!-- Show error banner if returning from failure -->
+{% if job.error_message and job.status not in ["failed", "running", "approved"] %}
+<div class="error-msg" style="margin-bottom:12px;">
+  Previous error: {{ job.error_message }} — fix the highlighted item below, then advance.
+</div>
 {% endif %}
 
 <!-- Per-item stage content sections -->
+{% set can_edit = (job.status != "running" and job.status != "approved") %}
 {% if job.status in review_states or job.status == "approved" %}
 
   <!-- Analysis stage content -->
+  {% if active_tab == "stage_analysis_review" or job.status == "approved" %}
   {% if job.analysis_category is not none %}
+  {% set editable = can_edit %}
   <div class="stage-section">
-    <h2>Analysis</h2>
+    <h2>Overview {% if editable %}<span class="edit-hint">(edit or regenerate each field)</span>{% endif %}</h2>
+
+    {% if editable %}
+    <form method="POST" action="/ui/ugc/{{ job.id }}/update-analysis">
+    {% endif %}
+
     <div class="card-grid">
+      {# -- Category -- #}
       <div class="stage-card">
-        <div class="card-label">Category</div>
-        <div class="card-value">{{ job.analysis_category }}</div>
-      </div>
-      <div class="stage-card">
-        <div class="card-label">UGC Style</div>
-        <div class="card-value">{{ job.analysis_ugc_style }}</div>
-      </div>
-      <div class="stage-card">
-        <div class="card-label">Emotional Tone</div>
-        <div class="card-value">{{ job.analysis_emotional_tone }}</div>
-      </div>
-      <div class="stage-card">
-        <div class="card-label">Target Audience</div>
-        <div class="card-value">{{ job.analysis_target_audience }}</div>
-      </div>
-      {% if job.analysis_key_features %}
-      <div class="stage-card">
-        <div class="card-label">Key Features</div>
-        <div class="card-value">
-          <ul>
-            {% for feature in job.analysis_key_features %}
-            <li>{{ feature }}</li>
-            {% endfor %}
-          </ul>
+        <div class="card-header">
+          <div class="card-label">Category</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_category', this)">Redo</button>
+          {% endif %}
         </div>
+        {% if editable %}
+          <input type="text" name="analysis_category" value="{{ job.analysis_category }}" class="inline-edit">
+        {% else %}
+          <div class="card-value">{{ job.analysis_category }}</div>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if job.analysis_visual_keywords %}
+
+      {# -- UGC Style -- #}
       <div class="stage-card">
-        <div class="card-label">Visual Keywords</div>
-        <div class="card-value">
-          <ul>
-            {% for kw in job.analysis_visual_keywords %}
-            <li>{{ kw }}</li>
-            {% endfor %}
-          </ul>
+        <div class="card-header">
+          <div class="card-label">Video Style</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_ugc_style', this)">Redo</button>
+          {% endif %}
         </div>
+        {% if editable %}
+          <input type="text" name="analysis_ugc_style" value="{{ job.analysis_ugc_style }}" class="inline-edit">
+        {% else %}
+          <div class="card-value">{{ job.analysis_ugc_style }}</div>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if job.hero_image_path %}
+
+      {# -- Emotional Tone -- #}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Emotional Tone</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_emotional_tone', this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if editable %}
+          <input type="text" name="analysis_emotional_tone" value="{{ job.analysis_emotional_tone }}" class="inline-edit">
+        {% else %}
+          <div class="card-value">{{ job.analysis_emotional_tone }}</div>
+        {% endif %}
+      </div>
+
+      {# -- Target Audience -- #}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Target Audience</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_target_audience', this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if editable %}
+          <textarea name="analysis_target_audience" class="inline-edit" rows="3">{{ job.analysis_target_audience }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.analysis_target_audience }}</div>
+        {% endif %}
+      </div>
+
+      {# -- Key Features -- #}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Key Features</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_key_features', this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if editable %}
+          <textarea name="analysis_key_features" class="inline-edit" rows="4">{{ (job.analysis_key_features or []) | join("\n") }}</textarea>
+          <div class="field-hint">One per line</div>
+        {% elif job.analysis_key_features %}
+          <div class="card-value">
+            <ul>
+              {% for feature in job.analysis_key_features %}
+              <li>{{ feature }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+
+      {# -- Visual Keywords -- #}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Visual Keywords</div>
+          {% if editable %}
+          <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'analysis_visual_keywords', this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if editable %}
+          <textarea name="analysis_visual_keywords" class="inline-edit" rows="4">{{ (job.analysis_visual_keywords or []) | join("\n") }}</textarea>
+          <div class="field-hint">One per line</div>
+        {% elif job.analysis_visual_keywords %}
+          <div class="card-value">
+            <ul>
+              {% for kw in job.analysis_visual_keywords %}
+              <li>{{ kw }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+
+      {# -- Reference Photos (product photos for subject reference) -- #}
+      {% if editable %}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Reference Photos <span class="edit-hint">(product photos — max 2, only 1 used when sketch is present)</span></div>
+        </div>
+        <div id="ref-photo-thumbs" class="ref-upload-thumbs">
+          {% for rp in ref_photo_paths %}
+          <div class="ref-upload-thumb ref-photo-thumb" data-path="{{ rp }}">
+            <img src="{{ rp | media_url }}" alt="Reference">
+            <button type="button" class="ref-upload-remove" onclick="removeRefPhoto({{ job.id }}, this)">&times;</button>
+          </div>
+          {% endfor %}
+        </div>
+        <input type="file" accept="image/*" class="ref-photo-upload-input"
+               onchange="uploadRefPhoto({{ job.id }}, this)"
+               {% if ref_photo_paths | length >= 2 %}disabled{% endif %}>
+        <div id="ref-photo-status" class="field-hint"></div>
+      </div>
+      {% elif ref_photo_paths %}
       <div class="stage-card media-card">
-        <div class="card-label">Hero Image</div>
+        <div class="card-label">Reference Photos</div>
+        <div class="ref-upload-thumbs">
+          {% for rp in ref_photo_paths %}
+          <div class="ref-upload-thumb ref-photo-thumb">
+            <img src="{{ rp | media_url }}" alt="Reference">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# -- Composition Sketches (hand-drawn sketches for layout control) -- #}
+      {% if editable %}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Composition Sketches <span class="edit-hint">(hand-drawn layout guide — max 1)</span></div>
+        </div>
+        <div id="sketch-thumbs" class="ref-upload-thumbs">
+          {% for sp in sketch_paths %}
+          <div class="ref-upload-thumb sketch-thumb" data-path="{{ sp }}">
+            <img src="{{ sp | media_url }}" alt="Sketch">
+            <button type="button" class="ref-upload-remove" onclick="removeSketchThumb({{ job.id }}, this)">&times;</button>
+          </div>
+          {% endfor %}
+        </div>
+        <input type="file" accept="image/*" class="sketch-upload-input"
+               onchange="uploadSketch({{ job.id }}, this)"
+               {% if sketch_paths | length >= 1 %}disabled{% endif %}>
+        <div id="sketch-status" class="field-hint"></div>
+      </div>
+      {% elif sketch_paths %}
+      <div class="stage-card media-card">
+        <div class="card-label">Composition Sketches</div>
+        <div class="ref-upload-thumbs">
+          {% for sp in sketch_paths %}
+          <div class="ref-upload-thumb sketch-thumb">
+            <img src="{{ sp | media_url }}" alt="Sketch">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# -- Hero Image -- #}
+      {% if job.hero_image_path or editable %}
+      <div class="stage-card media-card">
+        <div class="card-header">
+          <div class="card-label">Hero Image <span class="edit-hint">(product photo only — no people, used as reference for video generation)</span></div>
+          {% if editable %}
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span id="hero-inputs-changed" class="inputs-changed-hint" style="display:none;">Inputs changed — regenerate for updated image</span>
+            <label class="btn-regen" style="cursor:pointer;margin:0;">
+              Upload
+              <input type="file" accept="image/*" style="display:none;"
+                     onchange="uploadHeroImage({{ job.id }}, this)">
+            </label>
+            <button type="button" class="btn-regen" onclick="regenItem({{ job.id }}, 'hero_image', this)">Redo</button>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Build image list: current hero first, then history newest-first #}
+        {% set slides = [job.hero_image_path] + (job.hero_image_history or []) %}
+        <div id="ref-images-data" data-paths="[]"></div>
+
+        {# Large preview of latest generated image #}
         <img src="{{ job.hero_image_path | media_url }}"
-             alt="Hero image for {{ job.product_name }}"
+             alt="Current hero image"
              class="media-preview"
              loading="lazy">
+
+        {# Thumbnail grid of all generated images #}
+        {% if slides | length > 1 %}
+        <div class="hero-thumb-grid" id="hero-thumb-grid">
+          {% for slide_path in slides %}
+          <div class="hero-thumb{% if loop.first %} hero-thumb-current{% endif %}"
+               data-path="{{ slide_path }}"
+               {% if editable %}onclick="toggleHeroRef(this)"{% endif %}>
+            <img src="{{ slide_path | media_url }}" alt="v{{ loop.index }}" loading="lazy">
+            <div class="hero-thumb-label">{% if loop.first %}Current{% else %}v{{ loop.index }}{% endif %}</div>
+            {% if editable and not loop.first %}
+            <button type="button" class="hero-thumb-restore" onclick="event.stopPropagation(); restoreHeroImage({{ job.id }}, '{{ slide_path }}')" title="Restore">&#8635;</button>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if editable %}
+        {% if slides | length > 1 %}
+        <div class="field-hint" style="margin-top:6px;">Click images to select as references for regeneration.</div>
+        {% endif %}
+
+        {% endif %}
       </div>
       {% endif %}
     </div>
+
+    {% if editable %}
+    </form>
+    <div id="autosave-status" class="field-hint" style="margin-top: 8px;"></div>
+    {% endif %}
+
   </div>
+  {% endif %}
   {% endif %}
 
   <!-- Script stage content -->
+  {% if active_tab == "stage_script_review" or job.status == "approved" %}
   {% if job.master_script is not none %}
+  {% set script_editable = can_edit %}
   <div class="stage-section">
-    <h2>Script</h2>
-    <div class="card-grid">
-      {% if job.master_script.hook %}
-      <div class="stage-card">
-        <div class="card-label">Hook</div>
-        <div class="card-value">{{ job.master_script.hook }}</div>
-      </div>
+    <h2>Script
+      {% if script_editable %}
+      <span class="edit-hint">(edit any field to override)</span>
+      <button type="button" class="btn-regen btn-regen-all-script"
+        onclick="regenAllScript({{ job.id }})">
+        Redo Entire Script
+      </button>
       {% endif %}
-      {% if job.master_script.cta %}
-      <div class="stage-card">
-        <div class="card-label">CTA</div>
-        <div class="card-value">{{ job.master_script.cta }}</div>
-      </div>
-      {% endif %}
-      {% if job.aroll_scenes %}
-        {% for scene in job.aroll_scenes %}
-        <div class="stage-card">
-          <div class="card-label">A-Roll Scene {{ loop.index }}</div>
-          <div class="card-value">{{ scene.description or scene }}</div>
-        </div>
-        {% endfor %}
-      {% endif %}
-      {% if job.broll_shots %}
-        {% for shot in job.broll_shots %}
-        <div class="stage-card">
-          <div class="card-label">B-Roll Shot {{ loop.index }}</div>
-          <div class="card-value">{{ shot.description or shot }}</div>
-        </div>
-        {% endfor %}
-      {% endif %}
+    </h2>
+
+    {% if script_editable %}
+    <div class="info-msg" style="margin-bottom:12px;">
+      Need inspiration? Browse top-performing ads on
+      <a href="https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=US&is_targeted_country=false&media_type=all&sort_data[mode]=total_impressions&sort_data[direction]=desc" target="_blank" rel="noopener">Meta Ad Library</a>
+      and
+      <a href="https://library.tiktok.com/ads?region=DE&start_time=1741022590338&end_time=1772558590338&sort_type=last_shown_date,desc" target="_blank" rel="noopener">TikTok Ad Library</a>
+      before editing your script.
     </div>
+    <form id="script-form" method="POST" action="/ui/ugc/{{ job.id }}/update-script">
+    {% endif %}
+
+    {# -- Setup: Creator & Voice (side by side) -- #}
+    <div class="script-setup">
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Creator Persona <span class="edit-hint">Who is presenting</span></div>
+        </div>
+        {% if script_editable %}
+          <textarea name="script_creator_persona" class="inline-edit" rows="2">{{ job.master_script.creator_persona or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.creator_persona or '' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Voice Direction <span class="edit-hint">Tone &amp; delivery style</span></div>
+        </div>
+        {% if script_editable %}
+          <textarea name="script_voice_direction" class="inline-edit" rows="2">{{ job.master_script.voice_direction or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.voice_direction or '' }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# -- Script timeline: single column, top-to-bottom = chronological -- #}
+    <div class="script-timeline">
+      <div class="stage-card script-timeline-card">
+        <div class="card-header">
+          <div class="card-label">Hook <span class="edit-hint">First 3 seconds</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'master_hook', 0, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <textarea name="script_hook" class="inline-edit" rows="2">{{ job.master_script.hook or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.hook or '' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="stage-card script-timeline-card">
+        <div class="card-header">
+          <div class="card-label">Problem <span class="edit-hint">Pain point, 3-8s</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'master_problem', 0, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <textarea name="script_problem" class="inline-edit" rows="2">{{ job.master_script.problem or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.problem or '' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="stage-card script-timeline-card">
+        <div class="card-header">
+          <div class="card-label">Proof <span class="edit-hint">Solution + social proof, 8-20s</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'master_proof', 0, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <textarea name="script_proof" class="inline-edit" rows="2">{{ job.master_script.proof or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.proof or '' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="stage-card script-timeline-card">
+        <div class="card-header">
+          <div class="card-label">CTA <span class="edit-hint">Final 5-10s</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'master_cta', 0, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <textarea name="script_cta" class="inline-edit" rows="2">{{ job.master_script.cta or '' }}</textarea>
+        {% else %}
+          <div class="card-value">{{ job.master_script.cta or '' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="stage-card script-timeline-card derived-field-card">
+        <div class="card-header">
+          <div class="card-label">Full Script <span class="edit-hint">Auto-generated from Hook + Problem + Proof + CTA ({{ job.master_script.total_duration or '?' }}s)</span></div>
+        </div>
+        {% if script_editable %}
+          <textarea name="script_full_script" class="inline-edit derived-field" rows="4" readonly>{{ job.master_script.full_script or '' }}</textarea>
+          <div class="field-hint">Read-only — edit the section fields above to change this</div>
+        {% else %}
+          <div class="card-value">{{ job.master_script.full_script or '' }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# -- A-Roll Scenes -- #}
+    {% if job.aroll_scenes %}
+    <h3 style="margin:16px 0 8px;font-size:0.95rem;color:#1a1a2e;">A-Roll Scenes</h3>
+    <div class="card-grid">
+      {% for scene in job.aroll_scenes %}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Scene {{ loop.index }} <span class="edit-hint">{{ scene.camera_angle or '' }} &middot; {{ scene.duration_seconds or '?' }}s</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'aroll_scene', {{ loop.index0 }}, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <div class="script-field-group">
+            <label class="field-hint">Script text <span class="derived-hint">(derived from Full Script — read-only)</span></label>
+            <textarea name="aroll_{{ loop.index0 }}_script_text" class="inline-edit derived-field" rows="2" readonly>{{ scene.script_text or '' }}</textarea>
+          </div>
+          <div class="script-field-group">
+            <label class="field-hint">Visual prompt</label>
+            <textarea name="aroll_{{ loop.index0 }}_visual_prompt" class="inline-edit" rows="2">{{ scene.visual_prompt or '' }}</textarea>
+          </div>
+          <div class="script-field-group">
+            <label class="field-hint">Camera angle</label>
+            <input type="text" name="aroll_{{ loop.index0 }}_camera_angle" class="inline-edit" value="{{ scene.camera_angle or '' }}">
+          </div>
+        {% else %}
+          <div class="card-value">
+            <p><strong>Script:</strong> {{ scene.script_text or '' }}</p>
+            <p class="script-meta">{{ scene.visual_prompt or '' }}</p>
+            <p class="script-meta">{{ scene.camera_angle or '' }}</p>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# -- B-Roll Shots -- #}
+    {% if job.broll_shots %}
+    <h3 style="margin:16px 0 8px;font-size:0.95rem;color:#1a1a2e;">B-Roll Shots</h3>
+    <div class="card-grid">
+      {% for shot in job.broll_shots %}
+      <div class="stage-card">
+        <div class="card-header">
+          <div class="card-label">Shot {{ loop.index }} <span class="edit-hint">{{ shot.duration_seconds or '?' }}s &middot; overlay at {{ shot.overlay_start or '?' }}s</span></div>
+          {% if script_editable %}
+          <button type="button" class="btn-regen" onclick="regenScriptField({{ job.id }}, 'broll_shot', {{ loop.index0 }}, this)">Redo</button>
+          {% endif %}
+        </div>
+        {% if script_editable %}
+          <div class="script-field-group">
+            <label class="field-hint">Image prompt</label>
+            <textarea name="broll_{{ loop.index0 }}_image_prompt" class="inline-edit" rows="2">{{ shot.image_prompt or '' }}</textarea>
+          </div>
+          <div class="script-field-group">
+            <label class="field-hint">Animation prompt</label>
+            <textarea name="broll_{{ loop.index0 }}_animation_prompt" class="inline-edit" rows="2">{{ shot.animation_prompt or '' }}</textarea>
+          </div>
+        {% else %}
+          <div class="card-value">
+            <p><strong>Image:</strong> {{ shot.image_prompt or '' }}</p>
+            <p class="script-meta"><strong>Animation:</strong> {{ shot.animation_prompt or '' }}</p>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if script_editable %}
+    </form>
+    <div id="script-autosave-status" class="field-hint" style="margin-top: 8px;"></div>
+    {% endif %}
+
   </div>
   {% endif %}
+  {% endif %}
 
-  <!-- A-Roll stage content -->
-  {% if job.aroll_paths is not none %}
+  <!-- A-Roll Image stage content -->
+  {% if active_tab == "stage_aroll_image_review" or job.status == "approved" %}
+  {% if job.aroll_image_paths is not none %}
+  {% set aroll_img_editable = can_edit %}
   <div class="stage-section">
-    <h2>A-Roll</h2>
+    <h2>A-Roll Image
+      {% if aroll_img_editable %}
+      <span class="edit-hint">(review or regenerate the creator image)</span>
+      {% endif %}
+    </h2>
+    <div class="card-grid">
+      {% for img_path in job.aroll_image_paths %}
+      {% set is_failed = (failed_aroll_idx.val == loop.index0 or failed_all_aroll.val) %}
+      <div class="stage-card scene-image-card{% if is_failed %} card-error{% endif %}" data-scene-type="aroll" data-scene-index="{{ loop.index0 }}">
+        <div class="card-header">
+          <div class="card-label">{% if job.aroll_image_paths | length == 1 %}Creator Image{% else %}Scene {{ loop.index }}{% endif %}{% if is_failed %} <span class="error-badge">FAILED</span>{% endif %}</div>
+          {% if aroll_img_editable %}
+          <div style="display:flex;gap:6px;align-items:center;">
+            <label class="btn-regen" style="cursor:pointer;margin:0;">
+              Upload
+              <input type="file" accept="image/*" style="display:none;"
+                     onchange="uploadArollImage({{ job.id }}, {{ loop.index0 }}, this)">
+            </label>
+            <button type="button" class="btn-regen" onclick="regenSceneImage({{ job.id }}, 'aroll', {{ loop.index0 }}, this)">Redo</button>
+          </div>
+          {% endif %}
+        </div>
+        <img src="{{ img_path | media_url }}" alt="A-Roll Creator Image" class="scene-image-preview" loading="lazy">
+        {% set outer_idx = loop.index0 %}
+        {% set scene_history = (job.aroll_image_history or [])[outer_idx] if outer_idx < (job.aroll_image_history or []) | length else [] %}
+        {% if scene_history and aroll_img_editable %}
+        <div class="image-history-strip">
+          <span class="history-label">History ({{ scene_history | length }})</span>
+          <div class="history-thumbs">
+            {% for hist_path in scene_history %}
+            <img src="{{ hist_path | media_url }}" alt="History {{ loop.index }}"
+                 class="history-thumb" loading="lazy"
+                 onclick="selectHistoryImage({{ job.id }}, 'aroll', {{ outer_idx }}, {{ loop.index0 }})">
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {# Show creator persona for single-image model, or per-scene info for old jobs #}
+        {% if job.aroll_image_paths | length == 1 %}
+          {% set persona = (job.master_script or {}).get("creator_persona", "") %}
+          {% if persona %}
+          <div class="card-value" style="margin-top:8px;">
+            <p><strong>Persona:</strong> {{ persona }}</p>
+          </div>
+          {% endif %}
+        {% else %}
+          {% set scene = (job.aroll_scenes or [])[loop.index0] if loop.index0 < (job.aroll_scenes or []) | length else {} %}
+          {% if scene %}
+          <div class="card-value" style="margin-top:8px;">
+            <p><strong>Script:</strong> {{ scene.get("script_text", "") }}</p>
+            <p class="script-meta">{{ scene.get("visual_prompt", "") }}</p>
+          </div>
+          {% endif %}
+        {% endif %}
+        {% if aroll_img_editable %}
+        <label class="skip-video-item">
+          <input type="checkbox" class="skip-video-item-cb" data-scene-type="aroll" data-clip-index="{{ loop.index0 }}">
+          Skip video for this clip
+        </label>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if aroll_img_editable %}
+    <label class="skip-video-gen">
+      <input type="checkbox" class="skip-video-gen-cb"
+        onchange="toggleAllSkipItems(this)">
+      Skip all video generation (upload your own on the next page)
+    </label>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- A-Roll Videos stage content -->
+  {% if active_tab == "stage_aroll_review" or job.status == "approved" %}
+  {% if job.aroll_paths is not none %}
+  {% set aroll_vid_editable = can_edit %}
+  <div class="stage-section">
+    <h2>A-Roll Videos
+      {% if aroll_vid_editable %}
+      <span class="edit-hint">(review or regenerate each clip)</span>
+      <button type="button" class="btn-regen btn-regen-all-videos"
+        onclick="regenAllSceneVideos({{ job.id }})">
+        Redo All
+      </button>
+      {% endif %}
+    </h2>
     <div class="card-grid">
       {% for path in job.aroll_paths %}
-      <div class="stage-card media-card">
-        <div class="card-label">A-Roll Clip {{ loop.index }}</div>
+      {% set scene = (job.aroll_scenes or [])[loop.index0] if loop.index0 < (job.aroll_scenes or []) | length else {} %}
+      <div class="stage-card media-card scene-video-card" data-scene-type="aroll" data-scene-index="{{ loop.index0 }}">
+        <div class="card-header">
+          <div class="card-label">A-Roll Clip {{ loop.index }} <span class="edit-hint">{{ scene.get("camera_angle", "") }} &middot; {{ scene.get("duration_seconds", "?") }}s</span></div>
+          {% if aroll_vid_editable %}
+          <div style="display:flex;gap:6px;align-items:center;">
+            <label class="btn-regen" style="cursor:pointer;margin:0;">
+              Upload <input type="file" accept="video/*" style="display:none"
+                onchange="uploadVideo({{ job.id }}, 'aroll', {{ loop.index0 }}, this)">
+            </label>
+            <button type="button" class="btn-regen" onclick="regenSceneVideo({{ job.id }}, 'aroll', {{ loop.index0 }}, this)">Redo</button>
+          </div>
+          {% endif %}
+        </div>
+        {% if path %}
         <video class="media-preview media-preview-video" controls preload="metadata">
           <source src="{{ path | media_url }}" type="video/mp4">
         </video>
+        {% else %}
+        <div class="upload-placeholder">
+          <label class="btn-upload-placeholder">
+            Upload Video <input type="file" accept="video/*" style="display:none"
+              onchange="uploadVideo({{ job.id }}, 'aroll', {{ loop.index0 }}, this)">
+          </label>
+        </div>
+        {% endif %}
+        {% set vid_outer_idx = loop.index0 %}
+        {% set vid_history = (job.aroll_video_history or [])[vid_outer_idx] if vid_outer_idx < (job.aroll_video_history or []) | length else [] %}
+        {% if vid_history and aroll_vid_editable %}
+        <div class="image-history-strip">
+          <span class="history-label">History ({{ vid_history | length }})</span>
+          <div class="history-thumbs">
+            {% for hist_path in vid_history %}
+            <video class="history-thumb" muted preload="metadata"
+                   onclick="selectHistoryVideo({{ job.id }}, 'aroll', {{ vid_outer_idx }}, {{ loop.index0 }})">
+              <source src="{{ hist_path | media_url }}" type="video/mp4">
+            </video>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if scene %}
+        <div class="card-value" style="margin-top:8px;">
+          <p><strong>Script:</strong> {{ scene.get("script_text", "") }}</p>
+          {% if aroll_vid_editable %}
+          <label class="field-hint">Visual prompt (edit before regenerating)</label>
+          <textarea class="inline-edit scene-prompt-edit" rows="2"
+                    data-scene-type="aroll" data-scene-index="{{ loop.index0 }}" data-field="visual_prompt"
+          >{{ scene.get("visual_prompt", "") }}</textarea>
+          {% else %}
+          <p class="script-meta">{{ scene.get("visual_prompt", "") }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
   {% endif %}
+  {% endif %}
 
-  <!-- B-Roll stage content -->
-  {% if job.broll_paths is not none %}
+  <!-- B-Roll Images stage content -->
+  {% if active_tab == "stage_broll_image_review" or job.status == "approved" %}
+  {% if job.broll_image_paths is not none %}
+  {% set broll_img_editable = can_edit %}
   <div class="stage-section">
-    <h2>B-Roll</h2>
+    <h2>B-Roll Images
+      {% if broll_img_editable %}
+      <span class="edit-hint">(review or regenerate each shot image)</span>
+      <button type="button" class="btn-regen btn-regen-all-broll-images"
+        onclick="regenAllBrollImages({{ job.id }})">
+        Redo All
+      </button>
+      {% endif %}
+    </h2>
+    {% if broll_img_editable %}
+    <div class="form-check" style="margin-bottom:1rem;">
+      <input type="checkbox" id="broll_include_creator"
+        {{ "checked" if job.broll_include_creator else "" }}
+        onchange="toggleBrollCreator({{ job.id }}, this.checked)">
+      <label for="broll_include_creator">Show the UGC character from A-Roll Images in B-Roll Images</label>
+      <small class="form-hint" style="margin-left:0.5rem;">Creator appears as a circular PiP overlay (bottom-left) during B-Roll in the final video.</small>
+    </div>
+    {% endif %}
+    <div class="card-grid">
+      {% for img_path in job.broll_image_paths %}
+      {% set shot = (job.broll_shots or [])[loop.index0] if loop.index0 < (job.broll_shots or []) | length else {} %}
+      {% set is_failed = (failed_broll_idx.val == loop.index0 or failed_all_broll.val) %}
+      <div class="stage-card scene-image-card{% if is_failed %} card-error{% endif %}" data-scene-type="broll" data-scene-index="{{ loop.index0 }}">
+        <div class="card-header">
+          <div class="card-label">Shot {{ loop.index }}{% if is_failed %} <span class="error-badge">FAILED</span>{% endif %} <span class="edit-hint">{{ shot.get("duration_seconds", "?") }}s</span></div>
+          {% if broll_img_editable %}
+          <button type="button" class="btn-regen" onclick="regenSceneImage({{ job.id }}, 'broll', {{ loop.index0 }}, this)">Redo</button>
+          <button type="button" class="btn-regen" onclick="triggerBrollUpload({{ job.id }}, {{ loop.index0 }})">Upload</button>
+          {% endif %}
+        </div>
+        <img src="{{ img_path | media_url }}" alt="B-Roll Shot {{ loop.index }}" class="scene-image-preview" loading="lazy">
+        {% set outer_idx = loop.index0 %}
+        {% set shot_history = (job.broll_image_history or [])[outer_idx] if outer_idx < (job.broll_image_history or []) | length else [] %}
+        {% if shot_history and broll_img_editable %}
+        <div class="image-history-strip">
+          <span class="history-label">History ({{ shot_history | length }})</span>
+          <div class="history-thumbs">
+            {% for hist_path in shot_history %}
+            <img src="{{ hist_path | media_url }}" alt="History {{ loop.index }}"
+                 class="history-thumb" loading="lazy"
+                 onclick="selectHistoryImage({{ job.id }}, 'broll', {{ outer_idx }}, {{ loop.index0 }})">
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if shot %}
+        <div class="card-value" style="margin-top:8px;">
+          {% if broll_img_editable %}
+          <label class="field-hint">Image prompt (edit before regenerating)</label>
+          <textarea class="inline-edit scene-prompt-edit" rows="2"
+                    data-scene-type="broll" data-scene-index="{{ loop.index0 }}" data-field="image_prompt"
+          >{{ shot.get("image_prompt", "") }}</textarea>
+          {% else %}
+          <p><strong>Image prompt:</strong> {{ shot.get("image_prompt", "") }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if broll_img_editable %}
+        <label class="skip-video-item">
+          <input type="checkbox" class="skip-video-item-cb" data-scene-type="broll" data-clip-index="{{ loop.index0 }}">
+          Skip video for this clip
+        </label>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if broll_img_editable %}
+    <label class="skip-video-gen">
+      <input type="checkbox" class="skip-video-gen-cb"
+        onchange="toggleAllSkipItems(this)">
+      Skip all video generation (upload your own on the next page)
+    </label>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- B-Roll Videos stage content -->
+  {% if active_tab == "stage_broll_review" or job.status == "approved" %}
+  {% if job.broll_paths is not none %}
+  {% set broll_vid_editable = can_edit %}
+  <div class="stage-section">
+    <h2>B-Roll Videos
+      {% if broll_vid_editable %}
+      <span class="edit-hint">(review or regenerate each clip)</span>
+      <button type="button" class="btn-regen btn-regen-all-broll-videos"
+        onclick="regenAllBrollVideos({{ job.id }})">
+        Redo All
+      </button>
+      {% endif %}
+    </h2>
     <div class="card-grid">
       {% for path in job.broll_paths %}
-      <div class="stage-card media-card">
-        <div class="card-label">B-Roll Clip {{ loop.index }}</div>
+      {% set shot = (job.broll_shots or [])[loop.index0] if loop.index0 < (job.broll_shots or []) | length else {} %}
+      <div class="stage-card media-card broll-video-card" data-shot-index="{{ loop.index0 }}">
+        <div class="card-header">
+          <div class="card-label">B-Roll Clip {{ loop.index }} <span class="edit-hint">{{ shot.get("duration_seconds", "?") }}s</span></div>
+          {% if broll_vid_editable %}
+          <div style="display:flex;gap:6px;align-items:center;">
+            <label class="btn-regen" style="cursor:pointer;margin:0;">
+              Upload <input type="file" accept="video/*" style="display:none"
+                onchange="uploadVideo({{ job.id }}, 'broll', {{ loop.index0 }}, this)">
+            </label>
+            <button type="button" class="btn-regen" onclick="regenBrollVideo({{ job.id }}, {{ loop.index0 }}, this)">Redo</button>
+          </div>
+          {% endif %}
+        </div>
+        {% if path %}
         <video class="media-preview media-preview-video" controls preload="metadata">
           <source src="{{ path | media_url }}" type="video/mp4">
         </video>
+        {% else %}
+        <div class="upload-placeholder">
+          <label class="btn-upload-placeholder">
+            Upload Video <input type="file" accept="video/*" style="display:none"
+              onchange="uploadVideo({{ job.id }}, 'broll', {{ loop.index0 }}, this)">
+          </label>
+        </div>
+        {% endif %}
+        {% set bvid_idx = loop.index0 %}
+        {% set bvid_history = (job.broll_video_history or [])[bvid_idx] if bvid_idx < (job.broll_video_history or []) | length else [] %}
+        {% if bvid_history and broll_vid_editable %}
+        <div class="image-history-strip">
+          <span class="history-label">History ({{ bvid_history | length }})</span>
+          <div class="history-thumbs">
+            {% for hist_path in bvid_history %}
+            <video class="history-thumb" muted preload="metadata"
+                   onclick="selectHistoryVideo({{ job.id }}, 'broll', {{ bvid_idx }}, {{ loop.index0 }})">
+              <source src="{{ hist_path | media_url }}" type="video/mp4">
+            </video>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if shot %}
+        <div class="card-value" style="margin-top:8px;">
+          <p class="script-meta"><strong>Animation:</strong> {{ shot.get("animation_prompt", "") }}</p>
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
+  {% endif %}
   {% endif %}
 
   <!-- Composition stage content -->
+  {% if active_tab == "stage_composition_review" or job.status == "approved" %}
   {% if job.final_video_path is not none %}
   <div class="stage-section">
     <h2>Composition</h2>
     <div class="card-grid">
       <div class="stage-card media-card">
         <div class="card-label">Final Video</div>
-        <video class="media-preview media-preview-video" controls preload="metadata">
+        <video id="trim-video" class="media-preview media-preview-video" controls preload="metadata">
           <source src="{{ job.final_video_path | media_url }}" type="video/mp4">
         </video>
+
+        {% if job.status == "stage_composition_review" %}
+        <!-- Video trim controls -->
+        <div class="trim-controls" id="trim-controls">
+          <div class="trim-header">
+            <span class="card-label">Trim Tool</span>
+            <span class="trim-hint">Drag on the timeline to select regions to cut</span>
+          </div>
+          <div class="trim-timeline-wrap">
+            <div class="trim-timeline" id="trim-timeline">
+              <div class="trim-playhead" id="trim-playhead"></div>
+            </div>
+            <div class="trim-time-labels">
+              <span>0:00</span>
+              <span id="trim-duration-label">0:00</span>
+            </div>
+          </div>
+          <div class="trim-actions">
+            <button type="button" class="btn btn-secondary" onclick="clearAllCuts()">Clear</button>
+            <button type="button" class="btn btn-primary" id="apply-cuts-btn" onclick="applyCuts({{ job.id }})" disabled>Apply Cuts</button>
+            {% if job.trim_history %}
+            <button type="button" class="btn btn-secondary" id="undo-trim-btn" onclick="undoTrim({{ job.id }})">Undo Trim</button>
+            {% else %}
+            <button type="button" class="btn btn-secondary" id="undo-trim-btn" onclick="undoTrim({{ job.id }})" style="display:none">Undo Trim</button>
+            {% endif %}
+            <span id="trim-status" class="field-hint" style="margin-left:8px;"></span>
+          </div>
+        </div>
+        {% endif %}
       </div>
       {% if job.candidate_video_path %}
       <div class="stage-card media-card">
@@ -203,6 +1000,7 @@
       {% endif %}
     </div>
   </div>
+  {% endif %}
   {% endif %}
 
 {% endif %}
@@ -219,8 +1017,45 @@
 </div>
 {% endif %}
 
-<!-- Stage controls partial -->
-{% if job.status in review_states or job.status == "running" or job.status == "approved" %}
+<!-- Prev / Next navigation -->
+{% if active_tab in review_states or job.status == "approved" %}
+  {% set all_tabs = ["project_settings"] + stage_order | map(attribute=0) | list %}
+  {% set all_labels = ["Project"] + stage_order | map(attribute=1) | list %}
+  {% set viewable_tabs = ["project_settings"] + (viewable_stages | list) %}
+  {% set cur_idx = namespace(val=-1) %}
+  {% for t in all_tabs %}
+    {% if t == active_tab %}{% set cur_idx.val = loop.index0 %}{% endif %}
+  {% endfor %}
+  {% set prev_tab = namespace(val="", label="") %}
+  {% set next_tab = namespace(val="", label="") %}
+  {% for i in range(cur_idx.val - 1, -1, -1) %}
+    {% if not prev_tab.val and all_tabs[i] in viewable_tabs %}
+      {% set prev_tab.val = all_tabs[i] %}
+      {% set prev_tab.label = all_labels[i] %}
+    {% endif %}
+  {% endfor %}
+  {% for i in range(cur_idx.val + 1, all_tabs | length) %}
+    {% if not next_tab.val and all_tabs[i] in viewable_tabs %}
+      {% set next_tab.val = all_tabs[i] %}
+      {% set next_tab.label = all_labels[i] %}
+    {% endif %}
+  {% endfor %}
+  <div class="stage-nav">
+    {% if prev_tab.val %}
+      <a href="/ui/ugc/{{ job.id }}/review?tab={{ prev_tab.val }}" class="btn btn-secondary btn-sm">&larr; {{ prev_tab.label }}</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+    {% if next_tab.val %}
+      <a href="/ui/ugc/{{ job.id }}/review?tab={{ next_tab.val }}" class="btn btn-secondary btn-sm">{{ next_tab.label }} &rarr;</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+  </div>
+{% endif %}
+
+<!-- Stage controls partial (any review tab, running, or approved) -->
+{% if active_tab in review_states or job.status == "running" or job.status == "approved" %}
   {% include "partials/ugc_stage_controls.html" %}
 {% endif %}
 

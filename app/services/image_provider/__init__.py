@@ -30,10 +30,10 @@ def get_image_provider() -> ImageProvider:
     # Create provider based on type
     if provider_type == "imagen":
         google_api_key = getattr(settings, "google_api_key", "")
-        # Fall back to mock if no API key or USE_MOCK_DATA is True
-        if not google_api_key or settings.use_mock_data:
+        # Fall back to mock if no API key
+        if not google_api_key:
             print("Warning: IMAGE_PROVIDER_TYPE is 'imagen' but GOOGLE_API_KEY "
-                  "is empty or USE_MOCK_DATA is True. Using mock provider.")
+                  "is empty. Using mock provider.")
             return MockImageProvider(output_dir=output_dir)
         return GoogleImagenProvider(api_key=google_api_key, output_dir=output_dir)
     else:

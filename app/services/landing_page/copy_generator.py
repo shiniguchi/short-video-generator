@@ -1,5 +1,6 @@
 """AI copy generator for landing pages using proven copywriting formulas."""
 
+import json
 import logging
 from typing import Optional, List
 from app.schemas import LandingPageCopy, LPResearchResult
@@ -264,3 +265,62 @@ def generate_copy(
         return get_mock_copy(product_idea)
 
     return generate_lp_copy(product_idea, target_audience, research_result, formula)
+
+
+# Module-specific regen prompts
+_MODULE_PROMPTS = {
+    "headline": (
+        "Generate a NEW landing page headline and subheadline for this product.\n"
+        "Product: {product_idea}\nTarget Audience: {target_audience}\n\n"
+        "RULES:\n- headline: 5-8 words, benefit-driven, second-person\n"
+        "- subheadline: 15-25 words, expands headline with a specific claim\n\n"
+        "Return ONLY valid JSON: {{\"headline\": \"...\", \"subheadline\": \"...\"}}"
+    ),
+    "cta": (
+        "Generate NEW CTA copy for this product's landing page.\n"
+        "Product: {product_idea}\nTarget Audience: {target_audience}\n\n"
+        "RULES:\n- cta_text: 2-4 words, action verb + benefit\n"
+        "- urgency_text: one line creating scarcity\n"
+        "- social_proof_text: include a specific number\n\n"
+        "Return ONLY valid JSON: {{\"cta_text\": \"...\", \"urgency_text\": \"...\", \"social_proof_text\": \"...\"}}"
+    ),
+    "benefits": (
+        "Generate 3 NEW product-specific benefits for this landing page.\n"
+        "Product: {product_idea}\nTarget Audience: {target_audience}\n\n"
+        "RULES:\n- Each benefit: title (3-5 words), description (15-20 words with a number/stat), icon_emoji\n"
+        "- Must be specific to THIS product, not generic\n\n"
+        "Return ONLY valid JSON: {{\"benefits\": [{{\"title\": \"...\", \"description\": \"...\", \"icon_emoji\": \"...\"}}, ...]}}"
+    ),
+}
+
+# Which lp_copy keys each module maps to
+MODULE_KEYS = {
+    "headline": ["headline", "subheadline"],
+    "cta": ["cta_text", "urgency_text", "social_proof_text"],
+    "benefits": ["benefits"],
+}
+
+
+def regenerate_module(module: str, product_idea: str, target_audience: str) -> dict:
+    """Regenerate a single LP copy module via targeted LLM call.
+
+    Returns dict with only the module's keys (e.g. {"headline": "...", "subheadline": "..."}).
+    """
+    if module not in _MODULE_PROMPTS:
+        raise ValueError(f"Unknown module: {module}")
+
+    prompt = _MODULE_PROMPTS[module].format(
+        product_idea=product_idea, target_audience=target_audience
+    )
+    llm = get_llm_provider()
+    raw = llm.generate_text(prompt=prompt, temperature=0.9)
+
+    # Parse JSON from response (strip markdown fences if present)
+    text = raw.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+    result = json.loads(text)
+
+    # Only return the expected keys
+    expected = MODULE_KEYS[module]
+    return {k: result[k] for k in expected if k in result}

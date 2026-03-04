@@ -2,7 +2,8 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>Analytics Dashboard</h1>
+  <h1>Analytics</h1>
+  <a class="btn btn-secondary btn-sm" href="/ui/waitlist/export.csv">Export CSV</a>
 </div>
 
 {% set total_signups = signups_by_lp.values() | sum %}
@@ -35,9 +36,11 @@
 </form>
 
 {% if lps %}
+{% include "partials/bulk_delete_bar.html" %}
 <table class="lp-table">
   <thead>
     <tr>
+      <th><input type="checkbox" onchange="toggleSelectAll(this)"></th>
       <th>Product Idea</th>
       <th>Status</th>
       <th>Pageviews</th>
@@ -52,17 +55,19 @@
     {% set pv = analytics.get(lp.run_id, {}).get("pageviews", 0) %}
     {% set sg = signups_by_lp.get(lp.run_id, 0) %}
     <tr>
-      <td>{{ lp.product_idea[:50] }}{% if lp.product_idea|length > 50 %}…{% endif %}</td>
-      <td><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
-      <td>{{ pv }}</td>
-      <td>{{ sg }}</td>
-      <td class="cvr-cell">{{ "%.1f%%"|format(sg / pv * 100) if pv > 0 else "---" }}</td>
-      <td>{% if lp.deployed_url %}<a href="{{ lp.deployed_url }}" target="_blank">{{ lp.deployed_url }}</a>{% else %}---{% endif %}</td>
-      <td><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
+      <td><input type="checkbox" class="row-cb" value="{{ lp.id }}" onchange="updateBulkBar()"></td>
+      <td data-label="Product">{{ lp.product_idea[:50] }}{% if lp.product_idea|length > 50 %}…{% endif %}</td>
+      <td data-label="Status"><span class="status-badge status-{{ lp.status }}">{{ lp.status }}</span></td>
+      <td data-label="Pageviews">{{ pv }}</td>
+      <td data-label="Signups">{% if sg > 0 %}<span class="clickable-cell" onclick="openDetailModal('Signups', '/ui/analytics/signups/{{ lp.run_id }}', [{key:'email',label:'Email'},{key:'signed_up_at',label:'Signed Up'}])">{{ sg }}</span>{% else %}{{ sg }}{% endif %}</td>
+      <td data-label="CVR" class="cvr-cell">{{ "%.1f%%"|format(sg / pv * 100) if pv > 0 else "---" }}</td>
+      <td data-label="URL">{% if lp.deployed_url %}<a href="{{ lp.deployed_url }}" target="_blank">{{ lp.deployed_url }}</a>{% else %}---{% endif %}</td>
+      <td data-label=""><a href="/ui/preview/{{ lp.run_id }}">Preview</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<script>var BULK_DELETE_URL = "/ui/dashboard/bulk-delete";</script>
 {% else %}
 <p class="empty-msg">No landing pages yet.</p>
 {% endif %}
